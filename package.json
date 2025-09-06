@@ -1,0 +1,22 @@
+{
+  "name": "aura-bookmua",
+  "private": true,
+  "version": "0.1.0",
+  "description": "AURA – Booking Makeup Artist Online (monorepo)",
+  "license": "MIT",
+  "workspaces": [
+    "apps/frontend",
+    "apps/backend",
+    "shared"
+  ],
+  "scripts": {
+    "dev:frontend": "npm --workspace apps/frontend run dev",
+    "dev:backend": "npm --workspace apps/backend run dev",
+    "build": "npm -ws run build",
+    "lint": "npm -ws run lint",
+    "format": "npm -ws run format",
+    "install:all": "npm install --workspaces"
+  }
+}
+
+

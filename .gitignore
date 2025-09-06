@@ -1,0 +1,16 @@
+node_modules
+dist
+.next
+.turbo
+.vercel
+.env
+apps/**/.env
+apps/**/.next
+apps/**/node_modules
+apps/**/dist
+coverage
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+
