@@ -85,6 +85,42 @@ export class AuthController {
     }
   }
 
+  // POST /auth/google-login
+async googleLogin(req: Request, res: Response): Promise<void> {
+    try {
+      const credential: string = req.body.credential;
+      
+      // Validate required fields
+      if (!credential) {
+        const response: ApiResponseDTO = {
+          status: 400,
+          success: false,
+          message: 'Google credential is required'
+        };
+        res.status(400).json(response);
+        return;
+      }
+
+      const result = await authService.loginWithGoogle({ credential });
+
+      const response: ApiResponseDTO = {
+        status: 200,
+        success: true,
+        message: 'Login Google successful',
+        data: result
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      const response: ApiResponseDTO = {
+        status: 401,
+        success: false,
+        message: error instanceof Error ? error.message : 'Login Google failed'
+      };
+      res.status(401).json(response);
+    }
+  }
+
   // Send email verification
   async sendEmailVerification(req: Request, res: Response): Promise<void> {
     try {

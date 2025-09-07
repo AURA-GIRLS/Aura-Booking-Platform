@@ -2,19 +2,22 @@ import dotenv from 'dotenv';
 import type { Config } from './types';
 
 // Load environment variables
-const envFile = process.env.NODE_ENV === "production" ? ".env.production" : ".env.dev";
+const envFile = process.env.NEXT_PUBLIC_NODE_ENV === "production" ? ".env.production" : ".env.development";
 dotenv.config({ path: envFile });
-
+console.log(`Using environment file: ${envFile}`);
 
 export const config = {
   // Server
-  port: Number(process.env.PORT || 3000),
-  publicAPI: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
+  port: Number(process.env.NEXT_PUBLIC_PORT || 3000),
+  publicAPI: process.env.NEXT_PUBLIC_API_URL || '',
   
+  // Third-party services
+  googleClientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '',
+
   // Environment
-  nodeEnv: process.env.NODE_ENV || 'development',
-  isDevelopment: process.env.NODE_ENV !== 'production',
-  isProduction: process.env.NODE_ENV === 'production'
+  nodeEnv: process.env.NEXT_PUBLIC_NODE_ENV || 'development',
+  isDevelopment: process.env.NEXT_PUBLIC_NODE_ENV !== 'production',
+  isProduction: process.env.NEXT_PUBLIC_NODE_ENV === 'production'
 } satisfies Config;
 
 

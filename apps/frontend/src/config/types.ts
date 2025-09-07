@@ -3,6 +3,8 @@ export interface Config {
   port: number;
 
   publicAPI: string;
+
+  googleClientId: string;
   
   // Environment
   nodeEnv: string;
