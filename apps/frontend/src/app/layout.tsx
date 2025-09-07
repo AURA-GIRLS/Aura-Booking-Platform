@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "../styles/globals.css";
+import '@fortawesome/fontawesome-free/css/all.min.css';
 
 const poppins = Poppins({
   subsets: ["latin"],
