@@ -13,9 +13,11 @@ import type {
   ForgotPasswordDTO,
   ResetPasswordDTO
 } from '../types/user.dtos';
+import { OAuth2Client } from 'google-auth-library';
 
 export class AuthService {
   private emailService: EmailService;
+  private client: OAuth2Client = new OAuth2Client(config.googleClientId);
 
   constructor() {
     this.emailService = new EmailService();
@@ -106,6 +108,48 @@ export class AuthService {
       // Generate token
       const token = this.generateToken(user._id.toString());
 
+      // Return user data without password
+      return {
+        user: this.formatUserResponse(user),
+        token
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  //Google login
+  async verifyGoogleToken(credential: string) {
+  const ticket = await this.client.verifyIdToken({
+    idToken: credential,
+    audience: process.env.GOOGLE_CLIENT_ID,
+  });
+  const payload = ticket.getPayload();
+  return payload; // chứa email, name, picture, sub (googleId), ...
+}
+  async loginWithGoogle(data: { credential: string }): Promise<AuthResponseDTO> {
+    try {
+      const payload = await this.verifyGoogleToken(data.credential);
+      if (!payload || !payload.email) {
+        throw new Error('Invalid Google token');
+      }
+      // Check if user already exists
+      let user = await User.findOne({ email: payload.email });
+      if (!user) {
+        // If not, create a new user  
+        user = new User({
+          fullName: payload.name || 'No Name',
+          email: payload.email,
+          avatarUrl: payload.picture,
+          isEmailVerified: true,
+          password: crypto.randomBytes(16).toString('hex'), // Random password
+          role: 'USER',
+          status: 'ACTIVE'
+        });
+        await user.save();
+      }
+      // Generate token
+      const token = this.generateToken(user._id.toString());
       // Return user data without password
       return {
         user: this.formatUserResponse(user),

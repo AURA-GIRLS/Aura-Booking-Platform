@@ -9,3 +9,8 @@ export default function RegisterPage() {
 }
 
 
+declare global {
+				interface Window {
+					google: any;
+				}
+			}

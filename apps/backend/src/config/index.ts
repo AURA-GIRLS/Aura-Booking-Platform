@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 import type { Config } from './types';
 
 // Load environment variables
-const envFile = process.env.NODE_ENV === "production" ? ".env.production" : ".env.dev";
+const envFile = process.env.NODE_ENV === "production" ? ".env.production" : ".env.development";
 dotenv.config({ path: envFile });
 
 // Environment validation

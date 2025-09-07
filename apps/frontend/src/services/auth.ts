@@ -1,3 +1,4 @@
+
 import { api } from '@/config/api';
 import type {
 	CreateUserDTO,
@@ -55,6 +56,14 @@ export const authService = {
 	async resetPassword(data: ResetPasswordDTO): Promise<ApiResponseDTO> {
 		try {
 			const res = await api.post<ApiResponseDTO>('/auth/reset-password', data);
+			return res.data;
+		} catch (error: any) {
+			throw error.response?.data || error;
+		}
+	},
+	async loginWithGoogle(data: { credential: string }): Promise<ApiResponseDTO<AuthResponseDTO>> {
+		try {
+			const res = await api.post<ApiResponseDTO<AuthResponseDTO>>('/auth/google-login', data);
 			return res.data;
 		} catch (error: any) {
 			throw error.response?.data || error;

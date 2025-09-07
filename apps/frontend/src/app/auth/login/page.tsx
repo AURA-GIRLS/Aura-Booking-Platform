@@ -7,5 +7,10 @@ export default function LoginPage() {
      </main>
   );
 }
+declare global {
+				interface Window {
+					google: any;
+				}
+			}
 
 

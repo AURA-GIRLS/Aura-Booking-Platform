@@ -36,6 +36,10 @@ export interface UpdateUserDTO {
   phoneNumber?: string;
   avatarUrl?: string;
 }
+// Google login DTO
+export interface GoogleLoginDTO {
+	credential: string;
+}
 
 export interface LoginDTO {
   email: string;
