@@ -18,7 +18,7 @@ export class EmailService {
 
   // Send email verification
   async sendEmailVerification(email: string, token: string, fullName: string): Promise<void> {
-    const verificationUrl = `${config.clientOrigin}/verify-email?token=${token}`;
+    const verificationUrl = `${config.clientOrigin}/auth/verify-email?token=${token}`;
     
     const mailOptions = {
       from: `"AURA" <${config.smtpUser}>`,
@@ -38,7 +38,7 @@ export class EmailService {
 
   // Send password reset email
   async sendPasswordReset(email: string, token: string, fullName: string): Promise<void> {
-    const resetUrl = `${config.clientOrigin}/reset-password?token=${token}`;
+    const resetUrl = `${config.clientOrigin}/auth/reset-password?token=${token}`;
     
     const mailOptions = {
       from: `"AURA" <${config.smtpUser}>`,
