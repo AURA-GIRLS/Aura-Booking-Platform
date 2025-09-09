@@ -11,8 +11,12 @@ import type {
   SendEmailVerificationDTO,
   VerifyEmailDTO,
   ForgotPasswordDTO,
-  ResetPasswordDTO
+  ResetPasswordDTO,
+  CreateMuaDTO,
+  MuaResponseDTO
 } from '../types/user.dtos';
+import { MUA } from '../models/muas.models';
+import { USER_ROLES } from '../constants';
 import { OAuth2Client } from 'google-auth-library';
 
 export class AuthService {
@@ -21,6 +25,72 @@ export class AuthService {
 
   constructor() {
     this.emailService = new EmailService();
+  }
+
+  // Register as MUA (Makeup Artist)
+  async registerAsMua(muaData: CreateMuaDTO): Promise<AuthResponseDTO & { mua: MuaResponseDTO }> {
+    try {
+      // Check if user already exists
+      const existingUser = await User.findOne({ email: muaData.email });
+      if (existingUser) {
+        throw new Error('User with this email already exists');
+      }
+
+      // Generate email verification token
+      const verificationToken = this.generateVerificationToken();
+      const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+      // Create new user with role ARTIST
+      const user = new User({
+        ...muaData,
+        role: USER_ROLES.ARTIST,
+        emailVerificationToken: verificationToken,
+        emailVerificationExpires: verificationExpires
+      });
+      await user.save();
+
+      // Create MUA profile
+      const mua = new MUA({
+        userId: user._id,
+        experienceYears: muaData.experienceYears,
+        bio: muaData.bio,
+        location: muaData.location,
+        ratingAverage: 0,
+        feedbackCount: 0,
+        bookingCount: 0,
+        isVerified: false
+      });
+      await mua.save();
+
+      // Send verification email
+      await this.emailService.sendEmailVerification(
+        user.email,
+        verificationToken,
+        user.fullName
+      );
+
+      // Generate token
+      const token = this.generateToken(user._id.toString());
+
+      // Return user and mua data
+      return {
+        user: this.formatUserResponse(user),
+        token,
+        mua: {
+          _id: mua._id.toString(),
+          userId: user._id.toString(),
+          experienceYears: mua.experienceYears ?? undefined,
+          bio: mua.bio ?? undefined,
+          location: mua.location ?? undefined,
+          ratingAverage: mua.ratingAverage ?? undefined,
+          feedbackCount: mua.feedbackCount ?? undefined,
+          bookingCount: mua.bookingCount ?? undefined,
+          isVerified: mua.isVerified ?? undefined
+        }
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 
   // Generate JWT token

@@ -7,6 +7,7 @@ const authController = new AuthController();
 
 // Public routes (no authentication required)
 router.post('/register', authController.register.bind(authController));
+router.post('/register-mua', authController.registerAsMua.bind(authController));
 router.post('/login', authController.login.bind(authController));
 router.post('/google-login', authController.googleLogin.bind(authController));
 router.post('/send-verification', authController.sendEmailVerification.bind(authController));
