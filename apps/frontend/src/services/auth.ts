@@ -9,6 +9,7 @@ import type {
 	VerifyEmailDTO,
 	AuthResponseDTO,
 	UserResponseDTO,
+	CreateMuaDTO,
 } from '../types/user.dtos';
 import type { ApiResponseDTO } from '../types/common.dtos';
 
@@ -16,6 +17,14 @@ export const authService = {
 	async register(data: CreateUserDTO): Promise<ApiResponseDTO<AuthResponseDTO>> {
 		try {
 			const res = await api.post<ApiResponseDTO<AuthResponseDTO>>('/auth/register', data);
+			return res.data;
+		} catch (error: any) {
+			throw error.response?.data || error;
+		}
+	},
+	async registerAsMua(data: CreateMuaDTO): Promise<ApiResponseDTO<AuthResponseDTO>> {
+		try {
+			const res = await api.post<ApiResponseDTO<AuthResponseDTO>>('/auth/register-mua', data);
 			return res.data;
 		} catch (error: any) {
 			throw error.response?.data || error;

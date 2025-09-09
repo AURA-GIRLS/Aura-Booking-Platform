@@ -2,6 +2,7 @@
 import { Button } from '@/components/lib/ui/button';
 import { Input } from '@/components/lib/ui/input';
 import { Label } from '@radix-ui/react-label';
+import { UserIcon, Sparkles } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
 import { authService } from '@/services/auth';
 import { useRouter } from 'next/navigation';
@@ -77,100 +78,101 @@ const RegisterForm: React.FC = () => {
 		}
 	}, []);
 
-				return (
-					<div className="min-h-screen flex items-center justify-center from-pink-100 via-pink-200 to-pink-300">
-						<form
-							onSubmit={handleSubmit}
-							className="w-full max-w-md rounded-3xl shadow-xl bg-white/80 backdrop-blur-md px-8 py-10 flex flex-col gap-6 border border-pink-200"
-						>
-							{error && <div className="text-red-500 text-sm text-center">{error}</div>}
-							{success && <div className="text-green-600 text-sm text-center">{success}</div>}
-							<div className="flex flex-col items-center mb-2">
-								<div className="w-16 h-16 rounded-full bg-pink-200 flex items-center justify-center mb-2 shadow-inner">
-									<svg width="32" height="32" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#f472b6" /></svg>
-								</div>
-								<h2 className="text-2xl font-bold text-pink-600 mb-1">Create Your Account?</h2>
-								<p className="text-pink-400 text-sm text-center">Book makeup online with top artists. Fast. Easy. Beautiful.</p>
-							</div>
-							<div>
-								<Label htmlFor="fullName" className="block mb-1 font-medium text-pink-500">Full Name*</Label>
-								<Input
-									id="fullName"
-									type="text"
-									name="fullName"
-									value={form.fullName}
-									onChange={handleChange}
-									required
-									placeholder="Alex Smith"
-									className="bg-white/60 border border-pink-200 focus:border-pink-400 focus:ring-pink-200 text-pink-700"
-								/>
-							</div>
-							<div>
-								<Label htmlFor="email" className="block mb-1 font-medium text-pink-500">Email address*</Label>
-								<Input
-									id="email"
-									type="email"
-									name="email"
-									value={form.email}
-									onChange={handleChange}
-									required
-									placeholder="example@gmail.com"
-									className="bg-white/60 border border-pink-200 focus:border-pink-400 focus:ring-pink-200 text-pink-700"
-								/>
-							</div>
-							<div>
-								<Label htmlFor="password" className="block mb-1 font-medium text-pink-500">Password*</Label>
-								<Input
-									id="password"
-									type="password"
-									name="password"
-									value={form.password}
-									onChange={handleChange}
-									required
-									placeholder="@Sn123hsn#"
-									className="bg-white/60 border border-pink-200 focus:border-pink-400 focus:ring-pink-200 text-pink-700"
-								/>
-							</div>
-							<div>
-								<Label htmlFor="phoneNumber" className="block mb-1 font-medium text-pink-500">Phone Number</Label>
-								<Input
-									id="phoneNumber"
-									type="tel"
-									name="phoneNumber"
-									value={form.phoneNumber}
-									onChange={handleChange}
-									placeholder="Optional"
-									className="bg-white/60 border border-pink-200 focus:border-pink-400 focus:ring-pink-200 text-pink-700"
-								/>
-							</div>
-							<Button
-								type="submit"
-								className="w-full bg-pink-400 text-white py-2 rounded-xl font-semibold hover:bg-pink-500 transition mb-2 shadow-pink-200 shadow"
-								disabled={loading}
+					return (
+						<div className="min-h-screen flex items-center justify-center">
+							<form
+								onSubmit={handleSubmit}
+								className="w-full max-w-lg rounded-[2.5rem] shadow-2xl bg-white/90 border-4 border-pink-200/60 px-10 py-12 flex flex-col gap-7 animate-fade-in"
 							>
-								{loading ? 'Registering...' : 'Register'}
-							</Button>
-							<div className="flex items-center gap-2 my-2">
-								<div className="flex-1 h-px bg-pink-200" />
-								<span className="text-xs text-pink-400">Or continue with</span>
-								<div className="flex-1 h-px bg-pink-200" />
-							</div>
-							<div className="flex flex-col gap-3">
-								<div ref={googleBtnRef} className="flex justify-center"></div>
-							</div>
-							<div>
-								<div className="flex justify-center mt-2">
-									<span className="text-xs text-pink-400">Already have an account?</span>
-									<a href="/auth/login" className="ml-1 text-xs text-pink-500 font-semibold hover:underline">Sign In</a>
+								{error && <div className="text-red-500 text-sm text-center">{error}</div>}
+								{success && <div className="text-green-600 text-sm text-center">{success}</div>}
+								<div className="flex flex-col items-center gap-2 mb-2">
+									<a href="/" title='home' className="w-16 h-16 rounded-full bg-pink-200 flex items-center justify-center mb-2 shadow-inner animate-bounce">
+										<UserIcon className="w-8 h-8 text-pink-500" />
+									</a>
+									<h2 className="text-3xl font-extrabold text-pink-500 tracking-tight drop-shadow-pink">Create Your Account</h2>
+									<p className="text-pink-600 text-lg text-center font-medium">Book makeup online with top artists. Fast. Easy. Beautiful.</p>
 								</div>
-								<div className="flex justify-center mt-1">
-									<span className="text-xs text-pink-400">Haven't seen verification email?</span>
-									<a href="/auth/resend-verification" className="ml-1 text-xs text-pink-500 font-semibold hover:underline">Resend Email</a>
+								<div>
+									<Label htmlFor="fullName" className="block mb-1 font-medium text-pink-500">Full Name*</Label>
+									<Input
+										id="fullName"
+										type="text"
+										name="fullName"
+										value={form.fullName}
+										onChange={handleChange}
+										required
+										placeholder="Alex Smith"
+										className="bg-pink-50 border border-pink-200 focus:border-pink-400 focus:ring-pink-200 text-pink-700"
+									/>
 								</div>
-							</div>
-						</form>
-					</div>
-				);
+								<div>
+									<Label htmlFor="email" className="block mb-1 font-medium text-pink-500">Email address*</Label>
+									<Input
+										id="email"
+										type="email"
+										name="email"
+										value={form.email}
+										onChange={handleChange}
+										required
+										placeholder="example@gmail.com"
+										className="bg-pink-50 border border-pink-200 focus:border-pink-400 focus:ring-pink-200 text-pink-700"
+									/>
+								</div>
+								<div>
+									<Label htmlFor="password" className="block mb-1 font-medium text-pink-500">Password*</Label>
+									<Input
+										id="password"
+										type="password"
+										name="password"
+										value={form.password}
+										onChange={handleChange}
+										required
+										placeholder="@Sn123hsn#"
+										className="bg-pink-50 border border-pink-200 focus:border-pink-400 focus:ring-pink-200 text-pink-700"
+									/>
+								</div>
+								<div>
+									<Label htmlFor="phoneNumber" className="block mb-1 font-medium text-pink-500">Phone Number</Label>
+									<Input
+										id="phoneNumber"
+										type="tel"
+										name="phoneNumber"
+										value={form.phoneNumber}
+										onChange={handleChange}
+										placeholder="Optional"
+										className="bg-pink-50 border border-pink-200 focus:border-pink-400 focus:ring-pink-200 text-pink-700"
+									/>
+								</div>
+								<Button
+									type="submit"
+									className="w-full bg-gradient-to-r from-pink-400 via-pink-300 to-pink-400 hover:from-pink-500 hover:to-pink-400 text-white py-3 rounded-2xl font-bold hover:scale-105 transition-transform duration-200 mb-2 shadow-lg"
+									disabled={loading}
+								>
+									{loading ? 'Registering...' : 'Register'}
+								</Button>
+								<div className="flex items-center gap-2 my-2">
+									<div className="flex-1 h-px bg-pink-200" />
+									<span className="text-xs text-pink-400">Or continue with</span>
+									<div className="flex-1 h-px bg-pink-200" />
+								</div>
+								<div className="flex flex-col gap-3">
+									<div ref={googleBtnRef} className="flex justify-center"></div>
+								</div>
+								<div className="flex flex-col gap-1 mt-2">
+									<a href="/auth/register/mua" className="text-xs text-pink-500 font-semibold hover:underline text-center">Sign up as makeup artist</a>
+									<div className="flex justify-center mt-2">
+										<span className="text-xs text-pink-400">Already have an account?</span>
+										<a href="/auth/login" className="ml-1 text-xs text-pink-500 font-semibold hover:underline">Sign In</a>
+									</div>
+									<div className="flex justify-center mt-1">
+										<span className="text-xs text-pink-400">Haven't seen verification email?</span>
+										<a href="/auth/resend-verification" className="ml-1 text-xs text-pink-500 font-semibold hover:underline">Resend Email</a>
+									</div>
+								</div>
+							</form>
+						</div>
+					);
 			};
 
 export default RegisterForm;

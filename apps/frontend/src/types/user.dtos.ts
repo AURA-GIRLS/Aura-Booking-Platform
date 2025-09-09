@@ -1,3 +1,21 @@
+// ===== MUA DTOs =====
+export interface CreateMuaDTO extends Omit<CreateUserDTO, 'role'> {
+  experienceYears?: number;
+  bio?: string;
+  location?: string;
+}
+
+export interface MuaResponseDTO {
+  _id: string;
+  userId: string;
+  experienceYears?: number;
+  bio?: string;
+  location?: string;
+  ratingAverage?: number;
+  feedbackCount?: number;
+  bookingCount?: number;
+  isVerified?: boolean;
+}
 import { 
   type UserRole
 } from "../constants/index";
@@ -36,10 +54,6 @@ export interface UpdateUserDTO {
   phoneNumber?: string;
   avatarUrl?: string;
 }
-// Google login DTO
-export interface GoogleLoginDTO {
-	credential: string;
-}
 
 export interface LoginDTO {
   email: string;
@@ -63,7 +77,7 @@ export interface AuthResponseDTO {
 }
 
 // ===== ARTIST DTOs =====
-export interface CreateArtistDTO {
+export interface CreateArtistDTO extends Partial<CreateUserDTO> {
   userId: string;
   bio?: string;
   city?: string;

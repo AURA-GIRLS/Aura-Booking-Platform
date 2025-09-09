@@ -6,7 +6,8 @@ import type {
   SendEmailVerificationDTO,
   VerifyEmailDTO,
   ForgotPasswordDTO,
-  ResetPasswordDTO
+  ResetPasswordDTO,
+  CreateMuaDTO
 } from '../types/user.dtos';
 import type { ApiResponseDTO } from '../types/common.dtos';
 
@@ -48,7 +49,42 @@ export class AuthController {
       res.status(400).json(response);
     }
   }
+  async registerAsMua(req: Request, res: Response): Promise<void> {
+    try {
+      const userData: CreateMuaDTO = req.body;
 
+      // Validate required fields
+      if (!userData.fullName || !userData.email || !userData.password) {
+        const response: ApiResponseDTO = {
+          status: 400,
+          success: false,
+          message: 'Full name, email and password are required'
+        };
+        res.status(400).json(response);
+        return;
+      }
+
+      const result = await authService.registerAsMua(userData);
+
+      const response: ApiResponseDTO = {
+        status: 201,
+        success: true,
+        message: 'MUA registered successfully. Please check your email to verify your account.',
+        data: result
+      };
+
+      res.status(201).json(response);
+    } catch (error) {
+      const response: ApiResponseDTO = {
+        status: 400,
+        success: false,
+        message: error instanceof Error ? error.message : 'Registration failed'
+      };
+      res.status(400).json(response);
+    }
+  }
+
+      
   // Login user
   async login(req: Request, res: Response): Promise<void> {
     try {
