@@ -413,4 +413,39 @@ export class AuthService {
       throw error;
     }
   }
+
+  // Update user profile
+  async updateProfile(userId: string, updateData: any): Promise<UserResponseDTO> {
+    try {
+      const user = await User.findById(userId);
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      // Update allowed fields
+      const allowedFields = ['fullName', 'phoneNumber', 'avatarUrl'];
+      const updateFields: any = {};
+      
+      allowedFields.forEach(field => {
+        if (updateData[field] !== undefined) {
+          updateFields[field] = updateData[field];
+        }
+      });
+
+      // Update the user
+      const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        { ...updateFields, updatedAt: new Date() },
+        { new: true, runValidators: true }
+      ).select('-password');
+
+      if (!updatedUser) {
+        throw new Error('Failed to update user');
+      }
+
+      return this.formatUserResponse(updatedUser);
+    } catch (error) {
+      throw error;
+    }
+  }
 }
