@@ -27,9 +27,20 @@ export const BOOKING_TYPES = {
 // Portfolio Categories
 export const PORTFOLIO_CATEGORIES = {
   BRIDAL: 'BRIDAL',
-  EVENT: 'EVENT',
+  PARTY: 'PARTY',
   PHOTOSHOOT: 'PHOTOSHOOT',
   CASUAL: 'CASUAL'
+} as const;
+
+// Service Categories for makeup occasions
+export const SERVICE_CATEGORIES = {
+  BRIDAL: 'BRIDAL',          
+  PARTY: 'PARTY',             
+  WEDDING_GUEST: 'WEDDING_GUEST', 
+  GRADUATION: 'GRADUATION',    
+  PROM: 'PROM',               
+  DAILY: 'DAILY',             
+  SPECIAL_EVENT: 'SPECIAL_EVENT' 
 } as const;
 
 //Media types
@@ -62,5 +73,6 @@ export type BookingStatus = typeof BOOKING_STATUS[keyof typeof BOOKING_STATUS];
 export type BookingType = typeof BOOKING_TYPES[keyof typeof BOOKING_TYPES];
 export type MediaType = typeof MEDIA_TYPES[keyof typeof MEDIA_TYPES];
 export type PortfolioCategory = typeof PORTFOLIO_CATEGORIES[keyof typeof PORTFOLIO_CATEGORIES];
+export type ServiceCategory = typeof SERVICE_CATEGORIES[keyof typeof SERVICE_CATEGORIES];
 export type PaymentStatus = typeof PAYMENT_STATUS[keyof typeof PAYMENT_STATUS];
 export type NotificationType = typeof NOTIFICATION_TYPES[keyof typeof NOTIFICATION_TYPES];

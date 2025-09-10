@@ -397,4 +397,57 @@ async googleLogin(req: Request, res: Response): Promise<void> {
       res.status(500).json(response);
     }
   }
+
+  // Update user profile
+  async updateProfile(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = (req as any).user?.userId;
+      
+      if (!userId) {
+        const response: ApiResponseDTO = {
+          success: false,
+          message: 'Unauthorized'
+        };
+        res.status(401).json(response);
+        return;
+      }
+
+      const updateData = req.body;
+      
+      // Validate input data
+      if (updateData.fullName && (updateData.fullName.length < 2 || updateData.fullName.length > 50)) {
+        const response: ApiResponseDTO = {
+          success: false,
+          message: 'Full name must be between 2 and 50 characters'
+        };
+        res.status(400).json(response);
+        return;
+      }
+
+      if (updateData.phoneNumber && !/^[\+]?[0-9][\d]{0,10}$/.test(updateData.phoneNumber)) {
+        const response: ApiResponseDTO = {
+          success: false,
+          message: 'Please enter a valid phone number'
+        };
+        res.status(400).json(response);
+        return;
+      }
+
+      const updatedUser = await authService.updateProfile(userId, updateData);
+      
+      const response: ApiResponseDTO = {
+        success: true,
+        message: 'Profile updated successfully',
+        data: updatedUser
+      };
+      
+      res.status(200).json(response);
+    } catch (error) {
+      const response: ApiResponseDTO = {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to update profile'
+      };
+      res.status(500).json(response);
+    }
+  }
 }
