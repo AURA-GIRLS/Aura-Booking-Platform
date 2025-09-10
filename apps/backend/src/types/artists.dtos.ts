@@ -1,33 +1,39 @@
-export interface Config {
-  // Client
-  port: number;
+// apps/backend/src/types/artists.dtos.ts
+export type SortKey = "relevance" | "rating_desc" | "price_asc" | "price_desc" | "newest" | "popular";
+export type MediaType = "IMAGE" | "VIDEO";
 
-  publicAPI: string;
-
-  googleClientId: string;
-  
-  // Environment
-  nodeEnv: string;
-  isDevelopment: boolean;
-  isProduction: boolean;
+//Hien list artists query
+export interface ListArtistsQueryDTO {
+  q?: string;
+  location?: string;
+  occasion?: string; 
+  style?: string;    // "douyin", "tự nhiên"...
+  ratingMin?: number;
+  priceMin?: number;
+  priceMax?: number;
+  sort?: SortKey;
+  page?: number;
+  limit?: number;
 }
 
+export interface ListArtistsDataDTO {
+  items: Array<{
+    id: string;
+    fullName: string;
+    avatarUrl: string | null;
+    bio: string;
+    location: string;
+    ratingAverage: number;
+    bookingCount: number;
+    ratePerHour: number | null; // minPrice
+  }>;
+  total: number;
+  page: number;
+  pages: number;
+  limit: number;
+}
 
-export type SortKey = "relevance" | "rating_desc" | "price_asc" | "price_desc" | "newest" | "popular";
-
-export type Artist = {
-  id: string;
-  fullName: string;
-  avatarUrl: string | null;
-  bio: string;
-  location: string;
-  ratingAverage: number;
-  bookingCount: number;
-  ratePerHour: number | null;
-};
-
-export type ApiResp = { items: Artist[]; total: number; page: number; pages: number; limit: number };
-
+//Hien artist portfolio detail
 export type ArtistDetailDTO = {
   artist: { 
     id: string; 

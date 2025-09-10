@@ -1,4 +1,3 @@
-
 import { api } from '@/config/api';
 import type {
 	CreateUserDTO,
@@ -101,6 +100,16 @@ export const authService = {
 	async checkEmailVerification(): Promise<ApiResponseDTO<{ isEmailVerified: boolean }>> {
 		try {
 			const res = await api.get<ApiResponseDTO<{ isEmailVerified: boolean }>>('/auth/check-verification');
+			return res.data;
+		} catch (error: any) {
+			throw error.response?.data || error;
+		}
+	},
+
+	
+	async updateProfile(data: { fullName?: string; phoneNumber?: string; avatarUrl?: string }): Promise<ApiResponseDTO<UserResponseDTO>> {
+		try {
+			const res = await api.put<ApiResponseDTO<UserResponseDTO>>('/auth/profile', data);
 			return res.data;
 		} catch (error: any) {
 			throw error.response?.data || error;
