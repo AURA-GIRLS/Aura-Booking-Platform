@@ -5,6 +5,7 @@ export interface Config {
   
   // Database
   mongoUri: string;
+  redisUri: string;
   
   // Security
   jwtSecret: string;

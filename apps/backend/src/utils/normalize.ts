@@ -17,7 +17,7 @@ export function toDateU(value: Date | null): Date | undefined {
 /**
  * Convert number to undefined if null, otherwise return as-is
  */
-export function toNumberOr(value: number | null): number | undefined {
+export function toNumberOr(value: number |null|undefined): number | undefined {
   return value === null ? undefined : value;
 }
 

@@ -2,6 +2,7 @@
 import type { Request, Response } from "express";
 import { getArtists, ArtistsService } from "../services/artists.service";
 import type { ListArtistsQueryDTO } from "../types/artists.dtos";
+import { getWeeklySlots } from "@services/schedule.service";
 
 export class ArtistsController {
   private artistsService = new ArtistsService();
@@ -75,4 +76,16 @@ export class ArtistsController {
       });
     }
   }
+  async getWeeklySlotsController(req: Request, res: Response) {
+  const { muaId } = req.params;
+  const { weekStart } = req.query;
+  if (!weekStart) return res.status(400).json({ message: "weekStart is required" });
+
+  try {
+    const data = await getWeeklySlots(muaId, weekStart as string);
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err });
+  }
+}
 }

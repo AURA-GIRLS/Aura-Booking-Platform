@@ -40,6 +40,10 @@ export interface SendEmailVerificationDTO {
 }
 
 // ===== USER DTOs =====
+export interface NavbarProps {
+  user: UserResponseDTO | null;
+  setUser: (user: UserResponseDTO | null) => void;
+}
 
 export interface CreateUserDTO {
   fullName: string;

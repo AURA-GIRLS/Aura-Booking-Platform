@@ -20,8 +20,8 @@ export const BOOKING_STATUS = {
 } as const;
 // booking type
 export const BOOKING_TYPES = {
-  ONLINE: 'ONLINE',
-  OFFLINE: 'OFFLINE',
+  ONLINE: 'AT_HOME',
+  OFFLINE: 'AT_STUDIO',
 } as const;
 
 // Portfolio Categories

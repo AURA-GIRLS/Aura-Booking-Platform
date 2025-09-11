@@ -7,6 +7,7 @@ import { connectDB } from './config/database';
 import routes from './routes/index';
 import health from './routes/health';
 import { errorHandler } from 'middleware/error.middleware';
+import { connectRedis } from 'config/redis';
 
 const app = express();
 
@@ -27,9 +28,9 @@ app.get('/', (req, res) => {
 
 async function start() {
   try {
-    // Connect to MongoDB
+    // Connect to MongoDB and Redis
     await connectDB();
-    
+    await connectRedis();
     // Start server
     app.listen(config.port, () => {
       console.log(`🚀 Backend listening on http://localhost:${config.port}`);

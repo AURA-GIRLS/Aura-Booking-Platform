@@ -1,5 +1,4 @@
 import { 
-  BOOKING_STATUS,
   type BookingStatus
 } from "../constants/index";
 
