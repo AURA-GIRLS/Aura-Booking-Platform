@@ -1,16 +1,22 @@
 export interface ISlot {
   slotId: string;
-  day: string; // 'MON', 'TUE', ...
+  day: string; 
   startTime: string;
   endTime: string;
-  type: string; // 'working', 'override'
+  type: string;
   note?: string;
 }
 
 export interface IWeeklySlot {
   muaId: string;
-  weekStart: Date;
-  slots: ISlot[];
+  weekStart: string;      // ⚠️ RedisJSON không lưu được Date, nên nên đổi thành string ISO
+  weekStartStr: string;
+  slots: Record<string, ISlot>;
 }
 
-export type SlotType = 'working' | 'override' | 'blocked';
+export interface IFinalSlot {
+  muaId: string;
+  weekStart: string;      // ⚠️ RedisJSON không lưu được Date, nên nên đổi thành string ISO
+  weekStartStr: string;
+  slots: ISlot[];
+}

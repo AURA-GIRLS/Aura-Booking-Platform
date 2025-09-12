@@ -22,7 +22,14 @@ export const config = {
   
   // Database
   mongoUri: process.env.MONGO_URI!,
-  redisUri: process.env.REDIS_URI || '',
+  redisHost: process.env.REDIS_HOST || '',
+  redisPort: Number(process.env.REDIS_PORT || 0),
+  redisPassword: process.env.REDIS_PASSWORD || '',
+
+  //azure
+  azureClientId: process.env.AZURE_CLIENT_ID || '',
+  azureClientSecret: process.env.AZURE_CLIENT_SECRET || '',
+  azureTenantId: process.env.AZURE_TENANT_ID || '',
 
   // Security
   jwtSecret: process.env.JWT_SECRET!,

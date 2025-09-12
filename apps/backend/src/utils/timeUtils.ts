@@ -6,26 +6,20 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 /**
- * Convert local datetime (string/Date) về UTC để lưu DB/Redis
+ * Convert local datetime -> UTC
  */
-export function toUTC(date: Date | string, timeZone: string = "Asia/Ho_Chi_Minh"): Date {
-  return dayjs.tz(date, timeZone).utc().toDate();
+export function toUTC(date: Date | string, timeZone: string = "Asia/Ho_Chi_Minh") {
+  return dayjs.tz(date, timeZone).utc(); 
+  // Trả về dayjs object UTC
 }
 
 /**
- * Convert UTC datetime sang local timezone
+ * Convert UTC datetime -> local timezone
  */
-export function fromUTC(date: Date | string, timeZone: string = "Asia/Ho_Chi_Minh"): Date {
-  return dayjs.utc(date).tz(timeZone).toDate();
+export function fromUTC(date: Date | string, timeZone: string = "Asia/Ho_Chi_Minh") {
+  return dayjs.utc(date).tz(timeZone); 
+  // Trả về dayjs object local
 }
 
-/**
- * Format UTC datetime theo local timezone
- */
-export function formatInTimeZone(
-  date: Date | string,
-  timeZone: string = "Asia/Ho_Chi_Minh",
-  pattern: string = "YYYY-MM-DD HH:mm:ss"
-): string {
-  return dayjs.utc(date).tz(timeZone).format(pattern);
-}
+
+

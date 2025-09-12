@@ -5,7 +5,14 @@ export interface Config {
   
   // Database
   mongoUri: string;
-  redisUri: string;
+  redisHost: string;
+  redisPort: number;
+  redisPassword: string;
+
+  //azure
+  azureClientId: string;
+  azureClientSecret: string;
+  azureTenantId: string;
   
   // Security
   jwtSecret: string;
