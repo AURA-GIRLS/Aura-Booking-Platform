@@ -17,6 +17,7 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
 import {artistScheduleService} from "@/services/artist-schedule";
 import { ISlot } from "@/types/schedule.dtos";
+import Notification from "@/components/generalUI/Notification";
 
 // localizer cho react-big-calendar, tuần bắt đầu từ thứ 2
 moment.locale("vi"); // hoặc "en-gb" nếu muốn tiếng Anh nhưng tuần bắt đầu từ thứ 2
@@ -37,8 +38,11 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [currentView, setCurrentView] = useState<View>("week");
   const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
+  const [notification, setNotification] = useState({
+    isVisible: false,
+    type: 'success' as 'success' | 'error',
+    message: ''
+  });
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [modalSlotInfo, setModalSlotInfo] = useState<any>(null);
@@ -49,14 +53,34 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
     startTime: '',
     endTime: ''
   });
+
+  // Helper functions for notifications
+  const showSuccess = (message: string) => {
+    setNotification({
+      isVisible: true,
+      type: 'success',
+      message
+    });
+  };
+
+  const showError = (message: string) => {
+    setNotification({
+      isVisible: true,
+      type: 'error',
+      message
+    });
+  };
+
+  const closeNotification = () => {
+    setNotification(prev => ({ ...prev, isVisible: false }));
+  };
+
   useEffect(() => {
     fetchSchedule();
   }, [id]);
    const fetchSchedule = async (weekStart?:string ) => {
       console.log("Artist ID:", id);
       setLoading(true);
-      setError('');
-      setSuccess('');
       if(!weekStart) {
         const today = new Date();
         weekStart = getMondayOfWeek(today);
@@ -68,10 +92,10 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
               setSlotData(res.data.slots || []);
               console.log("Fetched slots:", res.data.slots);
             } else {
-              setError(res.message || 'Đăng ký thất bại');
+              showError(res.message || 'Đăng ký thất bại');
             }
           } catch (err: any) {
-            setError(err.message || 'Đăng ký thất bại');
+            showError(err.message || 'Đăng ký thất bại');
           } finally {
             setLoading(false);
           }
@@ -195,7 +219,7 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
     console.log("Event dropped:", event.id, startDate, endDate);
     
     if (event.type === 'BOOKING') {
-      setError('Không thể di chuyển booking');
+      showError('Cannot move booking');
       return;
     }
     
@@ -223,13 +247,13 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
       }
       
       if (response?.success) {
-        setSuccess('Cập nhật thành công!');
+        showSuccess('Updated successfully!');
         fetchSchedule(getMondayOfWeek(dayjs(startDate).toDate()));
       } else {
-        setError(response?.message || 'Cập nhật thất bại');
+        showError(response?.message || 'Update failed');
       }
     } catch (err: any) {
-      setError(err.message || 'Cập nhật thất bại');
+      showError(err.message || 'Update failed');
     } finally {
       setLoading(false);
     }
@@ -243,7 +267,7 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
     console.log("Event resized:", event.id, startDate, endDate);
     
     if (event.type === 'BOOKING') {
-      setError('Không thể thay đổi kích thước booking');
+      showError('Cannot resize booking');
       return;
     }
     
@@ -271,13 +295,13 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
       }
       
       if (response?.success) {
-        setSuccess('Cập nhật thành công!');
+        showSuccess('Updated successfully!');
         fetchSchedule(getMondayOfWeek(dayjs(startDate).toDate()));
       } else {
-        setError(response?.message || 'Cập nhật thất bại');
+        showError(response?.message || 'Update failed');
       }
     } catch (err: any) {
-      setError(err.message || 'Cập nhật thất bại');
+      showError(err.message || 'Update failed');
     } finally {
       setLoading(false);
     }
@@ -322,15 +346,15 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
       }
       
       if (response?.success) {
-        setSuccess('Tạo event thành công!');
+        showSuccess('Created successfully!');
         setShowAddEventModal(false);
         setNewEventForm({ type: 'BLOCKED', name: '', note: '', startTime: '', endTime: '' });
         fetchSchedule(getMondayOfWeek(dayjs(startTime).toDate()));
       } else {
-        setError(response?.message || 'Tạo event thất bại');
+        showError(response?.message || 'Creation failed');
       }
     } catch (err: any) {
-      setError(err.message || 'Tạo event thất bại');
+      showError(err.message || 'Creation failed');
     } finally {
       setLoading(false);
     }
@@ -338,7 +362,7 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
 
   const handleDeleteEvent = useCallback(async () => {
     if (!selectedEvent || !selectedEvent.slotData) {
-      setError('Không tìm thấy thông tin event để xóa');
+      showError('Event information not found for deletion');
       return;
     }
 
@@ -356,14 +380,14 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
       }
       
       if (response?.success) {
-        setSuccess('Xóa event thành công!');
+        showSuccess('Deleted successfully!');
         setSelectedEvent(null);
         fetchSchedule(getMondayOfWeek(selectedEvent.slotData.day));
       } else {
-        setError(response?.message || 'Xóa event thất bại');
+        showError(response?.message || 'Deletion failed');
       }
     } catch (err: any) {
-      setError(err.message || 'Xóa event thất bại');
+      showError(err.message || 'Deletion failed');
     } finally {
       setLoading(false);
     }
@@ -371,7 +395,7 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
 
   const handleOpenEditEvent = useCallback(() => {
     if (!selectedEvent || !selectedEvent.slotData) {
-      setError('Không tìm thấy thông tin event để chỉnh sửa');
+      showError('Event information not found for editing');
       return;
     }
 
@@ -432,16 +456,16 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
       }
       
       if (response?.success) {
-        setSuccess('Cập nhật event thành công!');
+        showSuccess('Event updated successfully!');
         setShowAddEventModal(false);
         setNewEventForm({ type: 'BLOCKED', name: '', note: '', startTime: '', endTime: '' });
         setSelectedEvent(null);
         fetchSchedule(getMondayOfWeek(selectedEvent.slotData.day));
       } else {
-        setError(response?.message || 'Cập nhật event thất bại');
+        showError(response?.message || 'Event update failed');
       }
     } catch (err: any) {
-      setError(err.message || 'Cập nhật event thất bại');
+      showError(err.message || 'Event update failed');
     } finally {
       setLoading(false);
     }
@@ -807,6 +831,14 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
           </div>
         </div>
       )}
+      
+      {/* Notification Component */}
+      <Notification
+        isVisible={notification.isVisible}
+        type={notification.type}
+        message={notification.message}
+        onClose={closeNotification}
+      />
     </div>
   );
 }
