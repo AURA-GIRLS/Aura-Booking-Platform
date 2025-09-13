@@ -4,8 +4,6 @@ import { Button } from "@/components/lib/ui/button";
 import { Icon } from "@iconify/react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/lib/ui/card";
 import { Separator } from "@/components/lib/ui/separator";
-import { Input } from "@/components/lib/ui/input";
-import { Label } from "@/components/lib/ui/label";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import dayjs from 'dayjs';
 import { Calendar, momentLocalizer, View } from "react-big-calendar";
@@ -19,30 +17,24 @@ import {artistScheduleService} from "@/services/artist-schedule";
 import { ISlot } from "@/types/schedule.dtos";
 import Notification from "@/components/generalUI/Notification";
 
+// Imported hooks and components
+import { useNotification } from "./hooks/useNotification";
+import { useCalendarEvents } from "./hooks/useCalendarEvents";
+import { useEventManagement } from "./hooks/useEventManagement";
+import { EventModal } from "./components/EventModal";
+import { getMondayOfWeek } from "./utils/calendarUtils";
+
 // localizer cho react-big-calendar, tuần bắt đầu từ thứ 2
 moment.locale("vi"); // hoặc "en-gb" nếu muốn tiếng Anh nhưng tuần bắt đầu từ thứ 2
 const localizer = momentLocalizer(moment);
 
 const DragAndDropCalendar = withDragAndDrop(Calendar);
 
-// Helper function to get Monday of the current week
-const getMondayOfWeek = (date: any) => {
-  const currentDay = dayjs(date);
-  const dayOfWeek = currentDay.day(); // 0=Sunday, 1=Monday, ..., 6=Saturday
-  const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // If Sunday, go back 6 days, else go back (dayOfWeek - 1) days
-  return currentDay.subtract(daysToSubtract, 'day').startOf('day').format('YYYY-MM-DDT00:00:00');
-};
-
 export function ArtistCalendar({ id }: { readonly id: string }) {
   const [slotData, setSlotData] = useState<ISlot[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [currentView, setCurrentView] = useState<View>("week");
   const [loading, setLoading] = useState(false);
-  const [notification, setNotification] = useState({
-    isVisible: false,
-    type: 'success' as 'success' | 'error',
-    message: ''
-  });
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [modalSlotInfo, setModalSlotInfo] = useState<any>(null);
@@ -54,52 +46,65 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
     endTime: ''
   });
 
-  // Helper functions for notifications
-  const showSuccess = (message: string) => {
-    setNotification({
-      isVisible: true,
-      type: 'success',
-      message
-    });
-  };
+  // Use custom hooks
+  const { notification, showSuccess, showError, closeNotification } = useNotification();
 
-  const showError = (message: string) => {
-    setNotification({
-      isVisible: true,
-      type: 'error',
-      message
-    });
-  };
+  const fetchSchedule = useCallback(async (weekStart?: string) => {
+    console.log("Artist ID:", id);
+    setLoading(true);
+    if (!weekStart) {
+      const today = new Date();
+      weekStart = getMondayOfWeek(today);
+    }
+    try {
+      const res = await artistScheduleService.getSchedule({ muaId: id, weekStart });
+      if (res.success) {
+        console.log('Schedule fetched successfully.');
+        setSlotData(res.data.slots || []);
+        console.log("Fetched slots:", res.data.slots);
+      } else {
+        showError(res.message || 'Failed to fetch schedule');
+      }
+    } catch (err: any) {
+      showError(err.message || 'Failed to fetch schedule');
+    } finally {
+      setLoading(false);
+    }
+  }, [id, showError]);
 
-  const closeNotification = () => {
-    setNotification(prev => ({ ...prev, isVisible: false }));
-  };
+  // Initialize calendar event handlers
+  const { handleEventDrop, handleEventResize } = useCalendarEvents({
+    id,
+    fetchSchedule,
+    setLoading,
+    showSuccess,
+    showError
+  });
+
+  // Initialize event management handlers
+  const { handleCreateEvent, handleDeleteEvent, handleUpdateEvent, handleOpenEditEvent } = useEventManagement({
+    id,
+    fetchSchedule,
+    setLoading,
+    showSuccess,
+    showError,
+    setShowAddEventModal,
+    setNewEventForm,
+    setSelectedEvent
+  });
+
+  // Wrapper functions for modal integration
+  const handleCreateEventWrapper = useCallback(() => {
+    handleCreateEvent(newEventForm, modalSlotInfo);
+  }, [handleCreateEvent, newEventForm, modalSlotInfo]);
+
+  const handleUpdateEventWrapper = useCallback(() => {
+    handleUpdateEvent(newEventForm, modalSlotInfo, selectedEvent);
+  }, [handleUpdateEvent, newEventForm, modalSlotInfo, selectedEvent]);
 
   useEffect(() => {
     fetchSchedule();
-  }, [id]);
-   const fetchSchedule = async (weekStart?:string ) => {
-      console.log("Artist ID:", id);
-      setLoading(true);
-      if(!weekStart) {
-        const today = new Date();
-        weekStart = getMondayOfWeek(today);
-      }
-      try {
-            const res = await artistScheduleService.getSchedule({ muaId: id, weekStart });
-            if (res.success) {
-              console.log('Get lịch thành công!.');
-              setSlotData(res.data.slots || []);
-              console.log("Fetched slots:", res.data.slots);
-            } else {
-              showError(res.message || 'Đăng ký thất bại');
-            }
-          } catch (err: any) {
-            showError(err.message || 'Đăng ký thất bại');
-          } finally {
-            setLoading(false);
-          }
-    };
+  }, [fetchSchedule,currentDate]);
   // console.log("slotData",slotData);
 
   // Tách events thành 2 loại: backgroundEvents (working, override), events (booking, blocked)
@@ -111,11 +116,11 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
       const end = moment(`${slot.day} ${slot.endTime}`, "YYYY-MM-DD HH:mm").toDate();
       let title = "";
       if (slot.type === "BOOKING") {
-        title = `${slot.note} `;
+        title = `${slot.customerName} - ${slot.serviceName} `;
       } else if (slot.type === "BLOCKED") {
-        title = `${slot.type.toLowerCase()}`;
+        title = `Blocked Time`;
       } else {
-        title = 'working';
+        title = 'Working Time';
       }
       const eventObj = {
         id: slot.slotId || slot.day + slot.startTime,
@@ -125,7 +130,7 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
         type: slot.type,
         note: slot.note
       };
-      if (slot.type === "ORIGINAL_WORKING" || slot.type === "OVERRIDE" || slot.type === "NEW_WORKING") {
+      if (slot.type === "ORIGINAL_WORKING" || slot.type === "OVERRIDE" || slot.type === "NEW_WORKING"|| slot.type === "NEW_OVERRIDE") {
         bgEvts.push(eventObj);
       } else {
         evts.push(eventObj);
@@ -147,10 +152,10 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
     } else if (event.type === "BLOCKED") {
       backgroundColor = "#E5E7EB";
       borderColor = "#6B7280";
-    } else if (event.type === "OVERRIDE" || event.type === "NEW_WORKING" || event.type === "ORIGINAL_WORKING") {
+    } else if (event.type === "OVERRIDE" || event.type === "NEW_WORKING" || event.type === "ORIGINAL_WORKING"|| event.type === "NEW_OVERRIDE") {
       // background events: nhạt màu, nằm dưới
-      backgroundColor = event.type === "OVERRIDE" ? "#f6f0f8ff" : "#e7f6ecff";
-      borderColor = event.type === "OVERRIDE" ? "#7d16a3ff" : "#16A34A";
+      backgroundColor = event.type === "OVERRIDE" || event.type === "NEW_OVERRIDE" ? "#f6f0f8ff" : "#e7f6ecff";
+      borderColor = event.type === "OVERRIDE"|| event.type === "NEW_OVERRIDE" ? "#7d16a3ff" : "#16A34A";
       opacity = 0.3;
       zIndex = 1;
     }
@@ -210,266 +215,7 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
         });
     }, [slotData]);
 
-  const handleEventDrop = useCallback(async (args: any) => {
-    // args: { event, start, end, allDay, ... }
-    const { event, start, end } = args;
-    // start/end can be string or Date
-    const startDate = typeof start === 'string' ? new Date(start) : start;
-    const endDate = typeof end === 'string' ? new Date(end) : end;
-    console.log("Event dropped:", event.id, startDate, endDate);
-    
-    if (event.type === 'BOOKING') {
-      showError('Cannot move booking');
-      return;
-    }
-    
-    try {
-      setLoading(true);
-      let response;
-      
-      if (event.type === 'NEW_WORKING' || event.type === 'ORIGINAL_WORKING') {
-        const weekday = dayjs(startDate).format('dddd').toUpperCase();
-        response = await artistScheduleService.updateWorkingSlot(id,event.id, {
-          weekday,
-          startTime: dayjs(startDate).format('HH:mm'),
-          endTime: dayjs(endDate).format('HH:mm')
-        });
-      } else if (event.type === 'OVERRIDE') {
-        response = await artistScheduleService.updateOverrideSlot(id,event.id, {
-          overrideStart: dayjs(startDate).format('YYYY-MM-DDTHH:mm:ss'),
-          overrideEnd: dayjs(endDate).format('YYYY-MM-DDTHH:mm:ss')
-        });
-      } else if (event.type === 'BLOCKED') {
-        response = await artistScheduleService.updateBlockedSlot(id,event.id, {
-          blockStart: dayjs(startDate).format('YYYY-MM-DDTHH:mm:ss'),
-          blockEnd: dayjs(endDate).format('YYYY-MM-DDTHH:mm:ss')
-        });
-      }
-      
-      if (response?.success) {
-        showSuccess('Updated successfully!');
-        fetchSchedule(getMondayOfWeek(dayjs(startDate).toDate()));
-      } else {
-        showError(response?.message || 'Update failed');
-      }
-    } catch (err: any) {
-      showError(err.message || 'Update failed');
-    } finally {
-      setLoading(false);
-    }
-  }, [id, fetchSchedule]);
 
-  const handleEventResize = useCallback(async (args: any) => {
-    // args: { event, start, end, ... }
-    const { event, start, end } = args;
-    const startDate = typeof start === 'string' ? new Date(start) : start;
-    const endDate = typeof end === 'string' ? new Date(end) : end;
-    console.log("Event resized:", event.id, startDate, endDate);
-    
-    if (event.type === 'BOOKING') {
-      showError('Cannot resize booking');
-      return;
-    }
-    
-    try {
-      setLoading(true);
-      let response;
-      
-      if (event.type === 'NEW_WORKING' || event.type === 'ORIGINAL_WORKING') {
-        const weekday = dayjs(startDate).format('dddd').toUpperCase();
-        response = await artistScheduleService.updateWorkingSlot(id,event.id, {
-          weekday,
-          startTime: dayjs(startDate).format('HH:mm'),
-          endTime: dayjs(endDate).format('HH:mm')
-        });
-      } else if (event.type === 'OVERRIDE') {
-        response = await artistScheduleService.updateOverrideSlot(id,event.id, {
-          overrideStart: dayjs(startDate).format('YYYY-MM-DDTHH:mm:ss'),
-          overrideEnd: dayjs(endDate).format('YYYY-MM-DDTHH:mm:ss')
-        });
-      } else if (event.type === 'BLOCKED') {
-        response = await artistScheduleService.updateBlockedSlot(id,event.id, {
-          blockStart: dayjs(startDate).format('YYYY-MM-DDTHH:mm:ss'),
-          blockEnd: dayjs(endDate).format('YYYY-MM-DDTHH:mm:ss')
-        });
-      }
-      
-      if (response?.success) {
-        showSuccess('Updated successfully!');
-        fetchSchedule(getMondayOfWeek(dayjs(startDate).toDate()));
-      } else {
-        showError(response?.message || 'Update failed');
-      }
-    } catch (err: any) {
-      showError(err.message || 'Update failed');
-    } finally {
-      setLoading(false);
-    }
-  }, [id, fetchSchedule]);
-
-  const handleCreateEvent = useCallback(async () => {
-    const startTime = newEventForm.startTime || modalSlotInfo?.start;
-    const endTime = newEventForm.endTime || modalSlotInfo?.end;
-    
-    // if (!newEventForm.name || !startTime || !endTime) {
-    //   console.log('Vui lòng điền đầy đủ thông tin');
-    //   return;
-    // }
-  console.log("newEventForm", newEventForm);
-    try {
-      setLoading(true);
-      let response;
-      
-      if (newEventForm.type === 'ORIGINAL_WORKING') {
-        const weekday = dayjs(startTime).format('ddd').toUpperCase();
-        response = await artistScheduleService.addWorkingSlot({
-          muaId:id,
-          weekday,
-          startTime: dayjs(startTime).format('HH:mm'),
-          endTime: dayjs(endTime).format('HH:mm'),
-          note: newEventForm.note || newEventForm.name
-        });
-      } else if (newEventForm.type === 'OVERRIDE') {
-        response = await artistScheduleService.addOverrideSlot({
-          muaId: id,
-          overrideStart: dayjs(startTime).format('YYYY-MM-DDTHH:mm:ss'),
-          overrideEnd: dayjs(endTime).format('YYYY-MM-DDTHH:mm:ss'),
-          note: newEventForm.note || newEventForm.name
-        });
-      } else if (newEventForm.type === 'BLOCKED') {
-        response = await artistScheduleService.addBlockedSlot({
-          muaId: id,
-          blockStart: dayjs(startTime).format('YYYY-MM-DDTHH:mm:ss'),
-          blockEnd: dayjs(endTime).format('YYYY-MM-DDTHH:mm:ss'),
-          note: newEventForm.note || newEventForm.name
-        });
-      }
-      
-      if (response?.success) {
-        showSuccess('Created successfully!');
-        setShowAddEventModal(false);
-        setNewEventForm({ type: 'BLOCKED', name: '', note: '', startTime: '', endTime: '' });
-        fetchSchedule(getMondayOfWeek(dayjs(startTime).toDate()));
-      } else {
-        showError(response?.message || 'Creation failed');
-      }
-    } catch (err: any) {
-      showError(err.message || 'Creation failed');
-    } finally {
-      setLoading(false);
-    }
-  }, [newEventForm, modalSlotInfo, id, fetchSchedule]);
-
-  const handleDeleteEvent = useCallback(async () => {
-    if (!selectedEvent || !selectedEvent.slotData) {
-      showError('Event information not found for deletion');
-      return;
-    }
-
-    try {
-      setLoading(true);
-      let response;
-      const slotId = selectedEvent.slotData.slotId;
-      console.log("slotid", selectedEvent.id);
-      if (selectedEvent.type === 'NEW_WORKING' || selectedEvent.type === 'ORIGINAL_WORKING') {
-        response = await artistScheduleService.deleteWorkingSlot(id, slotId);
-      } else if (selectedEvent.type === 'OVERRIDE') {
-        response = await artistScheduleService.deleteOverrideSlot(id, slotId);
-      } else if (selectedEvent.type === 'BLOCKED') {
-        response = await artistScheduleService.deleteBlockedSlot(id, slotId);
-      }
-      
-      if (response?.success) {
-        showSuccess('Deleted successfully!');
-        setSelectedEvent(null);
-        fetchSchedule(getMondayOfWeek(selectedEvent.slotData.day));
-      } else {
-        showError(response?.message || 'Deletion failed');
-      }
-    } catch (err: any) {
-      showError(err.message || 'Deletion failed');
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedEvent, id, fetchSchedule]);
-
-  const handleOpenEditEvent = useCallback(() => {
-    if (!selectedEvent || !selectedEvent.slotData) {
-      showError('Event information not found for editing');
-      return;
-    }
-
-    // Pre-fill form with current event data
-    setNewEventForm({
-      type: selectedEvent.type,
-      name: selectedEvent.slotData.note || selectedEvent.title,
-      note: selectedEvent.slotData.note || '',
-      startTime: dayjs(selectedEvent.start).format('YYYY-MM-DDTHH:mm'),
-      endTime: dayjs(selectedEvent.end).format('YYYY-MM-DDTHH:mm')
-    });
-    
-    setModalSlotInfo({
-      start: dayjs(selectedEvent.start).format('YYYY-MM-DDTHH:mm'),
-      end: dayjs(selectedEvent.end).format('YYYY-MM-DDTHH:mm'),
-      day: dayjs(selectedEvent.start).format('YYYY-MM-DD'),
-      isEdit: true,
-      eventId: selectedEvent.slotData.slotId
-    });
-    
-    setShowAddEventModal(true);
-  }, [selectedEvent]);
-
-  const handleUpdateEvent = useCallback(async () => {
-    const startTime = newEventForm.startTime || modalSlotInfo?.start;
-    const endTime = newEventForm.endTime || modalSlotInfo?.end;
-    
-    if (!newEventForm.name || !startTime || !endTime || !selectedEvent?.slotData?.slotId) {
-      console.log('Vui lòng điền đầy đủ thông tin');
-      return;
-    }
-    
-    try {
-      setLoading(true);
-      let response;
-      const slotId = selectedEvent.slotData.slotId;
-      
-      if (newEventForm.type === 'ORIGINAL_WORKING' || newEventForm.type === 'NEW_WORKING') {
-        const weekday = dayjs(startTime).format('ddd').toUpperCase();
-        response = await artistScheduleService.updateWorkingSlot(id, slotId, {
-          weekday,
-          startTime: dayjs(startTime).format('HH:mm'),
-          endTime: dayjs(endTime).format('HH:mm'),
-          note: newEventForm.note || newEventForm.name
-        });
-      } else if (newEventForm.type === 'OVERRIDE') {
-        response = await artistScheduleService.updateOverrideSlot(id, slotId, {
-          overrideStart: dayjs(startTime).format('YYYY-MM-DDTHH:mm:ss'),
-          overrideEnd: dayjs(endTime).format('YYYY-MM-DDTHH:mm:ss'),
-          note: newEventForm.note || newEventForm.name
-        });
-      } else if (newEventForm.type === 'BLOCKED') {
-        response = await artistScheduleService.updateBlockedSlot(id, slotId, {
-          blockStart: dayjs(startTime).format('YYYY-MM-DDTHH:mm:ss'),
-          blockEnd: dayjs(endTime).format('YYYY-MM-DDTHH:mm:ss'),
-          note: newEventForm.note || newEventForm.name
-        });
-      }
-      
-      if (response?.success) {
-        showSuccess('Event updated successfully!');
-        setShowAddEventModal(false);
-        setNewEventForm({ type: 'BLOCKED', name: '', note: '', startTime: '', endTime: '' });
-        setSelectedEvent(null);
-        fetchSchedule(getMondayOfWeek(selectedEvent.slotData.day));
-      } else {
-        showError(response?.message || 'Event update failed');
-      }
-    } catch (err: any) {
-      showError(err.message || 'Event update failed');
-    } finally {
-      setLoading(false);
-    }
-  }, [newEventForm, modalSlotInfo, id, fetchSchedule, selectedEvent]);
   return (
     <div
       style={{
@@ -563,7 +309,7 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-pink-600">
                   <Icon icon="lucide:calendar" className="h-5 w-5 text-pink-500" />
-                  Booking Details
+                {selectedEvent && (selectedEvent.canUpdate?"Event Details": "Booking Details")}  
                 </CardTitle>
               </CardHeader>
               <CardContent className="px-6 space-y-4">
@@ -585,24 +331,32 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
                           {dayjs(selectedEvent.start).format('HH:mm')} - {dayjs(selectedEvent.end).format('HH:mm')}
                         </span>
                       </div>
-                      {selectedEvent.slotData?.note && (
+                      {selectedEvent.slotData?.customerName && (
                         <div className="flex justify-between">
-                          <span className="text-sm">Note:</span>
-                          <span className="text-sm font-medium text-pink-700">{selectedEvent.slotData.note}</span>
+                          <span className="text-sm">Customer:</span>
+                          <span className="text-sm font-medium text-pink-700">{selectedEvent.slotData.customerName}</span>
                         </div>
                       )}
-                      <div className="flex justify-between">
-                        <span className="text-sm">Status:</span>
-                        <Badge className={`${
-                          selectedEvent.type === 'BOOKING' ? 'bg-red-500' :
-                          selectedEvent.type === 'BLOCKED' ? 'bg-gray-500' :
-                          'bg-green-500'
-                        } text-white`}>
-                          {selectedEvent.type === 'BOOKING' ? 'Booking' :
-                           selectedEvent.type === 'BLOCKED' ? 'Blocked' :
-                           'Working'}
-                        </Badge>
-                      </div>
+                       {selectedEvent.slotData?.serviceName && (
+                        <div className="flex justify-between">
+                          <span className="text-sm">Service:</span>
+                          <span className="text-sm font-medium text-pink-700">{selectedEvent.slotData.serviceName}</span>
+                        </div>
+                      )}
+                     {selectedEvent.slotdata?.status && (
+                       <div className="flex justify-between">
+                       <span className="text-sm">Status:</span>
+                       <Badge className={`${
+                         selectedEvent.slotData.status === 'COMPLETED' ? 'bg-red-500' :
+                         selectedEvent.slotData.status === 'CONFIRMED' ? 'bg-orange-500' :
+                         'bg-green-500'
+                       } text-white`}>
+                         {selectedEvent.slotData.status === 'COMPLETED' ? 'Completed' :
+                          selectedEvent.slotData.status === 'CONFIRMED' ? 'Confirmed' :
+                          'Working'}
+                       </Badge>
+                     </div>
+                     )}
                     </div>
                     {selectedEvent.slotData?.note && (
                       <>
@@ -629,7 +383,7 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
                         <Button
                           variant="outline"
                           className="flex-1 border-pink-300 text-pink-500 hover:bg-pink-100"
-                          onClick={handleOpenEditEvent}
+                          onClick={() => handleOpenEditEvent(selectedEvent, setNewEventForm, setModalSlotInfo, setShowAddEventModal)}
                         >
                           <Icon icon="lucide:edit" className="mr-2 h-4 w-4" />
                           Edit
@@ -637,7 +391,7 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
                         <Button
                           variant="destructive"
                           className="flex-1 bg-pink-500 hover:bg-pink-600 text-white border-none"
-                          onClick={handleDeleteEvent}
+                          onClick={() => handleDeleteEvent(selectedEvent)}
                           disabled={loading}
                         >
                           <Icon icon="lucide:trash" className="mr-2 h-4 w-4" />
@@ -732,105 +486,19 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
         </div>
       </div>
       
-      {/* Add Event Modal */}
-      {showAddEventModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold text-pink-600">
-                {modalSlotInfo?.isEdit ? 'Edit Event' : 'Add New Event'}
-              </h3>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="type" className="block text-sm font-medium mb-1">
-                  Type
-                </Label>
-                <select
-                  id="type"
-                  value={newEventForm.type}
-                  disabled={modalSlotInfo?.isEdit}
-                  onChange={(e) => setNewEventForm(prev => ({ ...prev, type: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
-                >
-                  <option value="BLOCKED">Blocked</option>
-                  <option value="ORIGINAL_WORKING">Working</option>
-                  <option value="OVERRIDE">Override</option>
-                </select>
-              </div>
-              <div>
-                <Label htmlFor="name" className="block text-sm font-medium mb-1">
-                  Name
-                </Label>
-                <Input
-                  id="name" 
-                  disabled
-                  value={newEventForm.type === 'BLOCKED' ? 'Blocked' : newEventForm.type === 'ORIGINAL_WORKING' ? 'Working' : 'Override' }
-                  onChange={(e: any) => setNewEventForm(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full"
-                  placeholder="Event name"
-                />
-              </div>
-              <div>
-                <Label htmlFor="startTime" className="block text-sm font-medium mb-1">
-                  Start Time
-                </Label>
-                <Input
-                  id="startTime"
-                  type="datetime-local"
-                  value={newEventForm.startTime || modalSlotInfo?.start}
-                  onChange={(e: any) => setNewEventForm(prev => ({ ...prev, startTime: e.target.value }))}
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <Label htmlFor="endTime" className="block text-sm font-medium mb-1">
-                  End Time
-                </Label>
-                <Input
-                  id="endTime"
-                  type="datetime-local"
-                  value={newEventForm.endTime || modalSlotInfo?.end}
-                  onChange={(e: any) => setNewEventForm(prev => ({ ...prev, endTime: e.target.value }))}
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <Label htmlFor="note" className="block text-sm font-medium mb-1">
-                  Note/Reason (optional)
-                </Label>
-                <textarea
-                  id="note"
-                  value={newEventForm.note|| modalSlotInfo?.note}
-                  onChange={(e: any) => setNewEventForm(prev => ({ ...prev, note: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
-                  placeholder="Add a note or reason for this event"
-                  rows={3}
-                />
-              </div>
-            </div>
-            <div className="flex gap-2 mt-6">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowAddEventModal(false);
-                  setNewEventForm({ type: 'BLOCKED', name: '', note: '', startTime: '', endTime: '' });
-                }}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={modalSlotInfo?.isEdit? handleUpdateEvent: handleCreateEvent}
-                className="flex-1 bg-pink-500 hover:bg-pink-600 text-white"
-                disabled={loading}
-              >
-                {loading ? (modalSlotInfo?.isEdit ? 'Updating...' : 'Creating...') : (modalSlotInfo?.isEdit ? 'Update Event' : 'Create Event')}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Event Modal */}
+      <EventModal
+        showAddEventModal={showAddEventModal}
+        modalSlotInfo={modalSlotInfo}
+        newEventForm={newEventForm}
+        loading={loading}
+        onClose={() => {
+          setShowAddEventModal(false);
+          setNewEventForm({ type: 'BLOCKED', name: '', note: '', startTime: '', endTime: '' });
+        }}
+        onSubmit={modalSlotInfo?.isEdit ? handleUpdateEventWrapper : handleCreateEventWrapper}
+        onFormChange={setNewEventForm}
+      />
       
       {/* Notification Component */}
       <Notification

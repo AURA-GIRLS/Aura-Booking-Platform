@@ -74,6 +74,9 @@ function mapBookingToSlot(booking: any): ISlot {
     slotId: booking._id?.toString?.() ?? "",
     customerId: booking.customerId?._id?.toString?.() ?? "",
     serviceId: booking.serviceId?._id?.toString?.() ?? "",
+    customerName: booking.customerId?.fullName ?? "",
+    serviceName: booking.serviceId?.name ?? "",
+    status: booking.status,
     day,
     startTime,
     endTime,
@@ -174,12 +177,12 @@ function applyBlockedSlots(merged: ISlot[], blockeds: ISlot[]): ISlot[] {
         updated.push({
           ...slot,
           endTime: blockedStart.format("HH:mm"),
-          type: SLOT_TYPES.NEW_WORKING
+          type:slot.type === SLOT_TYPES.ORIGINAL_WORKING ? SLOT_TYPES.NEW_WORKING : SLOT_TYPES.NEW_OVERRIDE
         });
         updated.push({
           ...slot,
           startTime: blockedEnd.format("HH:mm"),
-          type: SLOT_TYPES.NEW_WORKING
+          type: slot.type === SLOT_TYPES.ORIGINAL_WORKING ? SLOT_TYPES.NEW_WORKING : SLOT_TYPES.NEW_OVERRIDE
         });
       }
     }

@@ -2,17 +2,14 @@ import { fromUTC, toUTC } from "utils/timeUtils";
 import { MUA_WorkingSlot, MUA_OverrideSlot, MUA_BlockedSlot } from "../models/muas.models";
 import dayjs from "dayjs";
 import { redisClient } from "../config/redis"; // Assuming you have redis client configured
+import { getMondayOfWeek } from "utils/calendarUtils";
 
 // Helper function to invalidate cache for affected weeks
 async function invalidateWeeklyCache(muaId: string, date?: Date | string) {
   try {
     if (date) {
       // Invalidate specific week
-      // Get Monday of the current week (ISO week starts on Monday)
-      const currentDay = dayjs(fromUTC(date));
-      const dayOfWeek = currentDay.day(); // 0=Sunday, 1=Monday, ..., 6=Saturday
-      const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // If Sunday, go back 6 days, else go back (dayOfWeek - 1) days
-      const weekStart = currentDay.subtract(daysToSubtract, 'day').format('YYYY-MM-DD');
+      const weekStart = getMondayOfWeek(dayjs(date).toDate(),"YYYY-MM-DD");
       const cacheKey = `weeklySlots:${muaId}:${weekStart}`;
       await redisClient.del(cacheKey);
     } else {
@@ -109,9 +106,7 @@ export async function updateBlockedSlot(
     blockEnd: { $gt: startDay },
   });
   if (overlap) {
-    throw new Error(
-      `This time range overlaps with another blocked slot: ${overlap.blockStart!.toISOString()} - ${overlap.blockEnd!.toISOString()}`
-    );
+      throw new Error(`This time range overlaps with an existing blocked slot: ${dayjs(overlap.blockStart).format('HH:mm')} - ${dayjs(overlap.blockEnd).format('HH:mm')}`);
   }
 
   const result = await MUA_BlockedSlot.findByIdAndUpdate(
@@ -146,7 +141,19 @@ export async function addWorkingSlot(muaId: string, weekday: string, startTime: 
 export async function addOverrideSlot(muaId: string, overrideStart: Date, overrideEnd: Date, note?: string) {
   const startDay = toUTC(overrideStart);
   const endDay = toUTC(overrideEnd);
-  const existing = await MUA_OverrideSlot.findOne({ muaId, overrideStart: { $gte: startDay, $lte: endDay } });
+  
+  // Check for existing override slot on the same day
+  const dayStart = startDay.startOf('day');
+  const dayEnd = startDay.endOf('day');
+  
+  const existing = await MUA_OverrideSlot.findOne({ 
+    muaId, 
+    overrideStart: { 
+      $gte: dayStart.toDate(), 
+      $lt: dayEnd.toDate() 
+    }
+  });
+  
   if (existing) {
     throw new Error(`An override slot already exists for this date. Please update instead of adding a new one.`);
   }
@@ -158,17 +165,24 @@ export async function addOverrideSlot(muaId: string, overrideStart: Date, overri
   return result;
 }
 
-// Add Blocked Slot (check for overlap with other block slots on same day)
+// Add Blocked Slot (check for overlap with other block slots)
 export async function addBlockedSlot(muaId: string, blockStart: Date, blockEnd: Date, note?: string) {
-  const startDay = toUTC(blockStart);
-  const endDay = toUTC(blockEnd);
-  const blocks = await MUA_BlockedSlot.find({ muaId, blockStart: { $gte: startDay, $lte: endDay } });
-  for (const b of blocks) {
-    if (
-      (blockStart < b.blockEnd! && blockEnd > b.blockStart!)
-    ) {
-      throw new Error(`This time range is already blocked by another slot: ${b.blockStart!.toISOString()} - ${b.blockEnd!.toISOString()}`);
-    }
+  const startTime = toUTC(blockStart);
+  const endTime = toUTC(blockEnd);
+  
+  // Find overlapping blocked slots
+  // Two ranges overlap if: startA < endB AND startB < endA
+  const overlappingBlocks = await MUA_BlockedSlot.find({
+    muaId,
+    $and: [
+      { blockStart: { $lt: endTime.toDate() } },    // existing block starts before new block ends
+      { blockEnd: { $gt: startTime.toDate() } }     // existing block ends after new block starts
+    ]
+  });
+  
+  if (overlappingBlocks.length > 0) {
+    const existingBlock = overlappingBlocks[0];
+    throw new Error(`This time range overlaps with an existing blocked slot: ${dayjs(existingBlock.blockStart).format('HH:mm')} - ${dayjs(existingBlock.blockEnd).format('HH:mm')}`);
   }
   const result = await MUA_BlockedSlot.create({ muaId, blockStart, blockEnd, note });
   

@@ -21,5 +21,3 @@ export function fromUTC(date: Date | string, timeZone: string = "Asia/Ho_Chi_Min
   // Trả về dayjs object local
 }
 
-
-
