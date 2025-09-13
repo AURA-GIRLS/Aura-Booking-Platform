@@ -25,10 +25,12 @@ export interface UpdateBookingDTO {
 
 export interface BookingResponseDTO {
   _id: string;
-  userId: string;
+  customerId: string;
   artistId: string;
   serviceId: string;
-  date: Date;
+  customerName: string;
+  serviceName: string;
+  bookingDate: string;
   startTime: string;
   endTime: string;
   address: string;

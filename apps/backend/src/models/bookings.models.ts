@@ -19,7 +19,9 @@ const BookingSchema = new Schema({
   address: String,
   status: { type: String, enum: Object.values(BOOKING_STATUS) },
   travelFee: Number,
+  totalPrice: Number,
   createdAt: { type: Date, default: Date.now },
+  note: String,
   feedback: { type: Schema.Types.ObjectId, ref: "Feedback" },
 });
 

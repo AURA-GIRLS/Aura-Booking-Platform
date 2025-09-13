@@ -3,7 +3,7 @@ import { updateWorkingSlot, updateOverrideSlot, updateBlockedSlot, deleteWorking
 import type { Request, Response } from "express";
 import { getArtists, ArtistsService } from "../services/artists.service";
 import type { ListArtistsQueryDTO } from "../types/artists.dtos";
-import { getFinalSlots, getOriginalWorkingSlots } from "@services/schedule.service";
+import { getFinalSlots, getOriginalWorkingSlots, getPendingBookingSlots } from "@services/schedule.service";
 import { addWorkingSlot, addOverrideSlot, addBlockedSlot } from "@services/slot.service";
 import type { ApiResponseDTO } from "types";
 
@@ -194,6 +194,23 @@ export class ArtistsScheduleController {
       const response: ApiResponseDTO = {
         success: false,
         message: err instanceof Error ? err.message : "Failed to get weekly original slots",
+      };
+      res.status(500).json(response);
+    }
+  }
+
+  async getPendingBookings(req:Request,res:Response){
+    const {muaId} = req.params;
+    const {pageNumber, pageSize} = req.query;
+    try{
+      const data = await getPendingBookingSlots(muaId, Number(pageNumber),Number(pageSize) )
+      const response: ApiResponseDTO = { success: true, data };
+      res.status(200).json(response);
+    }catch(err){
+      console.error(err);
+      const response: ApiResponseDTO = {
+        success: false,
+        message: err instanceof Error ? err.message : "Failed to get weekly pending bookings",
       };
       res.status(500).json(response);
     }

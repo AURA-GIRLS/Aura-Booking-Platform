@@ -32,6 +32,9 @@ const DragAndDropCalendar = withDragAndDrop(Calendar);
 
 export function ArtistCalendar({ id }: { readonly id: string }) {
   const [slotData, setSlotData] = useState<ISlot[]>([]);
+  const [pendingBookings, setPendingBookings] = useState<any[]>([]);
+ const [pageNumber,setPageNumber] = useState(1);
+ const [pageSize,setPageSize] = useState(5);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [currentView, setCurrentView] = useState<View>("week");
   const [loading, setLoading] = useState(false);
@@ -72,6 +75,22 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
     }
   }, [id, showError]);
 
+  const fetchPendingBookings = useCallback(async()=>{
+    try {
+      const res = await artistScheduleService.getPendingBookings(id,pageNumber.toString(),pageSize.toString());
+      if (res.success) {
+        console.log('Pending bookings fetched successfully.');
+        setPendingBookings(res.data || []);
+        console.log("Fetched pending bookings:", res.data);
+      } else {
+        showError(res.message || 'Failed to fetch pending bookings');
+      }
+    } catch (err: any) {
+      showError(err.message || 'Failed to fetch pending bookings');
+    } finally {
+      setLoading(false);
+    }
+  }, [id, pageNumber, pageSize, showError])
   // Initialize calendar event handlers
   const { handleEventDrop, handleEventResize } = useCalendarEvents({
     id,
@@ -105,6 +124,10 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
   useEffect(() => {
     fetchSchedule();
   }, [fetchSchedule,currentDate]);
+
+  useEffect(() => {
+    fetchPendingBookings();
+  }, [fetchPendingBookings]);
   // console.log("slotData",slotData);
 
   // Tách events thành 2 loại: backgroundEvents (working, override), events (booking, blocked)
@@ -253,7 +276,7 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
                 fontWeight: 700
               }}
             >
-              12 Pending Requests
+              {pendingBookings.length} Pending Requests
             </Badge>
             <Button
               onClick={() => setShowAddEventModal(true)}
@@ -411,72 +434,88 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
            <div className="border-t bg-pink-100 p-6 rounded-br-lg">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="font-heading text-lg font-semibold text-pink-600">Pending Requests</h3>
-              <Badge className="bg-pink-200 text-pink-700 border-pink-300" variant="secondary">3 New</Badge>
+              <Badge className="bg-pink-200 text-pink-700 border-pink-300" variant="secondary">{pendingBookings.length} New</Badge>
+            </div>
+            
+            {/* Pagination Controls */}
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-pink-600">Show:</span>
+                <select 
+                  value={pageSize} 
+                  onChange={(e) => setPageSize(Number(e.target.value))}
+                  className="px-2 py-1 text-sm border border-pink-300 rounded bg-white text-pink-600"
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={15}>15</option>
+                  <option value={20}>20</option>
+                </select>
+                <span className="text-sm text-pink-600">per page</span>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => setPageNumber(prev => Math.max(1, prev - 1))}
+                  disabled={pageNumber === 1}
+                  className="h-8 px-2 border-pink-300 text-pink-600 hover:bg-pink-50"
+                >
+                  <Icon icon="lucide:chevron-left" className="h-4 w-4" />
+                </Button>
+                <span className="text-sm text-pink-600 px-2">Page {pageNumber}</span>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => setPageNumber(prev => prev + 1)}
+                  disabled={pendingBookings.length < pageSize}
+                  className="h-8 px-2 border-pink-300 text-pink-600 hover:bg-pink-50"
+                >
+                  <Icon icon="lucide:chevron-right" className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
             <div className="space-y-3">
-              <Card className="p-4 border-pink-200">
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <p className="font-medium text-sm text-pink-700">Jessica Wilson</p>
-                    <p className="text-xs text-pink-400">Party Makeup - Dec 20, 2:00 PM</p>
-                  </div>
-                  <Badge variant="outline" className="text-xs border-pink-300 text-pink-500">
-                    $80
-                  </Badge>
+              {pendingBookings.length > 0 ? (
+                pendingBookings.map((booking) => (
+                  <Card key={booking._id} className="p-4 border-pink-200">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <p className="font-medium text-sm text-pink-700">{booking.customerName}</p>
+                        <p className="text-xs text-pink-400">
+                          {booking.serviceName} - {dayjs(booking.bookingDate).format('MMM DD')}, {booking.startTime} - {booking.endTime}
+                        </p>
+                        {booking.address && (
+                          <p className="text-xs text-pink-400 mt-1">📍 {booking.address}</p>
+                        )}
+                        {booking.notes && (
+                          <p className="text-xs text-pink-400 mt-1 italic">"{booking.notes}"</p>
+                        )}
+                      </div>
+                      <Badge variant="outline" className="text-xs border-pink-300 text-pink-500">
+                        {(booking.totalPrice).toLocaleString()}k
+                      </Badge>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" className="flex-1 h-8 text-xs bg-pink-500 hover:bg-pink-600 text-white">
+                        <Icon icon="lucide:check" className="mr-1 h-3 w-3" />
+                        Accept
+                      </Button>
+                      <Button variant="outline" size="sm" className="flex-1 h-8 text-xs border-pink-300 text-pink-500 hover:bg-pink-100">
+                        <Icon icon="lucide:x" className="mr-1 h-3 w-3" />
+                        Decline
+                      </Button>
+                    </div>
+                  </Card>
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <Icon icon="lucide:calendar-check" className="mx-auto h-12 w-12 text-pink-300 mb-2" />
+                  <p className="text-sm text-pink-500">No pending bookings</p>
+                  <p className="text-xs text-pink-400">All caught up!</p>
                 </div>
-                <div className="flex gap-2">
-                  <Button size="sm" className="flex-1 h-8 text-xs bg-pink-500 hover:bg-pink-600 text-white">
-                    <Icon icon="lucide:check" className="mr-1 h-3 w-3" />
-                    Accept
-                  </Button>
-                  <Button variant="outline" size="sm" className="flex-1 h-8 text-xs border-pink-300 text-pink-500 hover:bg-pink-100">
-                    <Icon icon="lucide:x" className="mr-1 h-3 w-3" />
-                    Decline
-                  </Button>
-                </div>
-              </Card>
-              <Card className="p-4 border-pink-200">
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <p className="font-medium text-sm text-pink-700">Maria Garcia</p>
-                    <p className="text-xs text-pink-400">Photoshoot - Dec 21, 10:00 AM</p>
-                  </div>
-                  <Badge variant="outline" className="text-xs border-pink-300 text-pink-500">
-                    $120
-                  </Badge>
-                </div>
-                <div className="flex gap-2">
-                  <Button size="sm" className="flex-1 h-8 text-xs bg-pink-500 hover:bg-pink-600 text-white">
-                    <Icon icon="lucide:check" className="mr-1 h-3 w-3" />
-                    Accept
-                  </Button>
-                  <Button variant="outline" size="sm" className="flex-1 h-8 text-xs border-pink-300 text-pink-500 hover:bg-pink-100">
-                    <Icon icon="lucide:x" className="mr-1 h-3 w-3" />
-                    Decline
-                  </Button>
-                </div>
-              </Card>
-              <Card className="p-4 border-pink-200">
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <p className="font-medium text-sm text-pink-700">Anna Thompson</p>
-                    <p className="text-xs text-pink-400">Evening Event - Dec 19, 4:00 PM</p>
-                  </div>
-                  <Badge variant="outline" className="text-xs border-pink-300 text-pink-500">
-                    $100
-                  </Badge>
-                </div>
-                <div className="flex gap-2">
-                  <Button size="sm" className="flex-1 h-8 text-xs bg-pink-500 hover:bg-pink-600 text-white">
-                    <Icon icon="lucide:check" className="mr-1 h-3 w-3" />
-                    Accept
-                  </Button>
-                  <Button variant="outline" size="sm" className="flex-1 h-8 text-xs border-pink-300 text-pink-500 hover:bg-pink-100">
-                    <Icon icon="lucide:x" className="mr-1 h-3 w-3" />
-                    Decline
-                  </Button>
-                </div>
-              </Card>
+              )}
             </div>
             <Button variant="ghost" className="w-full mt-4 text-sm text-pink-600 hover:bg-pink-100">
               View All Requests

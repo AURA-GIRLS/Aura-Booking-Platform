@@ -12,6 +12,14 @@ export const artistScheduleService = {
             throw error.response?.data || error;
         }
     },
+    async getPendingBookings(muaId:string, pageNumber:string, pageSize:string): Promise<ApiResponseDTO> {
+        try {
+            const res = await api.get<ApiResponseDTO>(`/artist-schedule/${muaId}/booking/pending`, { params: { pageNumber,pageSize } });
+            return res.data;
+        } catch (error: any) {
+            throw error.response?.data || error;
+        }
+    },
     async deleteWorkingSlot(muaId: string, slotId: string): Promise<ApiResponseDTO> {
         try {
             const res = await api.delete(`/artist-schedule/${muaId}/slot/working/${slotId}`);

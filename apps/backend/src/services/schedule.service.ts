@@ -10,6 +10,7 @@ import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import { SLOT_TYPES, type SlotType } from "constants/index";
 import { BOOKING_STATUS } from "constants/index";
+import type { BookingResponseDTO } from "types/booking.dtos";
 
 //---------------STAGE 1: Get and cache raw slots from DB/Redis--------
 dayjs.extend(utc);
@@ -240,16 +241,36 @@ async function getConfirmedBookingSlots(muaId: string, weekStart: string): Promi
   return bookings.map(mapBookingToSlot);
 }
 
-async function getPendingBookingSlots(muaId: string, weekStart: string): Promise<ISlot[]> {
-   const weekStartDate =  toUTC(weekStart, "Asia/Ho_Chi_Minh").toDate();
-  const weekEndDate = dayjs(weekStartDate).add(6, "day").endOf("day").toDate();
+export async function getPendingBookingSlots(muaId: string, pageNumber:number,pageSize:number): Promise<BookingResponseDTO[]> {
+  const skip = (pageNumber - 1) * pageSize;
+  
   const bookings = await Booking.find({
     muaId,
     status: BOOKING_STATUS.PENDING,
-    bookingDate: { $gte: weekStartDate, $lte: weekEndDate }
-  }).populate("customerId serviceId muaId");
+    bookingDate:{$gte: new Date()}
+  })
+  .populate("customerId serviceId")
+  .skip(skip)
+  .limit(pageSize)
+  .sort({ bookingDate: 1 }); // Sort by booking date ascending
 
-  return bookings.map(mapBookingToSlot);
+  return bookings.map(b => ({
+      _id: b._id.toString(),
+      customerId: (b.customerId as any)?._id?.toString() || '',
+      artistId: b.muaId?._id.toString() || '',
+      serviceId: (b.serviceId as any)?._id?.toString() || '',
+      customerName: (b.customerId as any)?.fullName ?? "",
+      serviceName: (b.serviceId as any)?.name ?? "",
+      bookingDate: fromUTC(b.bookingDate!).format("YYYY-MM-DD"),
+      startTime: fromUTC(b.bookingDate!).format("hh:mm A"),
+      endTime: fromUTC(b.bookingDate!).add(b.duration!,'minute').format("hh:mm A"),
+      address: b.address || '',
+      status: b.status || BOOKING_STATUS.PENDING,
+      notes: b.note || undefined,
+      totalPrice: b.totalPrice || 0,
+      createdAt: b.createdAt || new Date(),
+      updatedAt: b.createdAt || new Date() // Using createdAt since updatedAt doesn't exist in the model
+  }));
 }
 //---------------**UC X: merge booking x working --------
 export async function getFinalSlots(muaId:string, weekStart:string): Promise<IFinalSlot> {
