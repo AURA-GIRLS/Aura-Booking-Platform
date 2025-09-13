@@ -67,8 +67,8 @@ export function mapToSlot(
 }
 
 function mapBookingToSlot(booking: any): ISlot {
-  const utcDate = toUTC(booking.bookingDate, "Asia/Ho_Chi_Minh");
-  const day = dayjs(utcDate).format("ddd").toUpperCase();
+  const utcDate = fromUTC(booking.bookingDate, "Asia/Ho_Chi_Minh");
+  const day = dayjs(utcDate).format("YYYY-MM-DD");
   const startTime = dayjs(utcDate).format("HH:mm");
   const endTime = dayjs(utcDate).add(booking.duration, "minutes").format("HH:mm");
   return {
@@ -224,11 +224,24 @@ export async function computeMUAFinalSlots(data: IWeeklySlot): Promise<ISlot[]> 
   return finalSlots;
 }
 //**get booking slots
-async function getBookingSlotsFromDB(muaId: string, weekStart: string): Promise<ISlot[]> {
+async function getConfirmedBookingSlots(muaId: string, weekStart: string): Promise<ISlot[]> {
    const weekStartDate =  toUTC(weekStart, "Asia/Ho_Chi_Minh").toDate();
   const weekEndDate = dayjs(weekStartDate).add(6, "day").endOf("day").toDate();
   const bookings = await Booking.find({
     muaId,
+    status: { $in: [BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.COMPLETED] },
+    bookingDate: { $gte: weekStartDate, $lte: weekEndDate }
+  }).populate("customerId serviceId muaId");
+
+  return bookings.map(mapBookingToSlot);
+}
+
+async function getPendingBookingSlots(muaId: string, weekStart: string): Promise<ISlot[]> {
+   const weekStartDate =  toUTC(weekStart, "Asia/Ho_Chi_Minh").toDate();
+  const weekEndDate = dayjs(weekStartDate).add(6, "day").endOf("day").toDate();
+  const bookings = await Booking.find({
+    muaId,
+    status: BOOKING_STATUS.PENDING,
     bookingDate: { $gte: weekStartDate, $lte: weekEndDate }
   }).populate("customerId serviceId muaId");
 
@@ -240,7 +253,7 @@ export async function getFinalSlots(muaId:string, weekStart:string): Promise<IFi
   //get working slots
   const workingSlots = await computeMUAFinalSlots(rawSlots);
   //get booking slots
-  const bookingSlots = await getBookingSlotsFromDB(muaId, weekStart);
+  const bookingSlots = await getConfirmedBookingSlots(muaId, weekStart);
   const merged = [...workingSlots, ...bookingSlots];
    const weekStartDate = toUTC(weekStart, "Asia/Ho_Chi_Minh").toDate();
   const result: IFinalSlot = {

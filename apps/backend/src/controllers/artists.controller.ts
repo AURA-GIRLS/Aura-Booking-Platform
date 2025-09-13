@@ -3,6 +3,7 @@ import type { Request, Response } from "express";
 import { getArtists, ArtistsService } from "../services/artists.service";
 import type { ListArtistsQueryDTO } from "../types/artists.dtos";
 import { getFinalSlots, getOriginalWorkingSlots } from "@services/schedule.service";
+import type { ApiResponseDTO } from "types";
 
 export class ArtistsController {
   private artistsService = new ArtistsService();
@@ -83,10 +84,17 @@ export class ArtistsController {
   if (!weekStart) return res.status(400).json({ message: "weekStart is required" });
   try {
     const data = await getFinalSlots(muaId, weekStart as string);
-    res.json(data);
+     const response: ApiResponseDTO = {
+            success: true,
+            data
+          };
+     res.status(200).json(response);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error", error: err });
+    const response: ApiResponseDTO = {
+        success: false,
+        message: err instanceof Error ? err.message : 'Failed to send get weekly final slots'
+      };
+      res.status(500).json(response);
   }
 }
 
@@ -97,10 +105,18 @@ export class ArtistsController {
 
   try {
     const data = await getOriginalWorkingSlots(muaId, weekStart as string);
-    res.json(data);
+     const response: ApiResponseDTO = {
+            success: true,
+            data
+          };
+     res.status(200).json(response);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Server error", error: err });
+    const response: ApiResponseDTO = {
+      success: false,
+      message: err instanceof Error ? err.message : 'Failed to get weekly original slots'
+    };
+    res.status(500).json(response);
   }
 }
 }
