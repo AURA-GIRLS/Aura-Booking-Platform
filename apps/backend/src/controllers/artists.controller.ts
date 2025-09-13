@@ -2,7 +2,7 @@
 import type { Request, Response } from "express";
 import { getArtists, ArtistsService } from "../services/artists.service";
 import type { ListArtistsQueryDTO } from "../types/artists.dtos";
-import { computeFinalSlots, getOriginalWorkingSlots, getRawWeeklySlots } from "@services/schedule.service";
+import { getFinalSlots, getOriginalWorkingSlots } from "@services/schedule.service";
 
 export class ArtistsController {
   private artistsService = new ArtistsService();
@@ -82,9 +82,8 @@ export class ArtistsController {
   const { weekStart } = req.query;
   if (!weekStart) return res.status(400).json({ message: "weekStart is required" });
   try {
-    const data = await getRawWeeklySlots(muaId, weekStart as string);
-    const result = await computeFinalSlots(data);
-    res.json(result);
+    const data = await getFinalSlots(muaId, weekStart as string);
+    res.json(data);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error", error: err });

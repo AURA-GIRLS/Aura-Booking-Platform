@@ -9,9 +9,10 @@ import timezone from "dayjs/plugin/timezone";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import { SLOT_TYPES, type SlotType } from "constants/index";
+import { BOOKING_STATUS } from "constants/index";
+import { Types } from "mongoose";
 
-
-//---------------STAGE 1: Get and cache slots from DB/Redis--------
+//---------------STAGE 1: Get and cache raw slots from DB/Redis--------
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(isSameOrBefore);
@@ -72,11 +73,13 @@ function mapBookingToSlot(booking: any): ISlot {
   const endTime = dayjs(utcDate).add(booking.duration, "minutes").format("HH:mm");
   return {
     slotId: booking._id?.toString?.() ?? "",
+    customerId: booking.customerId?._id?.toString?.() ?? "",
+    serviceId: booking.serviceId?._id?.toString?.() ?? "",
     day,
     startTime,
     endTime,
     type: SLOT_TYPES.BOOKING,
-    note: `Khách: ${booking.customerId?.name || ""}, Dịch vụ: ${booking.serviceId?.name || ""}`
+    note: `Khách: ${booking.customerId?.fullName || ""}, Dịch vụ: ${booking.serviceId?.name || ""}`
   };
 }
 async function getWeeklySlotsFromDB(muaId: string, weekStart: string): Promise<ISlot[]> {
@@ -102,21 +105,8 @@ console.log("weekEndDate", weekEndDate, weekEndDate instanceof Date);
 
   return slots;
 }
-
-async function getBookingSlots(muaId: string, weekStart: string): Promise<ISlot[]> {
-  const weekStartDate =  dayjs(weekStart).startOf("day").toDate();
-  const weekEndDate = dayjs(weekStartDate).add(6, "day").endOf("day").toDate();
-
-  const bookings = await Booking.find({
-    muaId,
-    status: { $in: ["CONFIRMED", "COMPLETED"] },
-    bookingDate: { $gte: weekStartDate, $lte: weekEndDate }
-  }).populate("customerId serviceId");
-
-  return bookings.map(mapBookingToSlot);
-}
-
-export async function getRawWeeklySlots(muaId: string, weekStart: string): Promise<IWeeklySlot> {
+//**get raw working slots from redis*/
+async function getRawWeeklySlots(muaId: string, weekStart: string): Promise<IWeeklySlot> {
   const cacheKey = `weeklySlots:${muaId}:${weekStart}`;
 
   // 1. Check cache trước
@@ -151,7 +141,7 @@ await redisClient.json.set(cacheKey, "$", JSON.parse(JSON.stringify(result)));
   return result;
 }
 
-//---------------STAGE 2: Compute final slots for MUA --------
+//---------------STAGE 2: Compute final working slots for MUA and get booking slots --------
 
 function applyBlockedSlots(merged: ISlot[], blockeds: ISlot[]): ISlot[] {
   let result = [...merged];
@@ -197,10 +187,9 @@ function applyBlockedSlots(merged: ISlot[], blockeds: ISlot[]): ISlot[] {
   }
   return result;
 }
-
-export async function computeFinalSlots(data: IWeeklySlot): Promise<IFinalSlot> {
+//**get final working slots
+export async function computeMUAFinalSlots(data: IWeeklySlot): Promise<ISlot[]> {
   const { slots } = data;
-
   // 1. Nhóm slots theo day (YYYY-MM-DD)
   const slotsByDay: Record<string, ISlot[]> = {};
   Object.values(slots).forEach((slot: any) => {
@@ -231,12 +220,35 @@ export async function computeFinalSlots(data: IWeeklySlot): Promise<IFinalSlot> 
 
     finalSlots.push(...merged);
   }
- const result: IFinalSlot = {
-  muaId: data.muaId,
-  weekStart: data.weekStart, // đổi Date -> string
-  weekStartStr: data.weekStartStr,
-  slots: finalSlots
-};
+ 
+  return finalSlots;
+}
+//**get booking slots
+async function getBookingSlotsFromDB(muaId: string, weekStart: string): Promise<ISlot[]> {
+   const weekStartDate =  toUTC(weekStart, "Asia/Ho_Chi_Minh").toDate();
+  const weekEndDate = dayjs(weekStartDate).add(6, "day").endOf("day").toDate();
+  const bookings = await Booking.find({
+    muaId,
+    bookingDate: { $gte: weekStartDate, $lte: weekEndDate }
+  }).populate("customerId serviceId muaId");
+
+  return bookings.map(mapBookingToSlot);
+}
+//---------------**UC X: merge booking x working --------
+export async function getFinalSlots(muaId:string, weekStart:string): Promise<IFinalSlot> {
+  const rawSlots = await getRawWeeklySlots(muaId, weekStart);
+  //get working slots
+  const workingSlots = await computeMUAFinalSlots(rawSlots);
+  //get booking slots
+  const bookingSlots = await getBookingSlotsFromDB(muaId, weekStart);
+  const merged = [...workingSlots, ...bookingSlots];
+   const weekStartDate = toUTC(weekStart, "Asia/Ho_Chi_Minh").toDate();
+  const result: IFinalSlot = {
+  muaId,
+  weekStart: weekStartDate.toISOString(), // đổi Date -> string
+  weekStartStr: dayjs(weekStartDate).format("YYYY-MM-DD HH:mm:ss"),
+  slots: merged
+}
   return result;
 }
 

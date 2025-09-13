@@ -1,26 +1,309 @@
-'use client';
-import { Badge } from "@/components/lib/ui/badge";
-import { Button } from "@/components/lib/ui/button";
-import { Icon } from "@iconify/react";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/lib/ui/card";
-import { Separator } from "@/components/lib/ui/separator";
-import { useEffect } from "react";
+"use client"
+import { Badge } from "@/components/lib/ui/badge"
+import type React from "react"
+
+import { Button } from "@/components/lib/ui/button"
+import { Icon } from "@iconify/react"
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/lib/ui/card"
+import { Separator } from "@/components/lib/ui/separator"
+import { useEffect, useState, useRef } from "react"
+import { SlotDetail } from "./SlotDetail"
+
+import { Calendar, dayjsLocalizer } from "react-big-calendar";
+import dayjs from "dayjs";
+import "react-big-calendar/lib/css/react-big-calendar.css";
+
+const localizer = dayjsLocalizer(dayjs);
+
+interface SlotData {
+  day: string
+  startTime: string
+  endTime: string
+  type: "OVERRIDE" | "ORIGINAL_WORKING" | "NEW_WORKING" | "BLOCKED"
+}
+
+interface CalendarData {
+  muaId: string
+  weekStart: string
+  weekStartStr: string
+  slots: SlotData[]
+}
+
+interface DragState {
+  isDragging: boolean
+  draggedSlot: SlotData | null
+  dragStartY: number
+  originalStartTime: string
+}
 
 export function ArtistCalendar({ id }: { readonly id: string }) {
-    useEffect(() => {
-       console.log("Artist ID:", id);
-    }, [id]);
+  const [calendarData, setCalendarData] = useState<CalendarData | null>(null)
+  const [dragState, setDragState] = useState<DragState>({
+    isDragging: false,
+    draggedSlot: null,
+    dragStartY: 0,
+    originalStartTime: "",
+  })
+  const calendarRef = useRef<HTMLDivElement>(null)
+  // Convert slot data to events for react-big-calendar
+  const events = (calendarData?.slots || []).map(slot => {
+    const start = dayjs(`${slot.day} ${slot.startTime}`, "YYYY-MM-DD HH:mm").toDate();
+    const end = dayjs(`${slot.day} ${slot.endTime}`, "YYYY-MM-DD HH:mm").toDate();
+    return {
+      title: slot.type.replace("_", " "),
+      start,
+      end,
+      type: slot.type,
+      allDay: false
+    };
+  });
+
+  useEffect(() => {
+    console.log("Artist ID:", id)
+    const sampleData: CalendarData = {
+      muaId: "68c00edaaea1af1231d3a0fc",
+      weekStart: "2025-09-14T17:00:00.000Z",
+      weekStartStr: "2025-09-15 00:00:00",
+      slots: [
+        {
+          day: "2025-09-15",
+          startTime: "13:00",
+          endTime: "18:00",
+          type: "OVERRIDE",
+        },
+        {
+          day: "2025-09-17",
+          startTime: "14:00",
+          endTime: "18:00",
+          type: "ORIGINAL_WORKING",
+        },
+        {
+          day: "2025-09-19",
+          startTime: "10:00",
+          endTime: "11:00",
+          type: "NEW_WORKING",
+        },
+        {
+          day: "2025-09-19",
+          startTime: "13:00",
+          endTime: "16:00",
+          type: "NEW_WORKING",
+        },
+        {
+          day: "2025-09-19",
+          startTime: "11:00",
+          endTime: "13:00",
+          type: "BLOCKED",
+        },
+        {
+          day: "2025-09-20",
+          startTime: "09:00",
+          endTime: "12:00",
+          type: "OVERRIDE",
+        },
+      ],
+    }
+    setCalendarData(sampleData)
+  }, [id])
+
+  const timeToMinutes = (time: string): number => {
+    const [hours, minutes] = time.split(":").map(Number)
+    return hours * 60 + minutes
+  }
+
+  const minutesToTime = (minutes: number): string => {
+    const hours = Math.floor(minutes / 60)
+    const mins = minutes % 60
+    return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`
+  }
+
+  // Color for slot types
+  const slotTypeColor: Record<string, string> = {
+    OVERRIDE: "#EB638B",
+    ORIGINAL_WORKING: "#FFD9DA",
+    NEW_WORKING: "#AC274F",
+    BLOCKED: "#382E31"
+  };
+
+  // Custom event style for react-big-calendar
+  const eventPropGetter = (event: any) => ({
+    style: {
+      backgroundColor: slotTypeColor[event.type] || "#FFD9DA",
+      color: event.type === "BLOCKED" ? "#fff" : "#191516",
+      borderRadius: 8,
+      border: "2px solid #EB638B",
+      fontWeight: 600,
+      fontFamily: "Montserrat, Poppins, Arial, sans-serif"
+    }
+  });
+
+  const getTypeLabel = (type: SlotData["type"]) => {
+    switch (type) {
+      case "OVERRIDE":
+        return "Override"
+      case "ORIGINAL_WORKING":
+        return "Original Working"
+      case "NEW_WORKING":
+        return "New Working"
+      case "BLOCKED":
+        return "Blocked"
+      default:
+        return type
+    }
+  }
+
+  const handleMouseDown = (e: React.MouseEvent, slot: SlotData) => {
+    e.preventDefault()
+    setDragState({
+      isDragging: true,
+      draggedSlot: slot,
+      dragStartY: e.clientY,
+      originalStartTime: slot.startTime,
+    })
+  }
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!dragState.isDragging || !dragState.draggedSlot || !calendarData) return
+
+    const deltaY = e.clientY - dragState.dragStartY
+    const minutesPerPixel = 2 // Adjust sensitivity
+    const deltaMinutes = Math.round(deltaY / minutesPerPixel) * 15 // Snap to 15-minute intervals
+
+    const originalMinutes = timeToMinutes(dragState.originalStartTime)
+    const newStartMinutes = Math.max(480, Math.min(1080, originalMinutes + deltaMinutes)) // 8:00 AM to 6:00 PM
+    const newStartTime = minutesToTime(newStartMinutes)
+
+    const duration = timeToMinutes(dragState.draggedSlot.endTime) - timeToMinutes(dragState.draggedSlot.startTime)
+    const newEndTime = minutesToTime(newStartMinutes + duration)
+
+    // Update the slot in real-time
+    const updatedSlots = calendarData.slots.map((s) =>
+      s === dragState.draggedSlot ? { ...s, startTime: newStartTime, endTime: newEndTime } : s,
+    )
+
+    setCalendarData({ ...calendarData, slots: updatedSlots })
+  }
+
+  const handleMouseUp = () => {
+    setDragState({
+      isDragging: false,
+      draggedSlot: null,
+      dragStartY: 0,
+      originalStartTime: "",
+    })
+  }
+
+  const generateTimeSlots = () => {
+    const slots = []
+    for (let hour = 8; hour <= 18; hour++) {
+      slots.push(`${hour}:00`)
+    }
+    return slots
+  }
+
+  const renderSlotForDay = (dayIndex: number, timeSlot: string) => {
+    if (!calendarData) return null
+
+    const dayDate = new Date(calendarData.weekStart)
+    dayDate.setDate(dayDate.getDate() + dayIndex)
+    const dayString = dayDate.toISOString().split("T")[0]
+
+    const slotsForDay = calendarData.slots.filter((slot) => {
+      const slotDate = new Date(slot.day + "T00:00:00")
+      return slotDate.toISOString().split("T")[0] === dayString
+    })
+
+    const currentHour = Number.parseInt(timeSlot.split(":")[0])
+    const slotsInThisTimeSlot = slotsForDay.filter((slot) => {
+      const startMinutes = timeToMinutes(slot.startTime)
+      const endMinutes = timeToMinutes(slot.endTime)
+      const currentMinutes = currentHour * 60
+
+      return startMinutes < currentMinutes + 60 && endMinutes > currentMinutes
+    })
+
+    if (slotsInThisTimeSlot.length === 0) return null
+
+    const sortedSlots = slotsInThisTimeSlot.sort((a, b) => {
+      if (a.type === "ORIGINAL_WORKING" && b.type !== "ORIGINAL_WORKING") return -1
+      if (a.type !== "ORIGINAL_WORKING" && b.type === "ORIGINAL_WORKING") return 1
+      return 0
+    })
+
+    return sortedSlots.map((slot, index) => {
+      const startMinutes = timeToMinutes(slot.startTime)
+      const endMinutes = timeToMinutes(slot.endTime)
+      const currentHourMinutes = currentHour * 60
+
+      const slotStartInHour = Math.max(0, startMinutes - currentHourMinutes)
+      const slotEndInHour = Math.min(60, endMinutes - currentHourMinutes)
+      const slotDurationInHour = slotEndInHour - slotStartInHour
+
+      const topOffset = (slotStartInHour / 60) * 60
+      const height = (slotDurationInHour / 60) * 60
+
   return (
-    <div style={{ background: '#FFF', minHeight: '100vh', color: '#191516', fontFamily: 'Montserrat, Poppins, Arial, sans-serif', letterSpacing: '0.04em' }}>
-      <div style={{ borderBottom: '2px solid #FFD9DA', background: '#FFF' }}>
+    <div style={{ height: 700 }} key={`${slot.day}-${slot.startTime}-${slot.endTime}-${slot.type}`}>
+      <Calendar
+        localizer={localizer}
+        events={events}
+        step={60}
+        views={["week", "day"]}
+        defaultDate={new Date(2015, 3, 1)}
+        popup={false}
+        // You may need to adjust or remove onShowMore depending on your requirements
+      />
+    </div>
+  )
+    })
+  }
+
+  const timeSlots = generateTimeSlots()
+
+  return (
+    <div
+      style={{
+        background: "#FFF",
+        minHeight: "100vh",
+        color: "#191516",
+        fontFamily: "Montserrat, Poppins, Arial, sans-serif",
+        letterSpacing: "0.04em",
+      }}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+    >
+      <div style={{ borderBottom: "2px solid #FFD9DA", background: "#FFF" }}>
         <div className="flex h-16 items-center justify-between px-6">
           <div>
-            <h1 style={{ color: '#EB638B', fontWeight: 900, fontSize: '1.4rem', fontFamily: 'Montserrat, Poppins, Arial, sans-serif', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Calendar</h1>
-            <p style={{ color: '#AC274F', fontSize: '0.8rem' }}>Manage your bookings and schedule</p>
+            <h1
+              style={{
+                color: "#EB638B",
+                fontWeight: 900,
+                fontSize: "1.4rem",
+                fontFamily: "Montserrat, Poppins, Arial, sans-serif",
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+              }}
+            >
+              Calendar
+            </h1>
+            <p style={{ color: "#AC274F", fontSize: "0.8rem" }}>Manage your bookings and schedule</p>
           </div>
           <div className="flex items-center gap-4">
-            <Badge style={{ background: '#FFD9DA', color: '#AC274F', border: '1.5px solid #EB638B', fontWeight: 700 }}>12 Pending Requests</Badge>
-            <Button style={{ background: '#EB638B', color: '#fff', fontWeight: 700, borderRadius: '999px', boxShadow: '0 0 0 2px #FFD9DA', border: 'none' }}>
+            <Badge style={{ background: "#FFD9DA", color: "#AC274F", border: "1.5px solid #EB638B", fontWeight: 700 }}>
+              12 Pending Requests
+            </Badge>
+            <Button
+              style={{
+                background: "#EB638B",
+                color: "#fff",
+                fontWeight: 700,
+                borderRadius: "999px",
+                boxShadow: "0 0 0 2px #FFD9DA",
+                border: "none",
+              }}
+            >
               <Icon icon="lucide:plus" className="mr-2 h-4 w-4" />
               New Booking
             </Button>
@@ -28,318 +311,24 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
         </div>
       </div>
       <div className="flex ">
-        <div style={{ width: '66.666%', borderRight: '2px solid #FFD9DA', background: '#FFF' }}>
-          <div className="flex items-center justify-between" style={{ borderBottom: '2px solid #FFD9DA', padding: '1rem 1.5rem' }}>
-            <Button variant="outline" size="sm" style={{ border: '1.5px solid #EB638B', color: '#EB638B', background: 'transparent', borderRadius: '8px' }}>
-              <Icon icon="lucide:chevron-left" className="h-4 w-4" />
-            </Button>
-            <div className="text-center">
-              <h2 style={{ color: '#AC274F', fontWeight: 700, fontSize: '1.2rem', fontFamily: 'Montserrat, Poppins, Arial, sans-serif', letterSpacing: '0.08em' }}>December 16 - 22, 2024</h2>
-              <p style={{ color: '#EB638B', fontSize: '0.95rem' }}>This Week</p>
-            </div>
-            <Button variant="outline" size="sm" style={{ border: '1.5px solid #EB638B', color: '#EB638B', background: 'transparent', borderRadius: '8px' }}>
-              <Icon icon="lucide:chevron-right" className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="flex-1 overflow-auto">
-            <div className="grid grid-cols-8" style={{ borderBottom: '2px solid #FFD9DA', background: '#FFD9DA' }}>
-              <div className="p-3 text-sm font-medium" style={{ color: '#AC274F' }}>Time</div>
-              <div className="border-l p-3 text-center text-sm font-medium" style={{ color: '#EB638B', borderLeft: '2px solid #FFF' }}>
-                Mon
-                <br />
-                <span style={{ color: '#AC274F', fontWeight: 700 }}>16</span>
-              </div>
-              <div className="border-l p-3 text-center text-sm font-medium" style={{ color: '#EB638B', borderLeft: '2px solid #FFF' }}>
-                Tue
-                <br />
-                <span style={{ color: '#AC274F', fontWeight: 700 }}>17</span>
-              </div>
-              <div className="border-l p-3 text-center text-sm font-medium" style={{ color: '#EB638B', borderLeft: '2px solid #FFF' }}>
-                Wed
-                <br />
-                <span style={{ color: '#AC274F', fontWeight: 700 }}>18</span>
-              </div>
-              <div className="border-l p-3 text-center text-sm font-medium" style={{ color: '#EB638B', borderLeft: '2px solid #FFF' }}>
-                Thu
-                <br />
-                <span style={{ color: '#AC274F', fontWeight: 700 }}>19</span>
-              </div>
-              <div className="border-l p-3 text-center text-sm font-medium" style={{ color: '#EB638B', borderLeft: '2px solid #FFF' }}>
-                Fri
-                <br />
-                <span style={{ color: '#AC274F', fontWeight: 700 }}>20</span>
-              </div>
-              <div className="border-l p-3 text-center text-sm font-medium" style={{ color: '#EB638B', borderLeft: '2px solid #FFF' }}>
-                Sat
-                <br />
-                <span style={{ color: '#AC274F', fontWeight: 700 }}>21</span>
-              </div>
-              <div className="border-l p-3 text-center text-sm font-medium" style={{ color: '#EB638B', borderLeft: '2px solid #FFF' }}>
-                Sun
-                <br />
-                <span style={{ color: '#AC274F', fontWeight: 700 }}>22</span>
-              </div>
-            </div>
-            <div className="relative">
-              <div className="grid grid-cols-8 border-b">
-                <div className="p-3 text-sm text-pink-400">9:00 AM</div>
-                <div className="border-l p-1">
-                  <div className="rounded-md bg-pink-100 p-2 text-xs border-l-4 border-pink-500">
-                    <div className="font-medium text-pink-700">Bridal Makeup</div>
-                    <div className="text-pink-400">Sarah Johnson</div>
-                  </div>
-                </div>
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l" />
-              </div>
-              <div className="grid grid-cols-8 border-b">
-                <div className="p-3 text-sm text-pink-400">10:00 AM</div>
-                <div className="border-l" />
-                <div className="border-l p-1">
-                  <div className="rounded-md bg-pink-200 p-2 text-xs border-l-4 border-pink-400">
-                    <div className="font-medium text-pink-700">Party Makeup</div>
-                    <div className="text-pink-400">Emma Davis</div>
-                  </div>
-                </div>
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l" />
-              </div>
-              <div className="grid grid-cols-8 border-b">
-                <div className="p-3 text-sm text-pink-400">11:00 AM</div>
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l p-1">
-                  <div className="rounded-md bg-pink-50 p-2 text-xs border-l-4 border-pink-300">
-                    <div className="font-medium text-pink-700">Photoshoot</div>
-                    <div className="text-pink-400">Model Agency</div>
-                  </div>
-                </div>
-                <div className="border-l" />
-                <div className="border-l" />
-              </div>
-              <div className="grid grid-cols-8 border-b">
-                <div className="p-3 text-sm text-pink-400">12:00 PM</div>
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l" />
-              </div>
-              <div className="grid grid-cols-8 border-b">
-                <div className="p-3 text-sm text-pink-400">1:00 PM</div>
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l p-1">
-                  <div className="rounded-md bg-pink-100 p-2 text-xs border-l-4 border-pink-500">
-                    <div className="font-medium text-pink-700">Evening Makeup</div>
-                    <div className="text-pink-400">Lisa Brown</div>
-                  </div>
-                </div>
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l" />
-              </div>
-              <div className="grid grid-cols-8 border-b">
-                <div className="p-3 text-sm text-pink-400">2:00 PM</div>
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l" />
-              </div>
-              <div className="grid grid-cols-8 border-b">
-                <div className="p-3 text-sm text-pink-400">3:00 PM</div>
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l p-1">
-                  <div className="rounded-md bg-pink-200 p-2 text-xs border-l-4 border-pink-400">
-                    <div className="font-medium text-pink-700">Consultation</div>
-                    <div className="text-pink-400">New Client</div>
-                  </div>
-                </div>
-                <div className="border-l" />
-              </div>
-              <div className="grid grid-cols-8 border-b">
-                <div className="p-3 text-sm text-pink-400">4:00 PM</div>
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l" />
-              </div>
-              <div className="grid grid-cols-8 border-b">
-                <div className="p-3 text-sm text-pink-400">5:00 PM</div>
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l" />
-                <div className="border-l p-1">
-                  <div className="rounded-md bg-pink-100 p-2 text-xs border-l-4 border-pink-500">
-                    <div className="font-medium text-pink-700">Wedding Prep</div>
-                    <div className="text-pink-400">Bride & Bridesmaids</div>
-                  </div>
-                </div>
-              </div>
-            </div>
+        <div style={{ width: "66.666%", borderRight: "2px solid #FFD9DA", background: "#FFF", padding: 16 }}>
+          <div className="bg-white rounded-lg shadow border border-[#FFD9DA] p-2">
+            <Calendar
+              localizer={localizer}
+              events={events}
+              defaultView="week"
+              views={["week", "day"]}
+              startAccessor="start"
+              endAccessor="end"
+              style={{ height: 600 }}
+              eventPropGetter={eventPropGetter}
+              // onEventDrop={onEventDrop} // Enable if using DnD
+              // resizable
+            />
           </div>
         </div>
-        <div className="w-1/3 flex flex-col">
-          <div className="flex-1 p-6">
-            <Card className="border-pink-200">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-pink-600">
-                  <Icon icon="lucide:calendar" className="h-5 w-5 text-pink-500" />
-                  Booking Details
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-6 space-y-4">
-                <div>
-                  <h3 className="font-semibold text-pink-700">Bridal Makeup</h3>
-                  <p className="text-sm text-pink-400">Monday, December 16, 2024</p>
-                </div>
-                <Separator />
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm">Client:</span>
-                    <span className="text-sm font-medium text-pink-700">Sarah Johnson</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">Time:</span>
-                    <span className="text-sm font-medium text-pink-700">9:00 AM - 11:00 AM</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">Service:</span>
-                    <span className="text-sm font-medium text-pink-700">Bridal Makeup</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">Price:</span>
-                    <span className="text-sm font-medium text-pink-700">$150</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">Status:</span>
-                    <Badge className="bg-pink-500 text-white">Confirmed</Badge>
-                  </div>
-                </div>
-                <Separator />
-                <div>
-                  <p className="text-sm font-medium mb-2">Notes:</p>
-                  <p className="text-sm text-pink-400">
-                    Client requested natural look with focus on eyes. Wedding theme is vintage.
-                  </p>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <div className="flex gap-2 w-full">
-                  <Button variant="outline" className="flex-1 border-pink-300 text-pink-500 hover:bg-pink-100">
-                    <Icon icon="lucide:edit" className="mr-2 h-4 w-4" />
-                    Edit
-                  </Button>
-                  <Button variant="destructive" className="flex-1 bg-pink-500 hover:bg-pink-600 text-white border-none">
-                    <Icon icon="lucide:x" className="mr-2 h-4 w-4" />
-                    Cancel
-                  </Button>
-                </div>
-              </CardFooter>
-            </Card>
-          </div>
-          <div className="border-t bg-pink-100 p-6 rounded-br-lg">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-heading text-lg font-semibold text-pink-600">Pending Requests</h3>
-              <Badge className="bg-pink-200 text-pink-700 border-pink-300" variant="secondary">3 New</Badge>
-            </div>
-            <div className="space-y-3">
-              <Card className="p-4 border-pink-200">
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <p className="font-medium text-sm text-pink-700">Jessica Wilson</p>
-                    <p className="text-xs text-pink-400">Party Makeup - Dec 20, 2:00 PM</p>
-                  </div>
-                  <Badge variant="outline" className="text-xs border-pink-300 text-pink-500">
-                    $80
-                  </Badge>
-                </div>
-                <div className="flex gap-2">
-                  <Button size="sm" className="flex-1 h-8 text-xs bg-pink-500 hover:bg-pink-600 text-white">
-                    <Icon icon="lucide:check" className="mr-1 h-3 w-3" />
-                    Accept
-                  </Button>
-                  <Button variant="outline" size="sm" className="flex-1 h-8 text-xs border-pink-300 text-pink-500 hover:bg-pink-100">
-                    <Icon icon="lucide:x" className="mr-1 h-3 w-3" />
-                    Decline
-                  </Button>
-                </div>
-              </Card>
-              <Card className="p-4 border-pink-200">
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <p className="font-medium text-sm text-pink-700">Maria Garcia</p>
-                    <p className="text-xs text-pink-400">Photoshoot - Dec 21, 10:00 AM</p>
-                  </div>
-                  <Badge variant="outline" className="text-xs border-pink-300 text-pink-500">
-                    $120
-                  </Badge>
-                </div>
-                <div className="flex gap-2">
-                  <Button size="sm" className="flex-1 h-8 text-xs bg-pink-500 hover:bg-pink-600 text-white">
-                    <Icon icon="lucide:check" className="mr-1 h-3 w-3" />
-                    Accept
-                  </Button>
-                  <Button variant="outline" size="sm" className="flex-1 h-8 text-xs border-pink-300 text-pink-500 hover:bg-pink-100">
-                    <Icon icon="lucide:x" className="mr-1 h-3 w-3" />
-                    Decline
-                  </Button>
-                </div>
-              </Card>
-              <Card className="p-4 border-pink-200">
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <p className="font-medium text-sm text-pink-700">Anna Thompson</p>
-                    <p className="text-xs text-pink-400">Evening Event - Dec 19, 4:00 PM</p>
-                  </div>
-                  <Badge variant="outline" className="text-xs border-pink-300 text-pink-500">
-                    $100
-                  </Badge>
-                </div>
-                <div className="flex gap-2">
-                  <Button size="sm" className="flex-1 h-8 text-xs bg-pink-500 hover:bg-pink-600 text-white">
-                    <Icon icon="lucide:check" className="mr-1 h-3 w-3" />
-                    Accept
-                  </Button>
-                  <Button variant="outline" size="sm" className="flex-1 h-8 text-xs border-pink-300 text-pink-500 hover:bg-pink-100">
-                    <Icon icon="lucide:x" className="mr-1 h-3 w-3" />
-                    Decline
-                  </Button>
-                </div>
-              </Card>
-            </div>
-            <Button variant="ghost" className="w-full mt-4 text-sm text-pink-600 hover:bg-pink-100">
-              View All Requests
-              <Icon icon="lucide:arrow-right" className="ml-2 h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+        <SlotDetail />
       </div>
     </div>
-  );
+  )
 }
