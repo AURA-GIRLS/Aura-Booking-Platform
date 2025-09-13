@@ -78,45 +78,4 @@ export class ArtistsController {
     }
   }
 
-  async getArtistWeeklyFinalSlots(req: Request, res: Response) {
-  const { muaId } = req.params;
-  const { weekStart } = req.query;
-  if (!weekStart) return res.status(400).json({ message: "weekStart is required" });
-  try {
-    const data = await getFinalSlots(muaId, weekStart as string);
-     const response: ApiResponseDTO = {
-            success: true,
-            data
-          };
-     res.status(200).json(response);
-  } catch (err) {
-    const response: ApiResponseDTO = {
-        success: false,
-        message: err instanceof Error ? err.message : 'Failed to send get weekly final slots'
-      };
-      res.status(500).json(response);
-  }
-}
-
- async getArtistWeeklyOriginalSlots(req: Request, res: Response) {
-  const { muaId } = req.params;
-  const { weekStart } = req.query;
-  if (!weekStart) return res.status(400).json({ message: "weekStart is required" });
-
-  try {
-    const data = await getOriginalWorkingSlots(muaId, weekStart as string);
-     const response: ApiResponseDTO = {
-            success: true,
-            data
-          };
-     res.status(200).json(response);
-  } catch (err) {
-    console.error(err);
-    const response: ApiResponseDTO = {
-      success: false,
-      message: err instanceof Error ? err.message : 'Failed to get weekly original slots'
-    };
-    res.status(500).json(response);
-  }
-}
 }

@@ -30,6 +30,7 @@ const BlockedSlotSchema = new Schema({
   muaId: { type: Schema.Types.ObjectId, ref: "MUA" },
   blockStart: Date,
   blockEnd: Date,
+  note: String
 });
 
 export const MUA = model("MUA", MUASchema);

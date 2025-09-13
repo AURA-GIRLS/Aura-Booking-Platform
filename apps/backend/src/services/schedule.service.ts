@@ -10,7 +10,6 @@ import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import { SLOT_TYPES, type SlotType } from "constants/index";
 import { BOOKING_STATUS } from "constants/index";
-import { Types } from "mongoose";
 
 //---------------STAGE 1: Get and cache raw slots from DB/Redis--------
 dayjs.extend(utc);
@@ -107,7 +106,7 @@ console.log("weekEndDate", weekEndDate, weekEndDate instanceof Date);
 }
 //**get raw working slots from redis*/
 async function getRawWeeklySlots(muaId: string, weekStart: string): Promise<IWeeklySlot> {
-  const cacheKey = `weeklySlots:${muaId}:${weekStart}`;
+  const cacheKey = `weeklySlots:${muaId}:${dayjs(weekStart).format("YYYY-MM-DD")}`;
 
   // 1. Check cache trước
   const cached = await redisClient.json.get(cacheKey);
@@ -121,10 +120,12 @@ async function getRawWeeklySlots(muaId: string, weekStart: string): Promise<IWee
   slots.forEach((slot, idx) => {
     const slotId = slot.slotId?.toString() || `slot-${idx + 1}`;
     slotMap[slotId] = {
+      slotId: slotId,
       day: slot.day,
       startTime: slot.startTime,
       endTime: slot.endTime,
-      type: slot.type
+      type: slot.type,
+      note: slot.note
     };
   });
 
