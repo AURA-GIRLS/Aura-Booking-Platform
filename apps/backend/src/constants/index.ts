@@ -43,18 +43,6 @@ export const SERVICE_CATEGORIES = {
   SPECIAL_EVENT: 'SPECIAL_EVENT' 
 } as const;
 
-// Service Add-ons for makeup services
-export const SERVICE_ADDONS = {
-  HAIR_STYLING: 'HAIR_STYLING',
-  FALSE_LASHES: 'FALSE_LASHES',
-  SKINCARE_PREP: 'SKINCARE_PREP',
-  PHOTOGRAPHY: 'PHOTOGRAPHY',
-  TOUCH_UP_KIT: 'TOUCH_UP_KIT',
-  TRAVEL_SERVICE: 'TRAVEL_SERVICE',
-  AIRBRUSH_MAKEUP: 'AIRBRUSH_MAKEUP',
-  CONTOURING: 'CONTOURING'
-} as const;
-
 //Media types
 export const MEDIA_TYPES = {
   IMAGE: 'IMAGE',
@@ -95,7 +83,6 @@ export type BookingType = typeof BOOKING_TYPES[keyof typeof BOOKING_TYPES];
 export type MediaType = typeof MEDIA_TYPES[keyof typeof MEDIA_TYPES];
 export type PortfolioCategory = typeof PORTFOLIO_CATEGORIES[keyof typeof PORTFOLIO_CATEGORIES];
 export type ServiceCategory = typeof SERVICE_CATEGORIES[keyof typeof SERVICE_CATEGORIES];
-export type ServiceAddon = typeof SERVICE_ADDONS[keyof typeof SERVICE_ADDONS];
 export type PaymentStatus = typeof PAYMENT_STATUS[keyof typeof PAYMENT_STATUS];
 export type NotificationType = typeof NOTIFICATION_TYPES[keyof typeof NOTIFICATION_TYPES];
 export type SlotType = typeof SLOT_TYPES[keyof typeof SLOT_TYPES];

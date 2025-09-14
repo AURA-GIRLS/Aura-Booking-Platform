@@ -1,7 +1,5 @@
-
-import { Router } from "express";
-import { ArtistsController } from "../controllers/artists.controller";
-import { authenticateToken } from "middleware/auth.middleware";
+import { Router } from 'express';
+import { ArtistsController } from '../controllers/artists.controller';
 
 const router = Router();
 const artistsController = new ArtistsController();

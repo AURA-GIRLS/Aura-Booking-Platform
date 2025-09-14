@@ -115,34 +115,4 @@ export const authService = {
 			throw error.response?.data || error;
 		}
 	},
-
-	async getBookingHistory(): Promise<ApiResponseDTO<any[]>> {
-		try {
-			const res = await api.get<ApiResponseDTO<any[]>>('/auth/booking-history', {
-				headers: {
-					Authorization: `Bearer ${localStorage.getItem('token')}`,
-				}
-			});
-			return res.data;
-		} catch (error: any) {
-			throw error.response?.data || error;
-		}
-	},
-
-	async uploadAvatar(file: File): Promise<ApiResponseDTO<{ avatarUrl: string; user: UserResponseDTO }>> {
-		try {
-			const formData = new FormData();
-			formData.append('avatar', file);
-
-			const res = await api.post<ApiResponseDTO<{ avatarUrl: string; user: UserResponseDTO }>>('/auth/upload-avatar', formData, {
-				headers: {
-					'Content-Type': 'multipart/form-data',
-					Authorization: `Bearer ${localStorage.getItem('token')}`,
-				}
-			});
-			return res.data;
-		} catch (error: any) {
-			throw error.response?.data || error;
-		}
-	},
 };

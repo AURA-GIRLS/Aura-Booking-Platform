@@ -44,29 +44,3 @@ export const SERVICE_CATEGORY_LABELS = {
   DAILY: 'Daily',
   SPECIAL_EVENT: 'Special Event'
 } as const;
-
-// Service Add-ons for makeup services (matching backend)
-export const SERVICE_ADDONS = {
-  HAIR_STYLING: 'HAIR_STYLING',
-  FALSE_LASHES: 'FALSE_LASHES', 
-  SKINCARE_PREP: 'SKINCARE_PREP',
-  PHOTOGRAPHY: 'PHOTOGRAPHY',
-  NAIL_ART: 'NAIL_ART',
-  EYEBROW_SHAPING: 'EYEBROW_SHAPING',
-  CONTOURING: 'CONTOURING',
-  AIRBRUSH: 'AIRBRUSH'
-} as const;
-
-// Display labels for service add-ons in English
-export const SERVICE_ADDON_LABELS = {
-  HAIR_STYLING: 'Hair Styling',
-  FALSE_LASHES: 'False Lashes',
-  SKINCARE_PREP: 'Skincare Prep',
-  PHOTOGRAPHY: 'Photography',
-  NAIL_ART: 'Nail Art',
-  EYEBROW_SHAPING: 'Eyebrow Shaping',
-  CONTOURING: 'Contouring',
-  AIRBRUSH: 'Airbrush'
-} as const;
-
-export type ServiceAddon = typeof SERVICE_ADDONS[keyof typeof SERVICE_ADDONS];
