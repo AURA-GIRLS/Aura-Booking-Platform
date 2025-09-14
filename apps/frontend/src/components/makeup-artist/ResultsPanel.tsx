@@ -4,73 +4,23 @@ import React from "react";
 import Link from "next/link";
 import type { Artist, SortKey } from "@/config/types";
 import { SERVICE_CATEGORY_LABELS, ServiceCategory } from "../../constants/constants";
+import ArtistCard from "./ArtistCard";
 
-/* ===== Helpers ===== */
-const fmtVND = (n?: number | null) =>
-  typeof n === "number" ? `${n.toLocaleString("en-US")} VND` : "Contact";
-
-function Stars({ value = 0 }: { value?: number }) {
-  const full = Math.floor(value);
-  const arr = Array.from({ length: 5 }, (_, i) => i < full);
-  return (
-    <div className="flex items-center gap-1 text-amber-500 text-sm">
-      {arr.map((f, i) => (
-        <span key={i}>{f ? "★" : "☆"}</span>
-      ))}
-      <span className="text-gray-600 ml-1">{Number(value).toFixed(1)}</span>
-    </div>
-  );
+interface ResultsPanelProps {
+  occasion: ServiceCategory;
+  onOccasionChange: (occasion: ServiceCategory) => void;
+  sort: SortKey;
+  onSortChange: (sort: SortKey) => void;
+  artists: Artist[];
+  loading: boolean;
+  total: number;
+  error: string | null;
+  canLoadMore: boolean;
+  onLoadMore: () => void;
+  onViewProfile: (artistId: string, tab?: string) => void;
+  onBookService: (artistId: string, serviceId: string) => void;
 }
 
-/* ===== Card theo giao diện mới (mềm, viền nhẹ, ảnh trái, CTA) ===== */
-function ListCard({ a }: { a: Artist }) {
-  return (
-    <article className="w-full rounded-2xl border border-rose-200/60 bg-white p-5 flex items-start justify-between gap-6 hover:shadow-md transition">
-      {/* Image */}
-      <div className="w-40 h-28 rounded-xl overflow-hidden bg-rose-50 shrink-0 grid place-items-center text-gray-400 text-sm">
-        {a.avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img className="w-full h-full object-cover" src={a.avatarUrl} alt={a.fullName ?? "MUA"} />
-        ) : (
-          "No Image"
-        )}
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        <Link href={`/artists/portfolio/${a.id}`}>
-          <h3 className="font-bold text-gray-900 leading-tight text-lg truncate hover:text-pink-600 transition">
-            {a.fullName ?? "Makeup Artist Name"}
-          </h3>
-        </Link>
-        <div className="mt-1 flex items-center gap-3">
-          <Stars value={Number(a.ratingAverage ?? 0)} />
-          <span className="text-sm text-gray-500">({a.bookingCount ?? 0} bookings)</span>
-        </div>
-        <p className="mt-2 text-[15px] text-gray-700 line-clamp-2">
-          {a.bio ?? "Specializing in bridal & party makeup. Available at home & studio. Friendly & punctual."}
-        </p>
-        <Link href={`/artists/portfolio/${a.id}`}>
-          <button className="mt-3 inline-flex items-center h-10 px-4 rounded-xl bg-green-600 text-white text-sm hover:bg-green-700">
-            View Portfolio
-          </button>
-        </Link>
-      </div>
-
-      {/* Price + location */}
-      <div className="w-56 text-right">
-        {a.location && (
-          <div className="inline-flex items-center h-8 px-3 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium mb-2">
-            {a.location}
-          </div>
-        )}
-        <div className="text-2xl font-bold text-rose-600">{fmtVND(a.ratePerHour)}</div>
-      </div>
-    </article>
-  );
-}
-
-/* ===== Results Panel ===== */
 export default function ResultsPanel({
   occasion,
   onOccasionChange,
@@ -82,106 +32,164 @@ export default function ResultsPanel({
   error,
   canLoadMore,
   onLoadMore,
-}: {
-  occasion: ServiceCategory;
-  onOccasionChange: (v: ServiceCategory) => void;
-  sort: SortKey;
-  onSortChange: (v: SortKey) => void;
-  artists: Artist[];
-  loading: boolean;
-  total: number;
-  error: string | null;
-  canLoadMore: boolean;
-  onLoadMore: () => void;
-}) {
-  const sorts: Array<{ label: string; value: SortKey }> = [
-    { label: "Featured", value: "rating_desc" },
-    { label: "Price: Low to High", value: "price_asc" },
-    { label: "Price: High to Low", value: "price_desc" },
-    { label: "Newest", value: "newest" },
-    { label: "Most Popular", value: "popular" },
+  onViewProfile,
+  onBookService,
+}: ResultsPanelProps) {
+  const occasionTabs = Object.entries(SERVICE_CATEGORY_LABELS);
+  const sortOptions: { value: SortKey; label: string }[] = [
+    { value: "rating_desc", label: "Featured" },
+    { value: "price_asc", label: "Price: Low to High" },
+    { value: "price_desc", label: "Price: High to Low" },
+    { value: "newest", label: "Newest" },
+    { value: "popular", label: "Popular" },
   ];
 
-  const occasionTabs: Array<{ label: string; value: ServiceCategory }> = [
-    { label: SERVICE_CATEGORY_LABELS.ALL, value: "ALL" },
-    { label: SERVICE_CATEGORY_LABELS.BRIDAL, value: "BRIDAL" },
-    { label: SERVICE_CATEGORY_LABELS.PARTY, value: "PARTY" },
-    { label: SERVICE_CATEGORY_LABELS.WEDDING_GUEST, value: "WEDDING_GUEST" },
-    { label: SERVICE_CATEGORY_LABELS.GRADUATION, value: "GRADUATION" },
-    { label: SERVICE_CATEGORY_LABELS.PROM, value: "PROM" },
-    { label: SERVICE_CATEGORY_LABELS.DAILY, value: "DAILY" },
-    { label: SERVICE_CATEGORY_LABELS.SPECIAL_EVENT, value: "SPECIAL_EVENT" },
-  ];
+  const handleViewProfile = (artistId: string) => {
+    // Navigate to artist portfolio page
+    window.location.href = `/artists/portfolio/${artistId}`;
+  };
+
+  const handleBookService = (artistId: string, serviceId: string) => {
+    // TODO: Implement booking modal or navigation
+    alert(`Book service ${serviceId} from artist ${artistId}`);
+  };
 
   return (
-    <section>
-      {/* Tabs dịp + Sort */}
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <div className="flex flex-wrap gap-2">
-          {occasionTabs.map((t) => {
-            const active = occasion === t.value;
-            return (
-              <button
-                key={t.value}
-                onClick={() => onOccasionChange(t.value)}
-                className={`px-4 py-2 h-10 rounded-xl text-sm border transition ${
-                  active
-                    ? "bg-pink-500 text-white border-pink-600 shadow-sm"
-                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                }`}
-              >
-                {t.label}
-              </button>
-            );
-          })}
+    <div className="space-y-6">
+      {/* Tabs for occasions */}
+      <div className="bg-white rounded-2xl shadow-sm border border-rose-200 overflow-hidden">
+        <div className="flex overflow-x-auto scrollbar-hide">
+          {occasionTabs.map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => onOccasionChange(key as ServiceCategory)}
+              className={`flex-shrink-0 px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                occasion === key
+                  ? "border-rose-500 text-rose-600 bg-rose-50"
+                  : "border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Sort and Results Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="text-lg font-semibold text-gray-900">
+          {total.toLocaleString("en-US")} Makeup Artists
+          {occasion !== "ALL" && (
+            <span className="text-gray-600 font-normal">
+              {" "}
+              for {SERVICE_CATEGORY_LABELS[occasion]} occasions
+            </span>
+          )}
         </div>
 
-        <div className="w-48">
+        {/* Sort dropdown */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-600">Sort by:</span>
           <select
             value={sort}
             onChange={(e) => onSortChange(e.target.value as SortKey)}
-            className="w-full h-10 px-3 pr-8 rounded-xl bg-white text-sm text-gray-700 border border-gray-200 appearance-none focus:outline-none focus:ring-2 focus:ring-pink-400"
+            className="h-10 px-3 rounded-lg border border-gray-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 focus:border-rose-400"
           >
-            {sorts.map((s) => (
-              <option key={s.value} value={s.value}>
-                {s.label}
+            {sortOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
               </option>
             ))}
           </select>
         </div>
       </div>
 
-      {/* Error */}
-      {error && <div className="text-rose-600 mb-3">⚠️ {error}</div>}
-
-      {/* List */}
-      <div className="space-y-4">
-        {artists.map((a) => (
-          <ListCard key={a.id ?? `${a.fullName}-${Math.random()}`} a={a} />
-        ))}
-
-        {/* Skeleton */}
-        {loading &&
-          Array.from({ length: 4 }).map((_, i) => (
-            <div key={`sk-${i}`} className="h-36 rounded-2xl border border-rose-200 bg-white animate-pulse" />
-          ))}
-      </div>
-
-      {/* Load more / End */}
-      <div className="mt-8 flex justify-center">
-        {loading ? (
-          <div className="text-gray-600">Loading...</div>
-        ) : canLoadMore ? (
+      {/* Error State */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+          <div className="flex items-center gap-2">
+            <span className="text-red-600">⚠️</span>
+            <span className="text-red-800 font-medium">An error occurred</span>
+          </div>
+          <p className="text-red-700 mt-1 text-sm">{error}</p>
           <button
             onClick={onLoadMore}
-            className="h-11 px-6 rounded-xl bg-gray-900 text-white text-sm hover:bg-black"
+            className="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
           >
-            Load More
+            Try Again
           </button>
-        ) : (
-          <div className="text-gray-500 text-sm">No more results</div>
-        )}
+        </div>
+      )}
+
+      {/* Artists Grid */}
+      <div className="space-y-4">
+        {artists.map((artist) => (
+          <ArtistCard
+            key={artist._id}
+            artist={artist}
+            onViewProfile={handleViewProfile}
+            onBookService={handleBookService}
+          />
+        ))}
       </div>
-    </section>
+
+      {/* Loading State */}
+      {loading && (
+        <div className="space-y-4">
+          {[...Array(6)].map((_, i) => (
+            <div
+              key={i}
+              className="bg-white rounded-xl shadow-sm border border-rose-100 overflow-hidden animate-pulse"
+            >
+              <div className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-16 h-16 bg-gray-200 rounded-full"></div>
+                  <div className="flex-1">
+                    <div className="h-5 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/2 mb-3"></div>
+                    <div className="flex gap-2">
+                      <div className="flex-1 h-8 bg-gray-200 rounded-lg"></div>
+                      <div className="flex-1 h-8 bg-gray-200 rounded-lg"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!loading && artists.length === 0 && !error && (
+        <div className="text-center py-12">
+          <div className="text-6xl mb-4">💄</div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            No Makeup Artist found
+          </h3>
+          <p className="text-gray-600 mb-6">
+            Try adjusting the filters or searching with different keywords
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-3 bg-rose-600 text-white rounded-xl hover:bg-rose-700 transition-colors"
+          >
+            Reset Search
+          </button>
+        </div>
+      )}
+
+      {/* Load More Button */}
+      {canLoadMore && !loading && (
+        <div className="text-center pt-6">
+          <button
+            onClick={onLoadMore}
+            className="px-8 py-3 bg-white border-2 border-rose-300 text-rose-700 rounded-xl hover:bg-rose-50 hover:border-rose-400 transition-colors font-medium"
+          >
+            Load More Makeup Artists
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
