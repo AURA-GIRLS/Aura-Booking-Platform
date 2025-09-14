@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { PROVINCES, BUDGET_OPTIONS, type ServiceCategory } from "../../constants/constants";
+import { PROVINCES, BUDGET_OPTIONS, type ServiceCategory, ServiceAddon } from "../../constants/constants";
 import { fetchArtists } from "@/config/api";
 import type { Artist, ApiResp, SortKey } from "@/config/types";
 import FiltersPanel from "./FiltersPanel";
@@ -36,6 +36,7 @@ export default function ArtistsList() {
 
   const [selectedBudgets, setSelectedBudgets] = useState<string[]>([]);
   const [rating, setRating] = useState<number | null>(null);
+  const [selectedAddons, setSelectedAddons] = useState<ServiceAddon[]>([]);
   const [sort, setSort] = useState<SortKey>("rating_desc");
   const [page, setPage] = useState(1);
   const limit = 12;
@@ -45,20 +46,6 @@ export default function ArtistsList() {
     const maxs = selectedBudgets.map((b) => budgetToRange(b).max).filter((n): n is number => typeof n === "number");
     return { priceMin: mins.length ? Math.min(...mins) : undefined, priceMax: maxs.length ? Math.max(...maxs) : undefined };
   }, [selectedBudgets]);
-
-  const occasionCode = (() => {
-    const map: Record<ServiceCategory, string> = { 
-      ALL: "All", 
-      BRIDAL: "BRIDAL", 
-      PARTY: "PARTY", 
-      WEDDING_GUEST: "WEDDING_GUEST",
-      GRADUATION: "GRADUATION",
-      PROM: "PROM", 
-      DAILY: "DAILY",
-      SPECIAL_EVENT: "SPECIAL_EVENT"
-    };
-    return map[occasion] || "All";
-  })();
 
   // Fetch
   useEffect(() => {
@@ -70,11 +57,12 @@ export default function ArtistsList() {
         const data: ApiResp = await fetchArtists({
           q,
           location,
-          occasion, // dùng tab label (BE đã map)
+          occasion, 
           style: styleText,
           rating,
           priceMin,
           priceMax,
+          addons: selectedAddons,
           sort,
           page,
           limit,
@@ -90,10 +78,36 @@ export default function ArtistsList() {
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, location, occasionCode, styleText, rating, priceMin, priceMax, sort, page]);
+  }, [q, location, occasion, styleText, rating, priceMin, priceMax, selectedAddons, sort, page]);
 
   const canLoadMore = page < pages;
-  const metaLine = `${location}: ${total.toLocaleString("en-US")} Makeup Artists waiting for your selection`;
+  const metaLine = `${location}: ${total.toLocaleString("en-US")} Makeup Artists waiting for you to choose`;
+
+  const handleReset = () => {
+    setQ("");
+    setLocation("All Areas");
+    setOccasion("ALL");
+    setStyleText("");
+    setSelectedBudgets([]);
+    setRating(null);
+    setSelectedAddons([]);
+    setSort("rating_desc");
+    setPage(1);
+  };
+
+  const handleViewProfile = (artistId: string, tab?: string) => {
+    if (tab === 'portfolio') {
+      window.location.href = `/artists/portfolio/${artistId}`;
+    } else {
+      // Default behavior - could be contact page or general profile
+      window.location.href = `/artists/portfolio/${artistId}`;
+    }
+  };
+
+  const handleBookService = (artistId: string, serviceId: string) => {
+    // TODO: Implement booking modal or navigation
+    alert(`Book service ${serviceId} from artist ${artistId}`);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 to-pink-100">
@@ -137,7 +151,7 @@ export default function ArtistsList() {
                   aria-label="Makeup Style"
                   value={styleText}
                   onChange={(e) => { setStyleText(e.target.value); setPage(1); }}
-                  placeholder="Style (e.g., Natural, Glam...)"
+                  placeholder="Style (e.g., Natural, Elegant...)"
                   className="h-12 w-full pl-10 pr-3 rounded-xl md:rounded-2xl border-2 border-rose-200 bg-white text-base
                              focus:outline-none focus:ring-2 focus:ring-rose-300 focus:border-rose-400"
                 />
@@ -181,6 +195,16 @@ export default function ArtistsList() {
               }}
               rating={rating}
               onRatingChange={(val) => { setRating((cur) => (cur === val ? null : val)); setPage(1); }}
+              selectedAddons={selectedAddons}
+              onToggleAddon={(addon) => {
+                setSelectedAddons((list) => 
+                  list.includes(addon) 
+                    ? list.filter((x) => x !== addon) 
+                    : [...list, addon]
+                );
+                setPage(1);
+              }}
+              onReset={handleReset}
             />
           </div>
 
@@ -196,6 +220,8 @@ export default function ArtistsList() {
               error={error}
               canLoadMore={canLoadMore}
               onLoadMore={() => !loading && setPage((p) => p + 1)}
+              onViewProfile={handleViewProfile}
+              onBookService={handleBookService}
             />
           </div>
         </div>

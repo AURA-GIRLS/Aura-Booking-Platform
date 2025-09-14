@@ -16,6 +16,7 @@ export interface MuaResponseDTO {
   bookingCount?: number;
   isVerified?: boolean;
 }
+
 import { 
   type UserRole
 } from "../constants/index";
@@ -68,6 +69,7 @@ export interface UserResponseDTO {
   avatarUrl?: string;
   role: UserRole;
   status: string;
+  isEmailVerified: boolean;
   createdAt: Date;
 }
 
@@ -107,5 +109,3 @@ export interface ArtistResponseDTO {
   createdAt: Date;
   updatedAt: Date;
 }
-
-

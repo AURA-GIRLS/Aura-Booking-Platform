@@ -7,7 +7,7 @@ import Footer from "../components/generalUI/Footer";
 
 export default function HomePage() {
   return (
-    <main>
+    <main className="min-h-screen bg-gradient-to-b from-pink-50 to-white">
       <Navbar />
       <Hero />
       <FeaturedLocations />
