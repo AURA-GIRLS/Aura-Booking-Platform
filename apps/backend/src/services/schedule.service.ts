@@ -77,6 +77,7 @@ function mapBookingToSlot(booking: any): ISlot {
     serviceId: booking.serviceId?._id?.toString?.() ?? "",
     customerName: booking.customerId?.fullName ?? "",
     serviceName: booking.serviceId?.name ?? "",
+    totalPrice: booking.totalPrice || 0,
     status: booking.status,
     day,
     startTime,

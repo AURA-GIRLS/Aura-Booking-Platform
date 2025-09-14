@@ -22,6 +22,7 @@ import { useCalendarEvents } from "./hooks/useCalendarEvents";
 import { useEventManagement } from "./hooks/useEventManagement";
 import { EventModal } from "./components/EventModal";
 import { getMondayOfWeek } from "./utils/calendarUtils";
+import styles from './ArtistCalendarStyles.module.css';
 
 // localizer cho react-big-calendar, tuần bắt đầu từ thứ 2
 moment.locale("vi"); // hoặc "en-gb" nếu muốn tiếng Anh nhưng tuần bắt đầu từ thứ 2
@@ -30,30 +31,8 @@ const localizer = momentLocalizer(moment);
 const DragAndDropCalendar = withDragAndDrop(Calendar);
 
 export function ArtistCalendar({ id }: { readonly id: string }) {
-  // Inline style augmentation (could be moved to a global CSS module if preferred)
-  // Increase slot height slightly for more airy layout
-  // Using :where selector to keep specificity low
-  const extraStyles = (
-    <style>
-      {`
-        .calendar-shell :where(.rbc-time-slot) { min-height: 28px; }
-        .calendar-shell :where(.rbc-time-header) { background: linear-gradient(to right, #ffffff, #fff6f9 45%, #ffffff); }
-        .calendar-shell :where(.rbc-time-header-cell) { color:#111; font-weight:600; letter-spacing:.5px; }
-        .calendar-shell :where(.rbc-time-view) { background: #ffffff; }
-        .calendar-shell :where(.rbc-day-bg) { transition: background .15s ease; }
-        .calendar-shell :where(.rbc-day-bg.rbc-today) { background: #fff1f6 !important; box-shadow: inset 0 0 0 1px #fecdd3; }
-        .calendar-shell :where(.rbc-time-content) { border-top:1px solid #f4f4f5; }
-        .calendar-shell :where(.rbc-time-gutter) { background:#fff; color:#6b6b6b; font-size:11px; }
-        .calendar-shell :where(.rbc-time-gutter .rbc-timeslot-group) { border-color:#f1f5f9; }
-        .calendar-shell :where(.rbc-timeslot-group) { border-color:#f1f5f9; }
-        .calendar-shell :where(.rbc-time-header-content) { border-left:1px solid #f1f5f9; }
-        .calendar-shell :where(.rbc-time-content > * + * > * ) { border-left:1px solid #f1f5f9; }
-        .calendar-shell :where(.rbc-current-time-indicator) { background:#ec5a86; height:2px; }
-        .calendar-shell :where(.rbc-slot-selection) { background:rgba(236,90,134,0.15); border:1px solid #ec5a86; }
-        .calendar-shell :where(.rbc-selected) { background:rgba(236,90,134,0.08); }
-      `}
-    </style>
-  );
+  // Styles moved to CSS module (ArtistCalendarStyles.module.css) to avoid hydration mismatch
+  const extraStyles = null;
   const [slotData, setSlotData] = useState<ISlot[]>([]);
   const [pendingBookings, setPendingBookings] = useState<any[]>([]);
  const [pageNumber,setPageNumber] = useState(1);
@@ -88,7 +67,7 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
     measure();
     window.addEventListener('resize', measure);
     return () => window.removeEventListener('resize', measure);
-  }, [pendingBookings, selectedEvent, pageNumber, pageSize]);
+  }, [pendingBookings]);
 
   // Apply CSS variable for dynamic height (avoids inline height style lint warning)
   useLayoutEffect(() => {
@@ -175,39 +154,86 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
 
   useEffect(() => {
     fetchPendingBookings();
-  }, [fetchPendingBookings]);
+  }, [fetchPendingBookings,currentDate]);
   // (debug removed)
 
   // Tách events thành 2 loại: backgroundEvents (working, override), events (booking, blocked)
   const { events, backgroundEvents } = useMemo(() => {
     const evts: any[] = [];
     const bgEvts: any[] = [];
-    slotData.forEach((slot) => {
+
+    // Priority (higher number = higher priority / stays on top)
+    const priority: Record<string, number> = {
+      BOOKING: 100,
+      BLOCKED: 90,
+      NEW_OVERRIDE: 80,
+      OVERRIDE: 70,
+      NEW_WORKING: 60,
+      ORIGINAL_WORKING: 50,
+    };
+
+    const makeEvent = (slot: any) => {
       const start = moment(`${slot.day} ${slot.startTime}`, "YYYY-MM-DD HH:mm").toDate();
       const end = moment(`${slot.day} ${slot.endTime}`, "YYYY-MM-DD HH:mm").toDate();
-      let title = "";
-      if (slot.type === "BOOKING") {
-        title = `${slot.customerName} - ${slot.serviceName} `;
-      } else if (slot.type === "BLOCKED") {
-        title = `Blocked Time`;
-      } else {
-        title = 'Working Time';
-      }
-      const eventObj = {
+      let title = '';
+      if (slot.type === 'BOOKING') title = `${slot.customerName} - ${slot.serviceName} `;
+      else if (slot.type === 'BLOCKED') title = 'Blocked Time';
+  // title already defaults to '' so no need to reassign in else
+      return {
         id: slot.slotId || slot.day + slot.startTime,
         title,
         start,
         end,
         type: slot.type,
-        note: slot.note
+        note: slot.note,
+        _p: priority[slot.type] ?? 1
       };
-      if (slot.type === "ORIGINAL_WORKING" || slot.type === "OVERRIDE" || slot.type === "NEW_WORKING"|| slot.type === "NEW_OVERRIDE") {
-        bgEvts.push(eventObj);
+    };
+
+    slotData.forEach(slot => {
+      const evt = makeEvent(slot);
+      if (slot.type === 'ORIGINAL_WORKING' || slot.type === 'OVERRIDE' || slot.type === 'NEW_WORKING' || slot.type === 'NEW_OVERRIDE') {
+        bgEvts.push(evt);
       } else {
-        evts.push(eventObj);
+        evts.push(evt);
       }
     });
-    return { events: evts, backgroundEvents: bgEvts };
+
+    // Generic overlap filter: keep only highest priority per overlapping region (same day)
+    const sameDay = (a: Date, b: Date) => dayjs(a).format('YYYY-MM-DD') === dayjs(b).format('YYYY-MM-DD');
+    const isOverlap = (a: any, b: any) => a.start < b.end && b.start < a.end;
+    const pruneLowerPriority = (kept: any[], current: any) => {
+      let i = kept.length - 1;
+      while (i >= 0) {
+        const k = kept[i];
+        if (sameDay(k.start, current.start) && isOverlap(k, current) && current._p > k._p) {
+          kept.splice(i, 1);
+        }
+        i--;
+      }
+    };
+    const isCovered = (kept: any[], current: any) => {
+      for (const k of kept) {
+        if (sameDay(k.start, current.start) && isOverlap(k, current) && k._p >= current._p) return true;
+      }
+      return false;
+    };
+    const filterOverlaps = (list: any[]) => {
+      if (list.length <= 1) return list;
+      const sorted = [...list].sort((a, b) => (a.start.getTime() - b.start.getTime()) || (b._p - a._p));
+      const kept: any[] = [];
+      for (const current of sorted) {
+        if (isCovered(kept, current)) continue;
+        pruneLowerPriority(kept, current);
+        kept.push(current);
+      }
+      return kept;
+    };
+
+    const filteredEvents = filterOverlaps(evts).map(({ _p, ...rest }) => rest);
+    const filteredBg = filterOverlaps(bgEvts).map(({ _p, ...rest }) => rest);
+
+    return { events: filteredEvents, backgroundEvents: filteredBg };
   }, [slotData]);
 
   // Điều chỉnh bảng màu: nhấn mạnh tông hồng nhẹ nhưng vẫn phân biệt rõ các loại slot
@@ -241,7 +267,7 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
       case 'OVERRIDE':
       case 'NEW_OVERRIDE':
         backgroundColor = 'rgba(255,227,238,0.22)'; // faint soft pink (different hue than booking)
-        borderColor = 'rgba(236,90,134,0.35)';
+        borderColor = 'rgba(182, 90, 236, 0.35)';
         textColor = '#333';
         fontWeight = 500;
         break;
@@ -299,6 +325,8 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
           day: start.format('YYYY-MM-DD')
         });
         setShowAddEventModal(true);
+         const weekStart = getMondayOfWeek(start.format('YYYY-MM-DD'));
+        fetchSchedule(weekStart);
     }, []);
 
   const handleSelectEvent = useCallback((event:any) => {
@@ -317,8 +345,8 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
 
 
   return (
-    <div className="min-h-screen bg-white text-[#191516] font-sans tracking-wide">
-      {extraStyles}
+  <div className={`min-h-screen bg-white text-[#191516] font-sans tracking-wide ${styles.calendarRoot}`}> 
+      {extraStyles /* kept for structure; null now */}
       {matchedHeight && (
         <style>{`[data-equal-height]{height:var(--equal-col-height);}`}</style>
       )}
@@ -353,13 +381,17 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
       >
           {/* Legend */}
           <div className="flex flex-wrap gap-5 px-6 pt-4 pb-2 text-[11px] font-medium text-[#111] select-none">
+            {/* Booking: matches eventStyleGetter (background rgba(236,90,134,0.10), border #EC5A86) */}
             <div className="flex items-center gap-1"><span className="inline-block h-3 w-3 rounded-sm bg-[rgba(236,90,134,0.10)] border border-[#EC5A86]" /> <span>Booking</span></div>
-            <div className="flex items-center gap-1"><span className="inline-block h-3 w-3 rounded-sm bg-[rgba(255,255,255,0.55)] border border-[rgba(236,90,134,0.22)]" /> <span>Working</span></div>
-            <div className="flex items-center gap-1"><span className="inline-block h-3 w-3 rounded-sm bg-[rgba(255,227,238,0.22)] border border-[rgba(236,90,134,0.35)]" /> <span>Override</span></div>
-            <div className="flex items-center gap-1"><span className="inline-block h-3 w-3 rounded-sm bg-[rgba(17,17,17,0.07)] border border-[rgba(17,17,17,0.35)]" /> <span className="text-[#111]">Blocked</span></div>
+            {/* Working: background rgba(255,255,255,0.35), border rgba(236,90,134,0.22) */}
+            <div className="flex items-center gap-1"><span className="inline-block h-3 w-3 rounded-sm bg-[rgba(255,255,255,0.35)] border border-[rgba(236,90,134,0.22)]" /> <span>Working</span></div>
+            {/* Override: background rgba(255,227,238,0.22), border rgba(182,90,236,0.35) */}
+            <div className="flex items-center gap-1"><span className="inline-block h-3 w-3 rounded-sm bg-[rgba(255,227,238,0.22)] border border-[rgba(182,90,236,0.35)]" /> <span>Override</span></div>
+            {/* Blocked: background rgba(17,17,17,0.04), border rgba(17,17,17,0.25) */}
+            <div className="flex items-center gap-1"><span className="inline-block h-3 w-3 rounded-sm bg-[rgba(17,17,17,0.04)] border border-[rgba(17,17,17,0.25)]" /> <span className="text-[#111]">Blocked</span></div>
           </div>
           <div className="flex-1 px-6 pb-4 flex flex-col">
-            <div className="flex-1 rounded-md border border-neutral-200 bg-white calendar-shell">
+            <div className=" flex-1 rounded-md border border-neutral-200 bg-white calendar-shell">
               <DragAndDropCalendar
                 localizer={localizer}
                 selectable
@@ -368,9 +400,9 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
                 events={events}
                 backgroundEvents={backgroundEvents}
                 views={["week", "day"]}
+                style={{ height: "70rem" }}
                 step={30}
                 timeslots={1}
-                className="h-full p-4"
                 eventPropGetter={eventStyleGetter}
                 defaultView="week"
                 onEventDrop={handleEventDrop}
@@ -425,6 +457,12 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
                         <div className="flex justify-between">
                           <span className="text-sm text-neutral-500">Service:</span>
                           <span className="text-sm font-medium text-neutral-700">{selectedEvent.slotData.serviceName}</span>
+                        </div>
+                      )}
+                       {selectedEvent.slotData?.totalPrice && (
+                        <div className="flex justify-between">
+                          <span className="text-sm text-neutral-500">Total:</span>
+                          <span className="text-sm font-medium text-neutral-700">{selectedEvent.slotData.totalPrice.toLocaleString() ?? 0}đ</span>
                         </div>
                       )}
                      {selectedEvent.slotData?.status && (() => {
@@ -560,7 +598,7 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
                         )}
                       </div>
                       <Badge variant="outline" className="text-xs border-[#EC5A86] text-[#EC5A86] bg-white font-medium">
-                        {(booking.totalPrice).toLocaleString()}k
+                        {(booking.totalPrice).toLocaleString()}đ
                       </Badge>
                     </div>
                     <div className="flex gap-2">

@@ -4,6 +4,7 @@ export interface ISlot {
   serviceId?: string;
   customerName?: string;
   serviceName?: string;
+  totalPrice?: number;
   status?:string;
   day: string; 
   startTime: string;

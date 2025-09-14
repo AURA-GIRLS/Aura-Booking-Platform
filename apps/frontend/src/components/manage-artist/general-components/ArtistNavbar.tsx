@@ -8,7 +8,20 @@ import { ArtistNavbarProps } from "@/types/user.dtos";
 export default function ArtistNavbar({ mua, setMua }:  Readonly<ArtistNavbarProps>) {
   const [isOpen, setIsOpen] = useState(false);
   const [id, setId] = useState<string | null>(null);
-  const [user, setUser] = useState(localStorage.getItem('currentUser') ? JSON.parse(localStorage.getItem('currentUser') as string) : null);
+  // Defer reading from localStorage until client-side to avoid SSR ReferenceError
+  const [user, setUser] = useState<any>(null);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = window.localStorage.getItem('currentUser');
+        if (stored) {
+          setUser(JSON.parse(stored));
+        }
+      } catch (e) {
+        console.warn('Failed to parse currentUser from localStorage', e);
+      }
+    }
+  }, []);
   useEffect(() => {
     setId(mua?._id || null);
   }, [mua]);
@@ -32,14 +45,17 @@ export default function ArtistNavbar({ mua, setMua }:  Readonly<ArtistNavbarProp
         </div>
 
         {/* Center: Menu */}
-        <ul className="hidden md:flex items-center gap-6 text-pink-700 font-medium">
-          <li><Link href={`/manage-artist/${id}/dashboard`}>Dashboard</Link></li>
-          <li><Link href={`/manage-artist/${id}/portfolio`}>My Portfolio</Link></li>
-          <li><Link href={`/manage-artist/${id}/calendar`}>My Calendar</Link></li>
-          <li><Link href={`/manage-artist/${id}/feedback`}>My Feedback</Link></li>
-          <li><Link href={`/manage-artist/${id}/blog`}>My Blog</Link></li>
-          <li><Link href="/about">About Us</Link></li>
-        </ul>
+        { /* Helper to build dynamic artist paths safely */ }
+        {id && (
+          <ul className="hidden md:flex items-center gap-6 text-pink-700 font-medium">
+            <li><a href={`/manage-artist/${id}/dashboard`}>Dashboard</a></li>
+            <li><a href={`/manage-artist/${id}/portfolio`}>My Portfolio</a></li>
+            <li><a href={`/manage-artist/${id}/calendar`}>My Calendar</a></li>
+            <li><a href={`/manage-artist/${id}/feedback`}>My Feedback</a></li>
+            <li><a href={`/manage-artist/${id}/blog`}>My Blog</a></li>
+            <li><a href="/about">About Us</a></li>
+          </ul>
+        )}
 
         {/* Right: Icons */}
         <div className="hidden md:flex items-center gap-3 text-pink-700">
@@ -61,10 +77,10 @@ export default function ArtistNavbar({ mua, setMua }:  Readonly<ArtistNavbarProp
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44 bg-white rounded-xl shadow-lg py-2 z-50 border border-pink-100">
                 <DropdownMenuItem asChild>
-                  <Link href="/profile/my-profile">My Profile</Link>
+                  <a href="/profile/my-profile">My Profile</a>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/booking">Booking History</Link>
+                  <a href="/booking">Booking History</a>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleLogout} className="px-2 py-2 text-red-500 cursor-pointer">Logout</DropdownMenuItem>
               </DropdownMenuContent>
@@ -79,14 +95,16 @@ export default function ArtistNavbar({ mua, setMua }:  Readonly<ArtistNavbarProp
       {/* Mobile Menu */}
       {isOpen && (
         <div className="md:hidden px-8 pb-4 bg-pink-50 border-t border-pink-100">
-          <ul className="flex flex-col gap-2 text-pink-700 font-medium">
-            <li><Link href={`/manage-artist/${id}/dashboard`}>Dashboard</Link></li>
-            <li><Link href={`/manage-artist/${id}/portfolio`}>My Portfolio</Link></li>
-            <li><Link href={`/manage-artist/${id}/calendar`}>My Calendar</Link></li>
-            <li><Link href={`/manage-artist/${id}/feedback`}>My Feedback</Link></li>
-            <li><Link href={`/manage-artist/${id}/blog`}>My Blog</Link></li>
-            <li><Link href="/about">About Us</Link></li>
-          </ul>
+          {id && (
+            <ul className="flex flex-col gap-2 text-pink-700 font-medium">
+              <li><a href={`/manage-artist/${id}/dashboard`}>Dashboard</a></li>
+              <li><a href={`/manage-artist/${id}/portfolio`}>My Portfolio</a></li>
+              <li><a href={`/manage-artist/${id}/calendar`}>My Calendar</a></li>
+              <li><a href={`/manage-artist/${id}/feedback`}>My Feedback</a></li>
+              <li><a href={`/manage-artist/${id}/blog`}>My Blog</a></li>
+              <li><a href="/about">About Us</a></li>
+            </ul>
+          )}
           <div className="mt-3 flex items-center gap-3">
             <button aria-label="Cart" className="p-2 hover:bg-pink-100 rounded-full">🛒</button>
             <button aria-label="Notifications" className="p-2 hover:bg-pink-100 rounded-full">🔔</button>
