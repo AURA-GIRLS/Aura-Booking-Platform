@@ -1,9 +1,12 @@
 import React from "react";
+import { SERVICE_ADDON_LABELS, ServiceAddon } from "../../constants/constants";
 
 export default function FiltersPanel({
   q, onQChange,
   budgetOptions, selectedBudgets, onToggleBudget,
   rating, onRatingChange,
+  selectedAddons, onToggleAddon,
+  onReset
 }: {
   q: string;
   onQChange: (v: string) => void;
@@ -12,13 +15,18 @@ export default function FiltersPanel({
   onToggleBudget: (v: string) => void;
   rating: number | null;
   onRatingChange: (v: number) => void;
+  selectedAddons: ServiceAddon[];
+  onToggleAddon: (addon: ServiceAddon) => void;
+  onReset: () => void;
 }) {
+  const addonOptions = Object.entries(SERVICE_ADDON_LABELS);
+
   return (
-    <aside className="space-y-6 lg:sticky lg:top-24">
+    <aside className="space-y-6">
       {/* Search by name */}
       <div className="rounded-2xl overflow-hidden border border-rose-200 bg-white shadow-sm">
         <div className="bg-rose-50 text-gray-900 font-semibold text-base px-5 py-3.5 border-b border-rose-200">
-          Search by Makeup Artist Name
+          Search by Name or Location
         </div>
         <div className="px-5 py-4">
           <div className="relative">
@@ -27,7 +35,7 @@ export default function FiltersPanel({
               type="text"
               value={q}
               onChange={(e) => onQChange(e.target.value)}
-              placeholder="Enter artist name..."
+              placeholder="Enter MUA name or location..."
               className="w-full h-12 pl-10 pr-3 rounded-xl border-2 border-rose-200 bg-white text-base
                          focus:outline-none focus:ring-2 focus:ring-rose-300 focus:border-rose-400 transition-colors"
             />
@@ -80,6 +88,38 @@ export default function FiltersPanel({
           </div>
         </div>
       </section>
+
+      {/* Service Add-ons */}
+      {/* <section className="rounded-2xl overflow-hidden border border-rose-200 bg-white shadow-sm">
+        <div className="bg-rose-50 text-gray-900 font-semibold text-base px-5 py-3.5 border-b border-rose-200">
+          Dịch vụ bổ sung
+        </div>
+        <div className="px-5 py-5 space-y-3">
+          {addonOptions.map(([key, label]) => (
+            <label key={key} className="flex items-center gap-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                className="w-5 h-5 text-rose-600 border-rose-300 rounded focus:ring-rose-400 focus:ring-2"
+                checked={selectedAddons.includes(key as ServiceAddon)}
+                onChange={() => onToggleAddon(key as ServiceAddon)}
+              />
+              <span className="text-[15px] text-gray-700 group-hover:text-gray-900 transition-colors">{label}</span>
+            </label>
+          ))}
+        </div>
+      </section> */}
+
+      {/* Reset filters */}
+      <div className="rounded-2xl overflow-hidden border border-rose-200 bg-white shadow-sm">
+        <div className="px-5 py-4">
+          <button
+            onClick={onReset}
+            className="w-full h-10 px-4 rounded-lg border-2 border-rose-200 text-rose-700 hover:bg-rose-50 hover:border-rose-300 transition-colors text-sm font-medium"
+          >
+            Reset filters
+          </button>
+        </div>
+      </div>
     </aside>
   );
 }
