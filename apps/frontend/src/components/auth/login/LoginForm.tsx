@@ -39,7 +39,7 @@ const LoginForm: React.FC = () => {
 				// console.log('Logged in user:', res.data.user.role);
 				if(res.data.user.role === 'ARTIST') {
 					//need change redirect to artist dashboard
-					window.location.href = `/manage-artist/${res.data.mua._id}/schedule`;
+					window.location.href = `/manage-artist/${res.data.mua._id}/dashboard`;
 				}else{
 					window.location.href = '/';
 				}

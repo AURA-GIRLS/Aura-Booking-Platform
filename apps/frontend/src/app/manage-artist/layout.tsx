@@ -2,15 +2,15 @@
 
 import Footer from "@/components/generalUI/Footer";
 import ArtistNavbar from "@/components/manage-artist/general-components/ArtistNavbar";
-import { UserResponseDTO } from "@/types/user.dtos";
+import { MuaResponseDTO, UserResponseDTO } from "@/types/user.dtos";
 import { Poppins } from "next/font/google";
 import { useState,useEffect } from "react";
 
 
 export default function ArtistLayout({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<UserResponseDTO | null>(null);
+  const [mua, setMua] = useState<MuaResponseDTO | null>(null);
   useEffect(() => {
-    setUser(localStorage.getItem('currentUser') ? JSON.parse(localStorage.getItem('currentUser') as string) : null);
+    setMua(localStorage.getItem('currentMUA') ? JSON.parse(localStorage.getItem('currentMUA') as string) : null);
   }, []);
   return (
     <main
@@ -20,8 +20,8 @@ export default function ArtistLayout({ children }: { children: React.ReactNode }
         letterSpacing: '0.04em',
       }}
     >
-      <ArtistNavbar user={user} setUser={setUser} />
-      <div className="flex-1 px-20 py-8">{children}</div>
+      <ArtistNavbar mua={mua} setMua={setMua} />
+      <div className="flex-1 px-10 py-8">{children}</div>
       <Footer />
     </main>
   );

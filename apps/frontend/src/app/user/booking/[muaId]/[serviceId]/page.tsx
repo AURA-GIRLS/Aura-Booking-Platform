@@ -4,11 +4,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { BookingStep, BookingSlot, BookingResponseDTO, BookingDraft } from "@/types/booking.dtos";
 import { BOOKING_TYPES, type BookingType } from "@/constants/index";
 import { BookingProgress } from "@/components/booking/BookingProgress";
-import { BookingService } from "@/components/booking/BookingService";
+import { BookingService as BookingServiceComponent } from "@/components/booking/BookingService";
 import { BookingCheckout } from "@/components/booking/BookingCheckout";
 import { BookingReview } from "@/components/booking/BookingReview";
 import { BookingLocation } from "@/components/booking/BookingLocation";
 import { BookingTime } from "@/components/booking/BookingTime";
+import { ArtistService } from "@/services/artist";
+import { BookingService as BookingApi } from "@/services/booking";
 import type { ServiceResponseDTO } from "@/types/service.dtos";
 import { useParams, useRouter } from "next/navigation";
 
@@ -25,66 +27,108 @@ export default function BookingWizardPage() {
 
   const [currentStep, setCurrentStep] = useState<BookingStep>("service");
   const [draft, setDraft] = useState<BookingDraft>({ serviceId });
-  const [slots, setSlots] = useState<BookingSlot[]>([]); // monthly slots for service
+  // Services state
+  const [services, setServices] = useState<ServiceResponseDTO[]>([]);
+  const [loadingServices, setLoadingServices] = useState(false);
+  const [servicesError, setServicesError] = useState<string | null>(null);
+
+  // Slots (monthly) state (flattened BookingSlot[] for current viewed month)
+  const [slots, setSlots] = useState<BookingSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [slotsError, setSlotsError] = useState<string | null>(null);
+  const [viewYear, setViewYear] = useState<number>(new Date().getFullYear());
+  const [viewMonth, setViewMonth] = useState<number>(new Date().getMonth()); // 0-based
+
+  const currentUser = localStorage.getItem("currentUser") ? JSON.parse(localStorage.getItem("currentUser") as string) : null;
 
   // Simulated service fetch (replace with real API call)
   // If route already contains service id we could prefetch details here (future enhancement)
+  // Fetch services for artist
   useEffect(() => {
-    if (!serviceId) return;
-    // If arriving with a serviceId, we could fetch its detail to populate name/price
-    // Simulate quick fetch (replace with real API)
     let aborted = false;
     (async () => {
-      await new Promise(r => setTimeout(r, 120));
-      if (aborted) return;
-      setDraft(prev => ({
-        ...prev,
-        serviceId: serviceId,
-        serviceName: prev.serviceName || "Preselected service",
-        servicePrice: prev.servicePrice || 0,
-      }));
+      if (!muaId) return;
+      setLoadingServices(true);
+      setServicesError(null);
+      try {
+        const res = await ArtistService.getArtistServices(muaId);
+        if (aborted) return;
+        const list = Array.isArray((res as any).data) ? (res as any).data : [];
+        const active = list.filter((s: ServiceResponseDTO) => s.isActive !== false);
+        setServices(active);
+        // If route param preselects a service, ensure draft populated
+        if (serviceId) {
+          const found = active.find((s: ServiceResponseDTO) => s._id === serviceId);
+          if (found) {
+            setDraft(prev => ({
+              ...prev,
+              serviceId: found._id,
+              muaId: found.muaId,
+              serviceName: found.name,
+              servicePrice: found.price,
+              duration: found.duration,
+              serviceDescription: found.description,
+            }));
+          }
+        }
+      } catch(e: any) {
+        if (!aborted) setServicesError(e?.message || "Failed to load services");
+      } finally {
+        if (!aborted) setLoadingServices(false);
+      }
     })();
     return () => { aborted = true; };
-  }, [serviceId]);
+  }, [muaId, serviceId]);
 
-  // Simulated monthly slots fetch
-  const fetchSlotsForMonth = useCallback(async (year: number, month: number) => {
+  // Fetch monthly availability whenever (muaId, selected service duration) or view month changes
+  const fetchMonthlySlots = useCallback(async (year: number, month0: number,durationOverride?: number) => {
+      const duration = durationOverride ?? draft.duration;
+      console.log("Service selected, duration", muaId,duration);
+    if (!muaId || !duration) return;
     setLoadingSlots(true);
-    setError(null);
+    setSlotsError(null);
     try {
-      await new Promise(r => setTimeout(r, 400));
-      // Generate mock slots for example: each day 3 slots unless weekend = full
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-      const mock: BookingSlot[] = [];
-      for (let d = 1; d <= daysInMonth; d++) {
-        const dayDate = new Date(year, month, d);
-        const isoDay = dayDate.toISOString().split("T")[0];
-        const dayOfWeek = dayDate.getDay(); // 0 Sun ... 6 Sat
-        if (dayOfWeek === 0) continue; // Sunday off
-        // Random full days (simulate) if Saturday
-        if (dayOfWeek === 6) {
-          // mark as full by adding zero slots -> consumer will treat as full
-          continue;
-        }
-        mock.push({ serviceId, day: isoDay, startTime: "08:00", endTime: "10:00" });
-        mock.push({ serviceId, day: isoDay, startTime: "11:00", endTime: "13:00" });
-        mock.push({ serviceId, day: isoDay, startTime: "14:00", endTime: "16:00" });
+       console.log("Seffff");
+      const res = await BookingApi.getMonthlyAvailable({
+        muaId,
+        year,
+        month: month0 + 1, // API expects 1-12
+        duration: duration!
+      });
+      console.log("Monthly slots raw", res);
+      if (res.success && res.data) {
+        const transformed: BookingSlot[] = [];
+        Object.entries(res.data).forEach(([dayKey, arr]) => {
+          arr.forEach(tuple => {
+            const [day, start, end] = tuple;
+            transformed.push({
+              serviceId: draft.serviceId || "",
+              day,
+              startTime: start,
+              endTime: end
+            });
+          });
+        });
+        setSlots(transformed);
+      } else {
+        setSlots([]);
       }
-      setSlots(mock);
-    } catch (e: any) {
-  setError(e.message || "Failed to load schedule");
+    } catch(e: any) {
+      setSlotsError(e?.message || "Failed to load availability");
+      setSlots([]);
     } finally {
       setLoadingSlots(false);
     }
-  }, [serviceId]);
+  }, [muaId, draft.duration, draft.serviceId]);
 
-  // initial month load
-  useEffect(() => {
-    const now = new Date();
-    fetchSlotsForMonth(now.getFullYear(), now.getMonth());
-  }, [fetchSlotsForMonth]);
+  // Trigger fetch for current view month
+  useEffect(() => { fetchMonthlySlots(viewYear, viewMonth); }, [fetchMonthlySlots, viewYear, viewMonth]);
+
+  // Simulated monthly slots fetch
+  const handleMonthChange = (y: number, m0: number) => {
+    setViewYear(y);
+    setViewMonth(m0);
+  };
 
   // Recalculate total whenever servicePrice or transportFee changes
   useEffect(() => {
@@ -146,14 +190,20 @@ export default function BookingWizardPage() {
       endTime: undefined,
       totalPrice: svc.price + (prev.transportFee || 0),
     }));
+    
+    // Refresh slots for the currently viewed month (duration changed)
+  setTimeout(() =>fetchMonthlySlots(viewYear, viewMonth, svc.duration), 0);
   };
 
   const stepContent = useMemo(() => {
     switch (currentStep) {
       case "service":
         return (
-          <BookingService
-            muaId={muaId}
+          <BookingServiceComponent
+            services={services}
+            loading={loadingServices}
+            loadingSlots={loadingSlots}
+            error={servicesError}
             selectedServiceId={draft.serviceId}
             onSelect={handleSelectService}
             onContinue={() => setCurrentStep("datetime")}
@@ -165,10 +215,10 @@ export default function BookingWizardPage() {
           <BookingTime
             slots={slots}
             loading={loadingSlots}
-            error={error || undefined}
+            error={slotsError || undefined}
             selectedDate={draft.bookingDate}
             selectedTime={draft.startTime}
-            onChangeMonth={(y, m) => fetchSlotsForMonth(y, m)}
+            onChangeMonth={handleMonthChange}
             onSelectSlot={(day, start, end) => handleSelectDateTime(day, start, end)}
             onBack={goPrev}
           />
@@ -194,10 +244,11 @@ export default function BookingWizardPage() {
       case "checkout":
         return (
           <BookingCheckout
+            customer={currentUser}
             onPrev={goPrev}
             bookingData={{
-              customerId: draft.customerId || "temp-customer",
-              artistId: draft.muaId || "temp-artist",
+              customerId: currentUser._id || "",
+              artistId: draft.muaId || "",
               serviceId: draft.serviceId,
               customerName: draft.customerName || "Guest user",
               serviceName: draft.serviceName || "Service",
@@ -218,7 +269,7 @@ export default function BookingWizardPage() {
           />
         );
     }
-  }, [currentStep, slots, loadingSlots, error, draft]);
+  }, [currentStep, slots, loadingSlots, slotsError, draft, services, loadingServices, servicesError]);
 
   return (
     <div className="min-h-screen bg-background">

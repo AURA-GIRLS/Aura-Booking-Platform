@@ -3,52 +3,23 @@
 
 import { useEffect, useState } from "react";
 import type { ServiceResponseDTO } from "@/types/service.dtos";
-import { ArtistService } from "@/services/artist";
 
 interface BookingServiceProps {
-    muaId?: string;
+  services: ServiceResponseDTO[];
+  loading?: boolean;
+  loadingSlots?: boolean;
+  error?: string | null;
   selectedServiceId?: string;
   onSelect: (service: ServiceResponseDTO) => void;
-  onContinue?: () => void; // proceed to next step if already selected
+  onContinue?: () => void;
   onBack?: () => void;
-  autoAdvance?: boolean; // if true, selecting a service immediately continues
+  autoAdvance?: boolean;
 }
 
-export function BookingService({ muaId, selectedServiceId, onSelect, onBack, onContinue, autoAdvance }: Readonly<BookingServiceProps>) {
-  const [services, setServices] = useState<ServiceResponseDTO[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export function BookingService({ services, loading,loadingSlots, error, selectedServiceId, onSelect, onBack, onContinue, autoAdvance }: Readonly<BookingServiceProps>) {
   const [localSelected, setLocalSelected] = useState<string | undefined>(selectedServiceId);
 
-  useEffect(() => {
-    let aborted = false;
-    (async () => {
-      if (!muaId) {
-        setServices([]);
-        setError("Missing artist ID");
-        return;
-      }
-      setLoading(true);
-      setError(null);
-      try {
-  const apiRes = await ArtistService.getArtistServices(muaId);
-  if (aborted) return;
-  // apiRes expected shape: { status?, success?, message?, data: ServiceResponseDTO[] }
-  const list = Array.isArray((apiRes as any).data) ? (apiRes as any).data : [];
-  setServices(list.filter((s: ServiceResponseDTO) => s.isActive !== false));
-      } catch (e: any) {
-        if (!aborted) setError(e.message || "Failed to load services");
-      } finally {
-        if (!aborted) setLoading(false);
-      }
-    })();
-    return () => { aborted = true; };
-  }, [muaId]);
-
-  // Keep local selection in sync if parent changes it (e.g., preselected via URL)
-  useEffect(() => {
-    if (selectedServiceId) setLocalSelected(selectedServiceId);
-  }, [selectedServiceId]);
+  useEffect(() => { if (selectedServiceId) setLocalSelected(selectedServiceId); }, [selectedServiceId]);
 
   const handleChoose = (svc: ServiceResponseDTO) => {
     setLocalSelected(svc._id);
@@ -117,7 +88,7 @@ export function BookingService({ muaId, selectedServiceId, onSelect, onBack, onC
         {onContinue && (
           <button
             type="button"
-            disabled={!localSelected}
+            disabled={!localSelected || loadingSlots}
             onClick={() => localSelected && onContinue()}
             className="px-4 py-2 rounded-md text-sm font-medium bg-gradient-to-r from-pink-600 to-pink-500 text-white shadow hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
           >Continue</button>

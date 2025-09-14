@@ -16,6 +16,7 @@ export interface CreateBookingDTO {
   address: string;
   transportFee?: number;
   totalPrice: number;
+  payed?: boolean;
   note?: string;
 }
 
@@ -30,6 +31,7 @@ export interface UpdateBookingDTO {
   status?: BookingStatus;
   transportFee?: number;
   totalPrice?: number;
+  payed?: boolean;
   note?: string;
 }
 
@@ -51,6 +53,7 @@ export interface BookingResponseDTO {
   transportFee?: number;
   totalPrice: number;
   note?: string;
+  payed?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -86,6 +89,7 @@ export interface BookingDraftLite {
   address?: string;
   transportFee?: number;
   totalPrice?: number;
+  payed?: boolean;
   note?: string;
 }
 export interface BookingDraft {
@@ -104,4 +108,5 @@ export interface BookingDraft {
   note?: string;
   customerId?: string;
   customerName?: string;
+  payed?: boolean;
 }

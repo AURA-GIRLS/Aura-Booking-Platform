@@ -3,19 +3,20 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/lib/ui/dropdown-menu';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/lib/ui/avatar';
-import { NavbarProps } from '@/types/user.dtos';
+import { ArtistNavbarProps } from "@/types/user.dtos";
 
-export default function ArtistNavbar({ user, setUser }:  Readonly<NavbarProps>) {
+export default function ArtistNavbar({ mua, setMua }:  Readonly<ArtistNavbarProps>) {
   const [isOpen, setIsOpen] = useState(false);
   const [id, setId] = useState<string | null>(null);
+  const [user, setUser] = useState(localStorage.getItem('currentUser') ? JSON.parse(localStorage.getItem('currentUser') as string) : null);
   useEffect(() => {
-    setId(user?._id || null);
-  }, [user]);
+    setId(mua?._id || null);
+  }, [mua]);
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('currentUser');
     localStorage.removeItem('currentMUA');
-    setUser(null);
+    setMua(null);
     window.location.href = '/auth/login';
   };
 

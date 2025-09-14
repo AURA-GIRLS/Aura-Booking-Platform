@@ -21,6 +21,7 @@ const BookingSchema = new Schema({
   transportFee: Number,
   totalPrice: Number,
   createdAt: { type: Date, default: Date.now },
+  payed: { type: Boolean, default: false },
   note: String,
   feedback: { type: Schema.Types.ObjectId, ref: "Feedback" },
 });

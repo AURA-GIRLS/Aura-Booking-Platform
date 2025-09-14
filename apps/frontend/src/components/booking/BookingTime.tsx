@@ -2,22 +2,33 @@ import { useMemo, useState, useEffect } from "react";
 import type { BookingSlot } from "@/types/booking.dtos";
 
 interface BookingTimeProps {
-  slots: BookingSlot[];
+  slots: BookingSlot[]; // already transformed monthly slots for the current or multiple months
   loading?: boolean;
   error?: string;
   selectedDate?: string;
   selectedTime?: string;
-  onChangeMonth: (year: number, month: number) => void;
+  onChangeMonth?: (year: number, month: number) => void;
   onSelectSlot: (day: string, start: string, end?: string) => void;
   onBack?: () => void;
 }
 
-export function BookingTime({ slots, loading, error, selectedDate, selectedTime, onChangeMonth, onSelectSlot, onBack }: Readonly<BookingTimeProps>) {
+export function BookingTime({
+  slots,
+  loading,
+  error,
+  selectedDate,
+  selectedTime,
+  onChangeMonth,
+  onSelectSlot,
+  onBack
+}: Readonly<BookingTimeProps>) {
   const today = new Date();
+  const formatDayKey = (year: number, month: number, day: number) => `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth()); // 0-based
   const [activeDay, setActiveDay] = useState<string | undefined>(selectedDate);
   const [selectedSlot, setSelectedSlot] = useState<BookingSlot | undefined>(undefined);
+  // Presentation component: relies purely on passed-in slots/loading/error
 
   const daysInMonth = useMemo(() => new Date(viewYear, viewMonth + 1, 0).getDate(), [viewYear, viewMonth]);
 
@@ -38,8 +49,8 @@ export function BookingTime({ slots, loading, error, selectedDate, selectedTime,
   }, [monthSlots]);
 
   const isDayFull = (dayNum: number) => {
-    const iso = new Date(viewYear, viewMonth, dayNum).toISOString().split("T")[0];
-    const daySlots = slotsByDay[iso] || [];
+    const key = formatDayKey(viewYear, viewMonth, dayNum);
+    const daySlots = slotsByDay[key] || [];
     // define full: 0 available slots or maybe flagged externally; here mock: if no slots => full
     return daySlots.length === 0;
   };
@@ -58,14 +69,14 @@ export function BookingTime({ slots, loading, error, selectedDate, selectedTime,
   };
 
   // notify parent when changing month (side-effect)
-  useEffect(() => { onChangeMonth(viewYear, viewMonth); }, [viewYear, viewMonth, onChangeMonth]);
+  useEffect(() => { onChangeMonth?.(viewYear, viewMonth); }, [viewYear, viewMonth, onChangeMonth]);
 
   const weekdays = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"]; // show header
   const firstDayOffset = new Date(viewYear, viewMonth, 1).getDay();
 
   const selectDay = (dayNum: number) => {
-    const iso = new Date(viewYear, viewMonth, dayNum).toISOString().split("T")[0];
-    setActiveDay(iso);
+    const key = formatDayKey(viewYear, viewMonth, dayNum);
+    setActiveDay(key);
     // reset previously chosen slot if switching day
     setSelectedSlot(undefined);
   };
@@ -101,12 +112,12 @@ export function BookingTime({ slots, loading, error, selectedDate, selectedTime,
           {Array.from({ length: firstDayOffset }).map((_, i) => <div key={"blank-"+i} />)}
           {Array.from({ length: daysInMonth }).map((_, i) => {
             const dayNum = i + 1;
-            const iso = new Date(viewYear, viewMonth, dayNum).toISOString().split("T")[0];
-            const selected = activeDay === iso;
+            const key = formatDayKey(viewYear, viewMonth, dayNum);
+            const selected = activeDay === key;
             const full = isDayFull(dayNum);
             return (
               <button
-                key={iso}
+                key={key}
                 disabled={full}
                 onClick={() => selectDay(dayNum)}
                 className={[

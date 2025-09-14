@@ -45,6 +45,11 @@ export interface NavbarProps {
   setUser: (user: UserResponseDTO | null) => void;
 }
 
+export interface ArtistNavbarProps {
+  mua: MuaResponseDTO | null;
+  setMua: (mua: MuaResponseDTO | null) => void;
+}
+
 export interface CreateUserDTO {
   fullName: string;
   email: string;

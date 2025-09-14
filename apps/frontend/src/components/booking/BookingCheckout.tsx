@@ -1,16 +1,22 @@
 import { useState } from "react";
-import type { BookingResponseDTO } from "@/types/booking.dtos";
+import type { BookingResponseDTO, CreateBookingDTO } from "@/types/booking.dtos";
+import { UserResponseDTO } from "@/types/user.dtos";
+import { BookingService } from "@/services/booking";
 
 interface BookingCheckoutProps {
+  customer?:UserResponseDTO;
   onPrev: () => void;
   bookingData: BookingResponseDTO;
 }
 
-export function BookingCheckout({ onPrev, bookingData }: Readonly<BookingCheckoutProps>) {
+export function BookingCheckout({customer, onPrev, bookingData }: Readonly<BookingCheckoutProps>) {
   const [done, setDone] = useState(false);
-  const [customerName, setCustomerName] = useState(bookingData.customerName || "");
+  const [customerName, setCustomerName] = useState(customer?.fullName || "");
   const [note, setNote] = useState(bookingData.note || "");
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState(customer?.phoneNumber);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [created, setCreated] = useState<BookingResponseDTO | null>(null);
 
   let formattedDate: string | undefined = bookingData.bookingDate;
   try {
@@ -20,13 +26,53 @@ export function BookingCheckout({ onPrev, bookingData }: Readonly<BookingCheckou
     }
   } catch {/* ignore */}
 
-  if (done) {
+  const handleSubmit = async () => {
+    if (submitting) return;
+    setSubmitError(null);
+    // Basic validation
+    if (!customerName || !phone) {
+      setSubmitError("Please enter required contact information.");
+      return;
+    }
+    try {
+      setSubmitting(true);
+      const payload: CreateBookingDTO = {
+        customerId: bookingData.customerId, // assuming already known / maybe replace by logged in user
+        serviceId: bookingData.serviceId,
+        muaId: bookingData.artistId,
+        bookingDate: new Date(`${bookingData.bookingDate}T${bookingData.startTime}:00`),
+        duration: bookingData.duration,
+        locationType: bookingData.locationType,
+        address: bookingData.address,
+        transportFee: bookingData.transportFee,
+        totalPrice: bookingData.totalPrice,
+        payed:true,
+        note: note || undefined,
+      };
+      const res = await BookingService.create(payload);
+      if (res.success && res.data) {
+        setCreated(res.data);
+        setDone(true);
+      } else {
+        setSubmitError(res.message || "Failed to create booking");
+      }
+    } catch (e: any) {
+      setSubmitError(e?.message || "Failed to create booking");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (done && created) {
     return (
       <div className="space-y-8 text-center animate-in fade-in">
         <div className="mx-auto w-20 h-20 rounded-full bg-gradient-to-br from-pink-600 to-pink-500 flex items-center justify-center text-4xl text-white shadow-lg">✨</div>
         <div className="space-y-2">
           <h3 className="text-xl font-semibold text-pink-600">Booking confirmed!</h3>
           <p className="text-sm text-neutral-500 leading-relaxed">Thank you. We'll reach out shortly to reconfirm your appointment.</p>
+          {created._id && (
+            <p className="text-[11px] text-neutral-400">Ref: {created._id}</p>
+          )}
         </div>
         <button
           onClick={() => window.location.reload()}
@@ -78,7 +124,7 @@ export function BookingCheckout({ onPrev, bookingData }: Readonly<BookingCheckou
             </label>
           </div>
         </div>
-        <div className="rounded-xl border bg-white p-5 shadow-sm text-sm space-y-4 animate-in fade-in slide-in-from-bottom-1">
+  <div className="rounded-xl border bg-white p-5 shadow-sm text-sm space-y-4 animate-in fade-in slide-in-from-bottom-1">
           <div className="flex items-start gap-4">
             <div className="w-14 h-14 rounded-lg bg-pink-100 flex items-center justify-center text-pink-500 text-lg overflow-hidden">
               <span>💄</span>
@@ -96,7 +142,7 @@ export function BookingCheckout({ onPrev, bookingData }: Readonly<BookingCheckou
               </div>
               <div className="mt-4 border-t pt-3 grid gap-1 text-[11px] text-neutral-600">
                 <div className="flex justify-between"><span className="font-medium text-neutral-500 w-20">Date</span><span className="text-neutral-700">{formattedDate}</span></div>
-                <div className="flex justify-between"><span className="font-medium text-neutral-500 w-20">Time</span><span className="text-neutral-700">{bookingData.startTime}</span></div>
+                <div className="flex justify-between"><span className="font-medium text-neutral-500 w-20">Time</span><span className="text-neutral-700">{bookingData.startTime} - {bookingData.endTime}</span></div>
                 <div className="flex justify-between"><span className="font-medium text-neutral-500 w-20">Location</span><span className="text-neutral-700 truncate max-w-[200px]">{bookingData.address}</span></div>
               </div>
                <div className="mt-4 border-t pt-3 grid gap-1 text-[11px] text-neutral-600">
@@ -116,10 +162,18 @@ export function BookingCheckout({ onPrev, bookingData }: Readonly<BookingCheckou
         <div className="rounded-xl border border-pink-100 bg-pink-50 p-4 text-[11px] leading-relaxed text-neutral-700 animate-in fade-in slide-in-from-bottom-1">
           You can pay in cash or bank transfer after the service is completed. No pre-payment required.
         </div>
+        {submitError && (
+          <div className="text-xs text-red-500">{submitError}</div>
+        )}
       </div>
       <div className="flex justify-between gap-4 pt-2">
         <button onClick={onPrev} type="button" className="px-4 h-11 flex-1 border rounded-md text-sm bg-neutral-50 hover:bg-neutral-100">Back</button>
-        <button onClick={() => setDone(true)} type="button" className="px-4 h-11 flex-1 rounded-md text-sm font-medium bg-gradient-to-r from-pink-600 to-pink-500 text-white shadow hover:shadow-md">Complete booking</button>
+        <button
+          onClick={handleSubmit}
+          disabled={submitting}
+          type="button"
+          className="px-4 h-11 flex-1 rounded-md text-sm font-medium bg-gradient-to-r from-pink-600 to-pink-500 text-white shadow hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+        >{submitting ? "Submitting..." : "Complete booking"}</button>
       </div>
     </div>
   );
