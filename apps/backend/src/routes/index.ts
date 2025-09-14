@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import authRoutes from './auth';
 import artistsRoutes from "./artists";
+import artistScheduleRoutes from "./artist-schedule";
+
 const router = Router();
 
 // API routes
@@ -18,4 +20,6 @@ router.get('/', (req, res) => {
 // Mount route modules
 router.use('/auth', authRoutes);
 router.use("/artists", artistsRoutes);
+router.use("/artist-schedule", artistScheduleRoutes);
+
 export default router;

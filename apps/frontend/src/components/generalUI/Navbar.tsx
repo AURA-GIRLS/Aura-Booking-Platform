@@ -3,28 +3,10 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/lib/ui/dropdown-menu';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/lib/ui/avatar';
-import { authService } from '@/services/auth';
-import { UserResponseDTO } from '@/types/user.dtos';
+import { NavbarProps } from '@/types/user.dtos';
 
-export default function Navbar() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [user, setUser] = useState<UserResponseDTO | null>(null);
-  // No need for dropdown state or ref with shadcn DropdownMenu
-
-  useEffect(() => {
-    // Check token in localStorage
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    if (token) {
-      authService.getProfile().then(res => {
-        if (res.success && res.data) setUser(res.data);
-        else setUser(null);
-      }).catch(() => setUser(null));
-    } else {
-      setUser(null);
-    }
-  }, []);
-
-
+export default function Navbar({ user, setUser }: Readonly<NavbarProps>)  {
+ const [isOpen, setIsOpen] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -33,6 +15,7 @@ export default function Navbar() {
   };
 
   const avatarUrl = user?.avatarUrl || '/images/danang.jpg';
+
 
   return (
     <nav className="w-full bg-white shadow-sm">

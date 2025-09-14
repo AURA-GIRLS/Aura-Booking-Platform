@@ -20,8 +20,8 @@ export const BOOKING_STATUS = {
 } as const;
 // booking type
 export const BOOKING_TYPES = {
-  ONLINE: 'ONLINE',
-  OFFLINE: 'OFFLINE',
+  ONLINE: 'AT_HOME',
+  OFFLINE: 'AT_STUDIO',
 } as const;
 
 // Portfolio Categories
@@ -78,6 +78,15 @@ export const NOTIFICATION_TYPES = {
   PAYMENT_FAILED: 'PAYMENT_FAILED'
 } as const;
 
+export const SLOT_TYPES = {
+  ORIGINAL_WORKING: 'ORIGINAL_WORKING',
+  OVERRIDE: 'OVERRIDE',
+  BLOCKED: 'BLOCKED',
+  NEW_WORKING: 'NEW_WORKING',
+  NEW_OVERRIDE:'NEW_OVERRIDE',
+  BOOKING: 'BOOKING'
+} as const;
+
 // Type definitions derived from constants
 export type UserRole = typeof USER_ROLES[keyof typeof USER_ROLES];
 export type UserStatus = typeof USER_STATUS[keyof typeof USER_STATUS];
@@ -89,3 +98,4 @@ export type ServiceCategory = typeof SERVICE_CATEGORIES[keyof typeof SERVICE_CAT
 export type ServiceAddon = typeof SERVICE_ADDONS[keyof typeof SERVICE_ADDONS];
 export type PaymentStatus = typeof PAYMENT_STATUS[keyof typeof PAYMENT_STATUS];
 export type NotificationType = typeof NOTIFICATION_TYPES[keyof typeof NOTIFICATION_TYPES];
+export type SlotType = typeof SLOT_TYPES[keyof typeof SLOT_TYPES];

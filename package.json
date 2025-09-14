@@ -10,6 +10,7 @@
     "shared"
   ],
   "scripts": {
+    "dev": "npm --workspace apps/backend run dev",
     "dev:frontend": "npm --workspace apps/frontend run dev",
     "dev:backend": "npm --workspace apps/backend run dev",
     "build": "npm -ws run build",

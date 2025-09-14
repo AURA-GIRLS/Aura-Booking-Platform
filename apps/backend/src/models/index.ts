@@ -12,7 +12,6 @@ export {
 // bookings
 export {
   Booking,
-  BookingOption,
   Feedback
 } from "./bookings.models";
 

@@ -323,4 +323,5 @@ export class ArtistsController {
       });
     }
   }
+
 }
