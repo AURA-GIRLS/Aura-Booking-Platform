@@ -11,11 +11,9 @@
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.0.1",
-    "@iconify/react": "^6.0.1",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
     "@radix-ui/react-label": "^2.1.7",
-    "@radix-ui/react-separator": "^1.1.7",
     "@radix-ui/react-slot": "^1.2.3",
     "axios": "^1.7.2",
     "class-variance-authority": "^0.7.1",
@@ -24,9 +22,6 @@
     "next": "^14.2.5",
     "next-auth": "^4.24.7",
     "react": "^18.3.1",
-    "react-big-calendar": "^1.19.4",
-    "react-dnd": "^16.0.1",
-    "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "^18.3.1",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7"

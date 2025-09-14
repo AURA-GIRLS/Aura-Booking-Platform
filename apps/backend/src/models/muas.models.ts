@@ -21,16 +21,18 @@ const WorkingSlotSchema = new Schema({
 
 const OverrideSlotSchema = new Schema({
   muaId: { type: Schema.Types.ObjectId, ref: "MUA" },
-  overrideStart: Date,
-  overrideEnd: Date,
+  overrideDate: Date,
+  startTime: String,
+  endTime: String,
   note: String
 });
 
 const BlockedSlotSchema = new Schema({
   muaId: { type: Schema.Types.ObjectId, ref: "MUA" },
-  blockStart: Date,
-  blockEnd: Date,
-  note: String
+  blockDate: Date,
+  blockStart: String,
+  blockEnd: String,
+  reason: String
 });
 
 export const MUA = model("MUA", MUASchema);

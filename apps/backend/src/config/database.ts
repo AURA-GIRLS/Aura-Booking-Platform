@@ -3,10 +3,7 @@ import { config } from './index';
 
 export const connectDB = async (): Promise<void> => {
   try {
-    await mongoose.connect(config.mongoUri, {
-  ssl: true,
-  tlsAllowInvalidCertificates: true
-});
+    await mongoose.connect(config.mongoUri);
     console.log("✅ MongoDB connected successfully");
   } catch (error) {
     console.error("❌ MongoDB connection error:", error);

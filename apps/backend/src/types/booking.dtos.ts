@@ -1,4 +1,5 @@
 import { 
+  BOOKING_STATUS,
   type BookingStatus
 } from "../constants/index";
 
@@ -25,12 +26,10 @@ export interface UpdateBookingDTO {
 
 export interface BookingResponseDTO {
   _id: string;
-  customerId: string;
+  userId: string;
   artistId: string;
   serviceId: string;
-  customerName: string;
-  serviceName: string;
-  bookingDate: string;
+  date: Date;
   startTime: string;
   endTime: string;
   address: string;

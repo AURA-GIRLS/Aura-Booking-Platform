@@ -10,8 +10,6 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "types": ["node"],
-    "sourceMap": true,
-    "inlineSources": true,
     "allowSyntheticDefaultImports": true,
     "verbatimModuleSyntax": true,
     "baseUrl": "src",        

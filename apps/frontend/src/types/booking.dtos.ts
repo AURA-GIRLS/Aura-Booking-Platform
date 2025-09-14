@@ -39,8 +39,3 @@ export interface BookingResponseDTO {
   createdAt: Date;
   updatedAt: Date;
 }
-//========================SCHEDULE========================
-export interface GetScheduleDTO {
-  muaId: string;
-  weekStart: string; // ISO date string for the start of the week (e.g., "2023-10-01")
-}
