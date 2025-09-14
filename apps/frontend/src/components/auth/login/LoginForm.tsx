@@ -33,12 +33,13 @@ const LoginForm: React.FC = () => {
 			if (res.success && res.data?.token) {
 				localStorage.setItem('token', res.data.token);
 				localStorage.setItem('currentUser', JSON.stringify(res.data.user));
+				localStorage.setItem('currentMUA', JSON.stringify(res.data.mua));
 
 				setSuccess('Login successful!');
 				// console.log('Logged in user:', res.data.user.role);
 				if(res.data.user.role === 'ARTIST') {
 					//need change redirect to artist dashboard
-					window.location.href = `/manage-artist/${res.data.user._id}/schedule`;
+					window.location.href = `/manage-artist/${res.data.mua._id}/schedule`;
 				}else{
 					window.location.href = '/';
 				}

@@ -7,6 +7,8 @@ import { fetchArtistDetail } from "@/config/api";
 import type { ArtistDetailDTO } from "@/config/types";
 import Navbar from "@/components/generalUI/Navbar";
 import Footer from "@/components/generalUI/Footer";
+import { ServiceResponseDTO } from "@/types/service.dtos";
+import { useRouter } from "next/navigation";
 
 /* ===== Helper Components ===== */
 function Stars({ value = 0 }: { value?: number }) {
@@ -41,8 +43,9 @@ export default function ArtistDetailPage({ params }: { params: { id: string } })
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"intro" | "services" | "reviews" | "portfolio">("intro");
-
-  useEffect(() => {
+ const [selectedService, setSelectedService] = useState<ServiceResponseDTO | null>(null);
+ const router = useRouter();
+ useEffect(() => {
     (async () => {
       try {
         setLoading(true);
@@ -226,7 +229,21 @@ export default function ArtistDetailPage({ params }: { params: { id: string } })
                 {services.length > 0 ? (
                   <div className="grid gap-4">
                     {services.map((service) => (
-                      <div key={service.id} className="bg-white rounded-2xl border border-gray-200 p-6">
+                      <button
+                        key={service.id}
+                        type="button"
+                        onClick={() => setSelectedService(service)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            setSelectedService(service);
+                          }
+                        }}
+                        className={`w-full text-left cursor-pointer bg-white rounded-2xl border p-6 hover:shadow-lg transition active:scale-100 
+                          ${selectedService?.id === service.id ? "border-rose-600" : "border-gray-200"}`}
+                        role="button"
+                        tabIndex={0}
+                        aria-pressed={selectedService?.id === service.id}
+                      >
                         <div className="flex justify-between items-start mb-3">
                           <h3 className="text-lg font-semibold text-gray-900">
                             {service.name || "Service Package"}
@@ -249,7 +266,7 @@ export default function ArtistDetailPage({ params }: { params: { id: string } })
                             Service Unavailable
                           </span>
                         )}
-                      </div>
+                      </button>
                     ))}
                   </div>
                 ) : (
@@ -380,7 +397,10 @@ export default function ArtistDetailPage({ params }: { params: { id: string } })
               <p className="text-gray-600 mb-6 text-sm">
                 Limited slots available - book your desired date now!
               </p>
-              <button className="w-full px-6 py-3 bg-rose-600 text-white rounded-xl hover:bg-rose-700 font-semibold transition">
+              <button onClick={() => {
+                setSelectedService(null);
+                router.push(`/booking/${artist.id}/filling` as any );
+              }} className="w-full px-6 py-3 bg-rose-600 text-white rounded-xl hover:bg-rose-700 font-semibold transition">
                 BOOK NOW!
               </button>
             </div>

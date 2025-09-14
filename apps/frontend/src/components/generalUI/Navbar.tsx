@@ -10,6 +10,8 @@ export default function Navbar({ user, setUser }: Readonly<NavbarProps>)  {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('currentMUA');
     setUser(null);
     window.location.href = '/auth/login';
   };

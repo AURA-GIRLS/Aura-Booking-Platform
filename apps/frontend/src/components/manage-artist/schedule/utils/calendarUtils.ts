@@ -30,5 +30,5 @@ export const formatTimeForAPI = (date: Date | string): string => {
  * Get weekday name in uppercase
  */
 export const getWeekdayName = (date: Date | string): string => {
-  return dayjs(date).format('dddd').toUpperCase();
+  return dayjs(date).format('ddd').toUpperCase();
 };

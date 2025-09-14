@@ -78,6 +78,7 @@ export interface UserResponseDTO {
 export interface AuthResponseDTO {
   user: UserResponseDTO;
   token: string;
+  mua: MuaResponseDTO;
 }
 
 // ===== ARTIST DTOs =====

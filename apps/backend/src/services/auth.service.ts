@@ -177,11 +177,12 @@ export class AuthService {
 
       // Generate token
       const token = this.generateToken(user._id.toString());
-
+      const mua = await MUA.findOne({ userId: user._id });
       // Return user data without password
       return {
         user: this.formatUserResponse(user),
-        token
+        token,
+        mua
       };
     } catch (error) {
       throw error;

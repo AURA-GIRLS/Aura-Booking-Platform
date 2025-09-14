@@ -73,6 +73,7 @@ export interface UserResponseDTO {
 
 export interface AuthResponseDTO {
   user: UserResponseDTO;
+  mua: MuaResponseDTO;
   token: string;
 }
 

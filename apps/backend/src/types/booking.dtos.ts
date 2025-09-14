@@ -1,26 +1,34 @@
 import { 
-  type BookingStatus
+  type BookingStatus,
+  type BookingType
 } from "../constants/index";
 
 // ===== BOOKING DTOs =====
 export interface CreateBookingDTO {
-  userId: string;
-  artistId: string;
+  customerId: string;
   serviceId: string;
-  date: Date;
-  startTime: string;
-  endTime: string;
+  muaId: string;
+  bookingDate: Date;
+  duration: number;
+  locationType: BookingType;
   address: string;
-  notes?: string;
+  travelFee?: number;
+  totalPrice: number;
+  note?: string;
 }
 
 export interface UpdateBookingDTO {
-  date?: Date;
-  startTime?: string;
-  endTime?: string;
+  customerId?: string;
+  serviceId?: string;
+  muaId?: string;
+  bookingDate?: Date;
+  duration?: number;
+  locationType?: BookingType;
   address?: string;
   status?: BookingStatus;
-  notes?: string;
+  travelFee?: number;
+  totalPrice?: number;
+  note?: string;
 }
 
 export interface BookingResponseDTO {
@@ -33,10 +41,13 @@ export interface BookingResponseDTO {
   bookingDate: string;
   startTime: string;
   endTime: string;
+  duration: number;
+  locationType: BookingType;
   address: string;
   status: BookingStatus;
-  notes?: string;
+  travelFee?: number;
   totalPrice: number;
+  note?: string;
   createdAt: Date;
   updatedAt: Date;
 }

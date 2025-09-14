@@ -11,6 +11,12 @@ export interface ISlot {
   type: string;
   note?: string;
 }
+export interface IBookingSlot {
+  serviceId:string;
+  day: string; 
+  startTime: string;
+  endTime: string;
+}
 
 export interface IWeeklySlot {
   muaId: string;

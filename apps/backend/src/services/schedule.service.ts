@@ -9,7 +9,7 @@ import timezone from "dayjs/plugin/timezone";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import { SLOT_TYPES, type SlotType } from "constants/index";
-import { BOOKING_STATUS } from "constants/index";
+import { BOOKING_STATUS, BOOKING_TYPES } from "constants/index";
 import type { BookingResponseDTO } from "types/booking.dtos";
 
 //---------------STAGE 1: Get and cache raw slots from DB/Redis--------
@@ -109,7 +109,7 @@ console.log("weekEndDate", weekEndDate, weekEndDate instanceof Date);
   return slots;
 }
 //**get raw working slots from redis*/
-async function getRawWeeklySlots(muaId: string, weekStart: string): Promise<IWeeklySlot> {
+export async function getRawWeeklySlots(muaId: string, weekStart: string): Promise<IWeeklySlot> {
   const cacheKey = `weeklySlots:${muaId}:${dayjs(weekStart).format("YYYY-MM-DD")}`;
 
   // 1. Check cache trước
@@ -264,9 +264,11 @@ export async function getPendingBookingSlots(muaId: string, pageNumber:number,pa
       bookingDate: fromUTC(b.bookingDate!).format("YYYY-MM-DD"),
       startTime: fromUTC(b.bookingDate!).format("hh:mm A"),
       endTime: fromUTC(b.bookingDate!).add(b.duration!,'minute').format("hh:mm A"),
+      duration: b.duration || 0,
+      locationType: b.locationType || BOOKING_TYPES.ONLINE,
       address: b.address || '',
       status: b.status || BOOKING_STATUS.PENDING,
-      notes: b.note || undefined,
+      note: b.note || undefined,
       totalPrice: b.totalPrice || 0,
       createdAt: b.createdAt || new Date(),
       updatedAt: b.createdAt || new Date() // Using createdAt since updatedAt doesn't exist in the model
