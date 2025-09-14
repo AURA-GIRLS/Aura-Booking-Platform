@@ -132,9 +132,7 @@ export default function MyProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-pink-50 to-pink-100">
-        <Navbar />
-        <div className="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10 py-8">
+      <div className="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10 py-8">
           <div className="bg-white rounded-2xl shadow-sm border border-rose-200/60 p-8">
             <div className="animate-pulse">
               <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
@@ -155,22 +153,17 @@ export default function MyProfilePage() {
             </div>
           </div>
         </div>
-        <Footer />
-      </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50 to-pink-100">
-      <Navbar />
-      
+    <div >
       <Notification
         type={notification.type}
         message={notification.message}
         isVisible={notification.isVisible}
         onClose={hideNotification}
       />
-      
       <div className="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10 py-8">
         {/* Header */}
         <div className="bg-white rounded-2xl shadow-sm border border-rose-200/60 overflow-hidden">
@@ -386,8 +379,6 @@ export default function MyProfilePage() {
           </div>
         </div>
       </div>
-
-      <Footer />
     </div>
   );
 }

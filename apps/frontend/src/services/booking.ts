@@ -3,6 +3,52 @@ import type { ApiResponseDTO } from '../types/common.dtos';
 import type { CreateBookingDTO, BookingResponseDTO, BookingSlot, PaginatedBookingsResponse, UpdateBookingDTO } from '../types/booking.dtos';
 
 export const BookingService = {
+
+    // READ - Lấy available time slots
+  async getAvailableSlots(params: {
+    muaId: string;
+    serviceId: string;
+    day: string;
+    duration: number;
+  }): Promise<ApiResponseDTO<BookingSlot[]>> {
+    try {
+      const queryParams = new URLSearchParams({
+        muaId: params.muaId,
+        serviceId: params.serviceId,
+        day: params.day,
+        duration: params.duration.toString(),
+      });
+
+      const res = await api.get<ApiResponseDTO<BookingSlot[]>>(
+        `/booking/available-slots?${queryParams.toString()}`
+      );
+      return res.data;
+    } catch (error: any) {
+      throw error.response?.data || error;
+    }
+  },
+  // READ - Lấy available time slots theo tháng (group by day)
+  async getMonthlyAvailable(params: {
+    muaId: string;
+    year: number;
+    month: number; // 1-12
+    duration: number; // minutes
+  }): Promise<ApiResponseDTO<Record<string, [string, string, string][]>>> {
+    try {
+      const queryParams = new URLSearchParams({
+        muaId: params.muaId,
+        year: params.year.toString(),
+        month: params.month.toString(),
+        duration: params.duration.toString(),
+      });
+      const res = await api.get<ApiResponseDTO<Record<string, [string, string, string][]>>>(
+        `/booking/available-slots/monthly?${queryParams.toString()}`
+      );
+      return res.data;
+    } catch (error: any) {
+      throw error.response?.data || error;
+    }
+  },
   // CREATE - Tạo booking mới
   async create(data: CreateBookingDTO): Promise<ApiResponseDTO<BookingResponseDTO>> {
     try {
@@ -100,29 +146,7 @@ export const BookingService = {
     }
   },
 
-  // READ - Lấy available time slots
-  async getAvailableSlots(params: {
-    muaId: string;
-    serviceId: string;
-    day: string;
-    duration: number;
-  }): Promise<ApiResponseDTO<BookingSlot[]>> {
-    try {
-      const queryParams = new URLSearchParams({
-        muaId: params.muaId,
-        serviceId: params.serviceId,
-        day: params.day,
-        duration: params.duration.toString(),
-      });
 
-      const res = await api.get<ApiResponseDTO<BookingSlot[]>>(
-        `/booking/available-slots?${queryParams.toString()}`
-      );
-      return res.data;
-    } catch (error: any) {
-      throw error.response?.data || error;
-    }
-  },
 
   // UPDATE - Cập nhật booking
   async update(

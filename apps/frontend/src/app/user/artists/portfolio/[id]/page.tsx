@@ -2,13 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, Star, MapPin, Clock, Calendar, Award } from "lucide-react";
 import { fetchArtistDetail } from "@/config/api";
 import type { ArtistDetailDTO } from "@/config/types";
 import Navbar from "@/components/generalUI/Navbar";
 import Footer from "@/components/generalUI/Footer";
-import { ServiceResponseDTO } from "@/types/service.dtos";
-import { useRouter } from "next/navigation";
 
 /* ===== Helper Components ===== */
 function Stars({ value = 0 }: { value?: number }) {
@@ -39,13 +38,14 @@ function formatDate(date?: Date) {
 
 /* ===== Main Component ===== */
 export default function ArtistDetailPage({ params }: { params: { id: string } }) {
+  const router = useRouter();
   const [data, setData] = useState<ArtistDetailDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"intro" | "services" | "reviews" | "portfolio">("intro");
- const [selectedService, setSelectedService] = useState<ServiceResponseDTO | null>(null);
- const router = useRouter();
- useEffect(() => {
+  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
+
+  useEffect(() => {
     (async () => {
       try {
         setLoading(true);
@@ -62,8 +62,6 @@ export default function ArtistDetailPage({ params }: { params: { id: string } })
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-white">
-        <Navbar />
         <div className="max-w-screen-2xl mx-auto px-5 sm:px-8 lg:px-10 py-8">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 rounded w-32 mb-6"></div>
@@ -80,21 +78,17 @@ export default function ArtistDetailPage({ params }: { params: { id: string } })
             </div>
           </div>
         </div>
-        <Footer />
-      </main>
     );
   }
 
   if (error || !data) {
     return (
-      <main className="min-h-screen bg-white">
-        <Navbar />
         <div className="max-w-screen-2xl mx-auto px-5 sm:px-8 lg:px-10 py-8">
           <div className="text-center py-16">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Artist Not Found</h1>
             <p className="text-gray-600 mb-8">{error}</p>
             <Link
-              href="/artists/makeup-artist-list"
+              href="/user/artists/makeup-artist-list"
               className="inline-flex items-center gap-2 px-6 py-3 bg-rose-600 text-white rounded-xl hover:bg-rose-700"
             >
               <ArrowLeft size={20} />
@@ -102,8 +96,6 @@ export default function ArtistDetailPage({ params }: { params: { id: string } })
             </Link>
           </div>
         </div>
-        <Footer />
-      </main>
     );
   }
 
@@ -111,13 +103,10 @@ export default function ArtistDetailPage({ params }: { params: { id: string } })
   const firstPortfolioImage = portfolio[0]?.media?.[0]?.url;
 
   return (
-    <main className="min-h-screen bg-white">
-      <Navbar />
-      
       <div className="max-w-screen-2xl mx-auto px-5 sm:px-8 lg:px-10 py-8">
         {/* Back Link */}
         <Link
-          href="/artists/makeup-artist-list"
+          href="/user/artists/makeup-artist-list"
           className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6"
         >
           <ArrowLeft size={20} />
@@ -229,20 +218,14 @@ export default function ArtistDetailPage({ params }: { params: { id: string } })
                 {services.length > 0 ? (
                   <div className="grid gap-4">
                     {services.map((service) => (
-                      <button
-                        key={service.id}
-                        type="button"
-                        onClick={() => setSelectedService(service)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            setSelectedService(service);
-                          }
-                        }}
-                        className={`w-full text-left cursor-pointer bg-white rounded-2xl border p-6 hover:shadow-lg transition active:scale-100 
-                          ${selectedService?.id === service.id ? "border-rose-600" : "border-gray-200"}`}
-                        role="button"
-                        tabIndex={0}
-                        aria-pressed={selectedService?.id === service.id}
+                      <div 
+                        key={service.id} 
+                        onClick={() => setSelectedServiceId(service.id)}
+                        className={`bg-white rounded-2xl p-6 cursor-pointer transition-all duration-200 ${
+                          selectedServiceId === service.id
+                            ? 'border-2 border-pink-500 shadow-lg shadow-pink-200/50'
+                            : 'border border-gray-200 hover:border-pink-300 hover:shadow-md'
+                        }`}
                       >
                         <div className="flex justify-between items-start mb-3">
                           <h3 className="text-lg font-semibold text-gray-900">
@@ -261,12 +244,19 @@ export default function ArtistDetailPage({ params }: { params: { id: string } })
                         {service.description && (
                           <p className="text-gray-700">{service.description}</p>
                         )}
-                        {service.isAvailable === false && (
-                          <span className="inline-block mt-2 px-3 py-1 bg-red-100 text-red-700 text-sm rounded-full">
-                            Service Unavailable
-                          </span>
-                        )}
-                      </button>
+                        <div className="flex items-center justify-between mt-3">
+                          {service.isAvailable === false && (
+                            <span className="inline-block px-3 py-1 bg-red-100 text-red-700 text-sm rounded-full">
+                              Service Unavailable
+                            </span>
+                          )}
+                          {selectedServiceId === service.id && (
+                            <span className="inline-block px-3 py-1 bg-pink-100 text-pink-700 text-sm rounded-full font-medium">
+                              Selected
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     ))}
                   </div>
                 ) : (
@@ -397,18 +387,26 @@ export default function ArtistDetailPage({ params }: { params: { id: string } })
               <p className="text-gray-600 mb-6 text-sm">
                 Limited slots available - book your desired date now!
               </p>
-              <button onClick={() => {
-                setSelectedService(null);
-                router.push(`/booking/${artist.id}/filling` as any );
-              }} className="w-full px-6 py-3 bg-rose-600 text-white rounded-xl hover:bg-rose-700 font-semibold transition">
-                BOOK NOW!
+              <button 
+                onClick={() => {
+                  if (selectedServiceId) {
+                    router.push(`/user/booking/${params.id}/${selectedServiceId}` as any);
+                  } else {
+                    alert('Please select a service package first!');
+                  }
+                }}
+                className={`w-full px-6 py-3 rounded-xl font-semibold transition ${
+                  selectedServiceId 
+                    ? 'bg-rose-600 text-white hover:bg-rose-700' 
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+                disabled={!selectedServiceId}
+              >
+                {selectedServiceId ? 'BOOK NOW!' : 'SELECT A SERVICE FIRST'}
               </button>
             </div>
           </div>
         </div>
       </div>
-
-      <Footer />
-    </main>
   );
 }

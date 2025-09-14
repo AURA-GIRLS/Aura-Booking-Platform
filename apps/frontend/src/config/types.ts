@@ -42,7 +42,9 @@ export type ArtistDetailDTO = {
   services: { 
     id: string; 
     name?: string; 
+    muaId?: string;
     description?: string; 
+    imageUrl?: string;
     price?: number; 
     duration?: number; 
     isAvailable?: boolean; 

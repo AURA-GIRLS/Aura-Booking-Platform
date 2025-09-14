@@ -177,12 +177,26 @@ export class AuthService {
 
       // Generate token
       const token = this.generateToken(user._id.toString());
-      const mua = await MUA.findOne({ userId: user._id });
+      const muaDoc = await MUA.findOne({ userId: user._id });
+      
+      // Transform MUA document to DTO if it exists
+      const mua: MuaResponseDTO | undefined = muaDoc ? {
+        _id: muaDoc._id.toString(),
+        userId: muaDoc.userId?.toString() || '',
+        experienceYears: muaDoc.experienceYears ?? undefined,
+        bio: muaDoc.bio ?? undefined,
+        location: muaDoc.location ?? undefined,
+        ratingAverage: muaDoc.ratingAverage ?? undefined,
+        feedbackCount: muaDoc.feedbackCount ?? undefined,
+        bookingCount: muaDoc.bookingCount ?? undefined,
+        isVerified: muaDoc.isVerified ?? undefined
+      } : undefined;
+      
       // Return user data without password
       return {
         user: this.formatUserResponse(user),
         token,
-        mua
+        mua 
       };
     } catch (error) {
       throw error;

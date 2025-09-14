@@ -38,7 +38,7 @@ function ListCard({ a }: { a: Artist }) {
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <Link href={`/artists/portfolio/${a.id}`}>
+        <Link href={`/user/artists/portfolio/${a.id}`}>
           <h3 className="font-bold text-gray-900 leading-tight text-lg truncate hover:text-pink-600 transition">
             {a.fullName ?? "Makeup Artist Name"}
           </h3>
@@ -50,7 +50,7 @@ function ListCard({ a }: { a: Artist }) {
         <p className="mt-2 text-[15px] text-gray-700 line-clamp-2">
           {a.bio ?? "Specializing in bridal & party makeup. Available at home & studio. Friendly & punctual."}
         </p>
-        <Link href={`/artists/portfolio/${a.id}`}>
+        <Link href={`/user/artists/portfolio/${a.id}`}>
           <button className="mt-3 inline-flex items-center h-10 px-4 rounded-xl bg-green-600 text-white text-sm hover:bg-green-700">
             View Portfolio
           </button>

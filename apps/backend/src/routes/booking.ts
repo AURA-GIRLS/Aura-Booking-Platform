@@ -25,6 +25,8 @@ router.get("/date/:date", authenticateToken, (req, res) => ctrl.getByDate(req, r
 
 // READ - Lấy available time slots
 router.get("/available-slots", authenticateToken, (req, res) => ctrl.getAvailableSlots(req, res));
+// READ - Lấy available time slots theo tháng
+router.get("/available-slots/monthly", authenticateToken, (req, res) => ctrl.getMonthlyAvailable(req, res));
 
 // UPDATE - Cập nhật booking
 router.put("/:id", authenticateToken, (req, res) => ctrl.update(req, res));

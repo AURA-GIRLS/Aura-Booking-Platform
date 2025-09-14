@@ -18,7 +18,7 @@ const BookingSchema = new Schema({
   locationType: { type: String, enum: Object.values(BOOKING_TYPES)},
   address: String,
   status: { type: String, enum: Object.values(BOOKING_STATUS) },
-  travelFee: Number,
+  transportFee: Number,
   totalPrice: Number,
   createdAt: { type: Date, default: Date.now },
   note: String,

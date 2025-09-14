@@ -4,6 +4,7 @@ export interface CreateServiceDTO {
   description: string;
   duration: number;
   price: number;
+  imageUrl?: string;
 }
 
 export interface UpdateServiceDTO {
@@ -12,12 +13,15 @@ export interface UpdateServiceDTO {
   duration?: number;
   price?: number;
   isActive?: boolean;
+  imageUrl?: string;
 }
 
 export interface ServiceResponseDTO {
   _id: string;
+  muaId: string;
   name: string;
   description: string;
+  imageUrl?: string;
   duration: number;
   price: number;
   isActive: boolean;

@@ -11,12 +11,102 @@ import {
   updateBookingStatus,
   cancelBooking,
   deleteBooking,
-  getAvailableSlots
+  getAvailableSlots,
+  getAvailableMonthlySlots
 } from "../services/booking.service";
 import type { CreateBookingDTO, UpdateBookingDTO } from "../types/booking.dtos";
 import type { ApiResponseDTO } from "types";
 
 export class BookingController {
+
+ // READ - Lấy available slots
+  async getAvailableSlots(req: Request, res: Response): Promise<void> {
+    try {
+      const { muaId, serviceId, day, duration } = req.query as Record<string, string>;
+
+      if (!muaId || !serviceId || !day || !duration) {
+        const response: ApiResponseDTO = {
+          status: 400,
+          success: false,
+          message: "Missing required parameters: muaId, serviceId, day, duration"
+        };
+        res.status(400).json(response);
+        return;
+      }
+
+      const data = await getAvailableSlots(
+        muaId,
+        serviceId,
+        day,
+        Number(duration)
+      );
+
+      const response: ApiResponseDTO = {
+        status: 200,
+        success: true,
+        message: "Available slots retrieved successfully",
+        data
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      const response: ApiResponseDTO = {
+        status: 500,
+        success: false,
+        message: error instanceof Error ? error.message : "Failed to get available slots"
+      };
+      res.status(500).json(response);
+    }
+  }
+
+  // READ - Lấy available slots theo tháng
+  async getMonthlyAvailable(req: Request, res: Response): Promise<void> {
+    try {
+      const { muaId, year, month, duration } = req.query as Record<string, string>;
+
+      if (!muaId || !year || !month || !duration) {
+        const response: ApiResponseDTO = {
+          status: 400,
+          success: false,
+          message: "Missing required parameters: muaId, year, month, duration"
+        };
+        res.status(400).json(response);
+        return;
+      }
+
+      const y = Number(year);
+      const m = Number(month); // 1-12
+      const dur = Number(duration);
+      if (Number.isNaN(y) || Number.isNaN(m) || Number.isNaN(dur) || m < 1 || m > 12) {
+        const response: ApiResponseDTO = {
+          status: 400,
+          success: false,
+          message: "Invalid numeric parameters"
+        };
+        res.status(400).json(response);
+        return;
+      }
+
+      // Build a representative day in that month (use first day)
+      const day = `${y}-${String(m).padStart(2, "0")}-01`;
+      const data = await getAvailableMonthlySlots(muaId, day, dur);
+
+      const response: ApiResponseDTO = {
+        status: 200,
+        success: true,
+        message: "Monthly available slots retrieved successfully",
+        data
+      };
+      res.status(200).json(response);
+    } catch (error) {
+      const response: ApiResponseDTO = {
+        status: 500,
+        success: false,
+        message: error instanceof Error ? error.message : "Failed to get monthly available slots"
+      };
+      res.status(500).json(response);
+    }
+  }
 
   // CREATE - Tạo booking mới
   async create(req: Request, res: Response): Promise<void> {
@@ -201,45 +291,7 @@ export class BookingController {
     }
   }
 
-  // READ - Lấy available slots
-  async getAvailableSlots(req: Request, res: Response): Promise<void> {
-    try {
-      const { muaId, serviceId, day, duration } = req.query as Record<string, string>;
-
-      if (!muaId || !serviceId || !day || !duration) {
-        const response: ApiResponseDTO = {
-          status: 400,
-          success: false,
-          message: "Missing required parameters: muaId, serviceId, day, duration"
-        };
-        res.status(400).json(response);
-        return;
-      }
-
-      const data = await getAvailableSlots(
-        muaId,
-        serviceId,
-        day,
-        Number(duration)
-      );
-
-      const response: ApiResponseDTO = {
-        status: 200,
-        success: true,
-        message: "Available slots retrieved successfully",
-        data
-      };
-
-      res.status(200).json(response);
-    } catch (error) {
-      const response: ApiResponseDTO = {
-        status: 500,
-        success: false,
-        message: error instanceof Error ? error.message : "Failed to get available slots"
-      };
-      res.status(500).json(response);
-    }
-  }
+ 
 
   // UPDATE - Cập nhật booking
   async update(req: Request, res: Response): Promise<void> {

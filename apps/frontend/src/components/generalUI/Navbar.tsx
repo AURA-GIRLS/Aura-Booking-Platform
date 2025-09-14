@@ -31,9 +31,9 @@ export default function Navbar({ user, setUser }: Readonly<NavbarProps>)  {
         {/* Center: Menu */}
         <ul className="hidden md:flex items-center gap-6 text-gray-700 font-medium">
           <li><Link href="/">Home</Link></li>
-          <li><Link href="/artists/makeup-artist-list">Makeup Artist</Link></li>
-          <li><Link href="/booking">Booking</Link></li>
-          <li><Link href="/blog">Blog</Link></li>
+          <li><Link href="/user/artists/makeup-artist-list">Makeup Artist</Link></li>
+          {/* <li><Link href="/booking">Booking</Link></li> */}
+          <li><Link href="/user/blog">Blog</Link></li>
           <li><Link href="/about">About Us</Link></li>
         </ul>
 
@@ -57,10 +57,10 @@ export default function Navbar({ user, setUser }: Readonly<NavbarProps>)  {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44 bg-white rounded-xl shadow-lg py-2 z-50 border border-pink-100">
                 <DropdownMenuItem asChild>
-                  <Link href="/profile/my-profile">My Profile</Link>
+                  <Link href="/user/profile/my-profile">My Profile</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/booking">Booking History</Link>
+                  <Link href="/user/booking">Booking History</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleLogout} className="px-2 py-2 text-red-500 cursor-pointer">Logout</DropdownMenuItem>
               </DropdownMenuContent>
@@ -76,11 +76,11 @@ export default function Navbar({ user, setUser }: Readonly<NavbarProps>)  {
       {isOpen && (
         <div className="md:hidden px-6 pb-4">
           <ul className="flex flex-col gap-2 text-gray-700 font-medium">
-            <li><Link href="/">Home</Link></li>
-            <li><Link href="/artists/makeup-artist-list">Makeup Artist</Link></li>
-            <li><Link href="/booking">Booking</Link></li>
-            <li><Link href="/blog">Blog</Link></li>
-            <li><Link href="/about">About Us</Link></li>
+          <li><Link href="/">Home</Link></li>
+          <li><Link href="/user/artists/makeup-artist-list">Makeup Artist</Link></li>
+          {/* <li><Link href="/booking">Booking</Link></li> */}
+          <li><Link href="/user/blog">Blog</Link></li>
+          <li><Link href="/about">About Us</Link></li>
           </ul>
           <div className="mt-3 flex items-center gap-3">
             <button aria-label="Cart" className="p-2 hover:bg-gray-100 rounded">🛒</button>

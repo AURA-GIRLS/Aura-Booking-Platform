@@ -1,6 +1,6 @@
 import type { IBookingSlot, ISlot } from "types/schedule.interfaces";
 import { getMondayOfWeek } from "utils/calendarUtils";
-import { computeMUAFinalSlots, getRawWeeklySlots, getFinalSlots } from "./schedule.service";
+import { getFinalSlots } from "./schedule.service";
 import { fromUTC } from "utils/timeUtils";
 import { SLOT_TYPES, BOOKING_STATUS, BOOKING_TYPES } from "constants/index";
 import { Booking } from "models/bookings.models";
@@ -130,6 +130,82 @@ export async function getAvailableSlots(muaId: string, serviceId: string, day: s
         ...slot,
         serviceId
     }));
+}
+
+export async function getAvailableMonthlySlots(muaId: string, day: string, durationMinutes: number): Promise<Record<string, [string, string, string][]>> {
+    // Determine month range based on provided day
+    const base = dayjs(day);
+    if (!base.isValid()) {
+        throw new Error("Invalid day provided for monthly availability");
+    }
+    const daysInMonth = base.daysInMonth();
+    const monthYear = base.year();
+    const monthIndex = base.month(); // 0-based
+
+    const result: Record<string, [string, string, string][]> = {};
+    const weekCache = new Map<string, ISlot[]>();
+
+    // Working slot types
+    const workingTypes = [SLOT_TYPES.ORIGINAL_WORKING, SLOT_TYPES.OVERRIDE, SLOT_TYPES.NEW_WORKING, SLOT_TYPES.NEW_OVERRIDE];
+
+    // Helper to get (and cache) final slots for a week
+    async function getWeekSlots(targetDayISO: string): Promise<ISlot[]> {
+        const weekStart = getMondayOfWeek(targetDayISO, "YYYY-MM-DD");
+        if (weekCache.has(weekStart)) return weekCache.get(weekStart)!;
+        const finalSlotsData = await getFinalSlots(muaId, weekStart);
+        weekCache.set(weekStart, finalSlotsData.slots);
+        return finalSlotsData.slots;
+    }
+
+    for (let i = 1; i <= daysInMonth; i++) {
+        const currentDay = dayjs(new Date(monthYear, monthIndex, i)).format("YYYY-MM-DD");
+        let finalSlots: ISlot[];
+        try {
+            finalSlots = await getWeekSlots(currentDay);
+        } catch (e) {
+            // eslint-disable-next-line no-console
+            console.warn(`Monthly availability week load failed for ${currentDay}:`, e);
+            continue;
+        }
+        const targetDay = fromUTC(currentDay).format("YYYY-MM-DD");
+
+        const workingsOfDay = finalSlots.filter(slot => slot.day === targetDay && workingTypes.includes(slot.type as any));
+        const bookingsOfDay = finalSlots.filter(slot => slot.day === targetDay && slot.type === SLOT_TYPES.BOOKING);
+
+        // Start from all working slots
+        let availableSlots: ISlot[] = [...workingsOfDay];
+        for (const booking of bookingsOfDay) {
+            const newAvailable: ISlot[] = [];
+            for (const workingSlot of availableSlots) {
+                const rem = subtractBookedFromWorking(workingSlot, booking);
+                newAvailable.push(...rem);
+            }
+            availableSlots = newAvailable;
+        }
+
+        // Validate ranges
+        const validAvailable = availableSlots.filter(slot => {
+            const start = dayjs(`${slot.day} ${slot.startTime}`, "YYYY-MM-DD HH:mm");
+            const end = dayjs(`${slot.day} ${slot.endTime}`, "YYYY-MM-DD HH:mm");
+            return start.isBefore(end);
+        });
+
+        const durationBased: IBookingSlot[] = [];
+        for (const s of validAvailable) {
+            durationBased.push(...splitSlotByDuration(s, durationMinutes));
+        }
+
+        if (durationBased.length) {
+            const tuples: [string, string, string][] = durationBased.map(s => [
+                s.day,
+                s.startTime,
+                dayjs(`${s.day} ${s.startTime}`, "YYYY-MM-DD HH:mm").add(durationMinutes, 'minute').format("HH:mm")
+            ]);
+            result[currentDay] = tuples;
+        }
+    }
+
+    return result;
 }
 
 // ==================== OVERLAP CHECKING FUNCTIONS ====================
@@ -413,8 +489,13 @@ export async function updateBooking(
             const newBookingDate = updateData.bookingDate || currentBooking.bookingDate;
             const newDuration = updateData.duration || currentBooking.duration || 0;
 
+            // Type guards to ensure required values are present
+            if (!newMuaId || !newBookingDate || typeof newDuration !== 'number') {
+                throw new Error('Missing required booking data for conflict check');
+            }
+
             const conflictCheck = await checkBookingConflict(
-                newMuaId,
+                newMuaId.toString(),
                 newBookingDate,
                 newDuration,
                 bookingId // Exclude current booking from conflict check
@@ -499,21 +580,29 @@ export async function deleteBooking(bookingId: string): Promise<boolean> {
 
 // UTILITY - Format booking response
 function formatBookingResponse(booking: any): BookingResponseDTO {
+    const rawDate = booking.bookingDate;
+    const bookingDay = rawDate ? fromUTC(rawDate) : dayjs();
+    const durationVal: number = typeof booking.duration === 'number' ? booking.duration : 0;
+    const customer = booking.customerId || {};
+    const service = booking.serviceId || {};
+    const mua = booking.muaId || {};
+
     return {
-        _id: booking._id.toString(),
-        customerId: (booking.customerId as any)?._id?.toString() || '',
-        artistId: booking.muaId?._id?.toString() || '',
-        serviceId: (booking.serviceId as any)?._id?.toString() || '',
-        customerName: (booking.customerId as any)?.fullName ?? "",
-        serviceName: (booking.serviceId as any)?.name ?? "",
-        bookingDate: fromUTC(booking.bookingDate!).format("YYYY-MM-DD"),
-        startTime: fromUTC(booking.bookingDate!).format("HH:mm"),
-        endTime: fromUTC(booking.bookingDate!).add(booking.duration!, 'minute').format("HH:mm"),
-        duration: booking.duration || 0,
-        locationType: booking.locationType || BOOKING_TYPES.ONLINE,
+        _id: booking._id ? String(booking._id) : '',
+        customerId: customer._id ? String(customer._id) : '',
+        artistId: mua._id ? String(mua._id) : '',
+        serviceId: service._id ? String(service._id) : '',
+        customerName: customer.fullName || "",
+        serviceName: service.name || "",
+        servicePrice: service.price || 0,
+        bookingDate: bookingDay.format("YYYY-MM-DD"),
+        startTime: bookingDay.format("HH:mm"),
+        endTime: bookingDay.add(durationVal, 'minute').format("HH:mm"),
+        duration: durationVal,
+        locationType: booking.locationType || BOOKING_TYPES.STUDIO,
         address: booking.address || '',
         status: booking.status || BOOKING_STATUS.PENDING,
-        travelFee: booking.travelFee,
+        transportFee: booking.transportFee,
         totalPrice: booking.totalPrice || 0,
         note: booking.note,
         createdAt: booking.createdAt || new Date(),

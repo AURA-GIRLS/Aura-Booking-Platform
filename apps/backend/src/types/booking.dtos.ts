@@ -12,7 +12,7 @@ export interface CreateBookingDTO {
   duration: number;
   locationType: BookingType;
   address: string;
-  travelFee?: number;
+  transportFee?: number;
   totalPrice: number;
   note?: string;
 }
@@ -26,7 +26,7 @@ export interface UpdateBookingDTO {
   locationType?: BookingType;
   address?: string;
   status?: BookingStatus;
-  travelFee?: number;
+  transportFee?: number;
   totalPrice?: number;
   note?: string;
 }
@@ -38,6 +38,7 @@ export interface BookingResponseDTO {
   serviceId: string;
   customerName: string;
   serviceName: string;
+  servicePrice: number;
   bookingDate: string;
   startTime: string;
   endTime: string;
@@ -45,7 +46,7 @@ export interface BookingResponseDTO {
   locationType: BookingType;
   address: string;
   status: BookingStatus;
-  travelFee?: number;
+  transportFee?: number;
   totalPrice: number;
   note?: string;
   createdAt: Date;

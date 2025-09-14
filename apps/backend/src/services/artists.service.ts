@@ -3,7 +3,8 @@ import { MUA } from "../models/muas.models";
 import { ServicePackage } from "../models/services.models";
 import { Portfolio, Certificate } from "../models/portfolios.models";
 import { mapServiceDoc, mapPortfolioDoc, mapCertificateDoc } from "../mappers/artist.mappers";
-import { toU, toDateU, toNumberOr } from "../utils/normalize";
+import type { ServiceResponseDTO } from "../types/service.dtos";
+import { toU, toNumberOr } from "../utils/normalize";
 import type {
   ListArtistsQueryDTO,
   ListArtistsDataDTO,
@@ -89,7 +90,7 @@ export async function getArtists(query: ListArtistsQueryDTO): Promise<ListArtist
   }
 
   // 6A) occasion (dịp) → match Portfolio.category theo code
-  if (occasion && occasion.trim() && occasion.toLowerCase() !== "all") {
+  if (occasion?.trim() && occasion.toLowerCase() !== "all") {
     const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
     const OCC_MAP: Record<string, string> = {
       bridal: "BRIDAL",
@@ -117,7 +118,7 @@ export async function getArtists(query: ListArtistsQueryDTO): Promise<ListArtist
   }
 
   // 6B) style (tone - free-text) → match portfolio + services bằng regex
-  if (style && style.trim()) {
+  if (style?.trim()) {
     const rx = new RegExp(String(style).trim(), "i");
 
     pipeline.push(
@@ -223,6 +224,26 @@ export async function getArtists(query: ListArtistsQueryDTO): Promise<ListArtist
    GET DETAIL (portfolio + services + certs)
    ========================================= */
 export class ArtistsService {
+  async getArtistServices(muaId: string): Promise<ServiceResponseDTO[]> {
+    if (!mongoose.isValidObjectId(muaId)) return [];
+    const _id = new mongoose.Types.ObjectId(muaId);
+    const docs = await ServicePackage.find({ muaId: _id, isAvailable: { $ne: false } })
+      .select("_id muaId name description price duration imageUrl isAvailable createdAt updatedAt")
+      .sort({ price: 1 })
+      .lean();
+    return docs.map((d: any) => ({
+      _id: String(d._id),
+      muaId: String(d.muaId),
+      name: d.name ?? "",
+      description: d.description ?? "",
+      imageUrl: d.imageUrl ?? "",
+      duration: typeof d.duration === 'number' ? d.duration : 0,
+      price: typeof d.price === 'number' ? d.price : 0,
+      isActive: d.isAvailable !== false,
+      createdAt: d.createdAt instanceof Date ? d.createdAt : new Date(d.createdAt ?? Date.now()),
+      updatedAt: d.updatedAt instanceof Date ? d.updatedAt : new Date(d.updatedAt ?? d.createdAt ?? Date.now()),
+    }));
+  }
   async getDetail(id: string): Promise<ArtistDetailDTO | null> {
     // Validate ObjectId, return null if invalid
     if (!mongoose.isValidObjectId(id)) return null;
