@@ -463,4 +463,152 @@ export class AuthService {
       throw error;
     }
   }
+
+  // Get user booking history with optional status filtering
+  async getBookingHistory(userId: string, status?: string): Promise<any[]> {
+    try {
+      const { Booking } = await import('../models/bookings.models');
+      const { Types } = await import('mongoose');
+      
+      // Convert userId string to ObjectId for MongoDB query
+      const customerObjectId = new Types.ObjectId(userId);
+      
+      // Build filter query
+      const filter: any = { customerId: customerObjectId };
+      if (status && status !== 'ALL') {
+        filter.status = status;
+      }
+      
+
+      // Aggregate booking data with populated service and MUA information
+      const bookings = await Booking.aggregate([
+        { $match: filter },
+        {
+          $lookup: {
+            from: 'servicepackages',
+            localField: 'serviceId',
+            foreignField: '_id',
+            as: 'servicePackage'
+          }
+        },
+        {
+          $lookup: {
+            from: 'muas',
+            localField: 'muaId',
+            foreignField: '_id',
+            as: 'muaProfile'
+          }
+        },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'muaProfile.userId',
+            foreignField: '_id',
+            as: 'muaUser'
+          }
+        },
+        {
+          $unwind: { path: '$servicePackage', preserveNullAndEmptyArrays: true }
+        },
+        {
+          $unwind: { path: '$muaProfile', preserveNullAndEmptyArrays: true }
+        },
+        {
+          $unwind: { path: '$muaUser', preserveNullAndEmptyArrays: true }
+        },
+        {
+          $project: {
+            _id: 1,
+            bookingDate: 1,
+            bookingTime: 1,
+            status: 1,
+            totalPrice: 1,
+            transportFee: 1,
+            locationType: 1,
+            address: 1,
+            createdAt: 1,
+            servicePackage: {
+              _id: '$servicePackage._id',
+              name: '$servicePackage.name',
+              price: '$servicePackage.price',
+              duration: '$servicePackage.duration',
+              images: '$servicePackage.images'
+            },
+            mua: {
+              _id: '$muaProfile._id',
+              fullName: '$muaUser.fullName',
+              avatarUrl: '$muaUser.avatarUrl',
+              location: '$muaProfile.location'
+            }
+          }
+        },
+        { $sort: { createdAt: -1 } }
+      ]);
+
+      return bookings;
+    } catch (error) {
+      console.error('Backend: Error in getBookingHistory:', error);
+      throw error;
+    }
+  }
+
+  // Get user statistics (total spent, booking counts, etc.)
+  async getUserStats(userId: string): Promise<any> {
+    try {
+      console.log('🔍 Backend: Getting user stats for userId:', userId);
+      
+      const { Booking } = await import('../models/bookings.models');
+      const { Types } = await import('mongoose');
+      
+      // Convert userId string to ObjectId for MongoDB query
+      const customerObjectId = new Types.ObjectId(userId);
+      
+      // Aggregate user statistics
+      const stats = await Booking.aggregate([
+        { $match: { customerId: customerObjectId } },
+        {
+          $group: {
+            _id: null,
+            totalBookings: { $sum: 1 },
+            completedBookings: {
+              $sum: { $cond: [{ $eq: ['$status', 'COMPLETED'] }, 1, 0] }
+            },
+            pendingBookings: {
+              $sum: { $cond: [{ $eq: ['$status', 'PENDING'] }, 1, 0] }
+            },
+            confirmedBookings: {
+              $sum: { $cond: [{ $eq: ['$status', 'CONFIRMED'] }, 1, 0] }
+            },
+            cancelledBookings: {
+              $sum: { $cond: [{ $eq: ['$status', 'CANCELLED'] }, 1, 0] }
+            },
+            totalSpent: {
+              $sum: {
+                $cond: [
+                  { $ne: ['$status', 'CANCELLED'] },   
+                  { $ifNull: ['$totalPrice', 0] },     
+                  0
+                ]
+              }
+            }
+          }
+        }
+      ]);
+
+      const result = stats[0] || {
+        totalBookings: 0,
+        completedBookings: 0,
+        pendingBookings: 0,
+        confirmedBookings: 0,
+        cancelledBookings: 0,
+        totalSpent: 0
+      };
+
+      console.log('🔍 Backend: User stats:', result);
+      return result;
+    } catch (error) {
+      console.error('Backend: Error in getUserStats:', error);
+      throw error;
+    }
+  }
 }

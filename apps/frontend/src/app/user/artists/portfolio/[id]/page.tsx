@@ -2,11 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Star, MapPin, Clock, Calendar, Award } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useParams } from 'next/navigation';
+import { ArrowLeft, Star, MapPin, Clock, Calendar, Award, Eye, Heart } from "lucide-react";
 import { fetchArtistDetail } from "@/config/api";
 import type { ArtistDetailDTO } from "@/config/types";
-import Navbar from "@/components/generalUI/Navbar";
-import Footer from "@/components/generalUI/Footer";
+import type { UserResponseDTO } from "@/types/user.dtos";
 
 /* ===== Helper Components ===== */
 function Stars({ value = 0, size = "sm" }: { value?: number; size?: "sm" | "lg" }) {
@@ -35,18 +36,26 @@ function formatDuration(duration?: number) {
 }
 
 /* ===== Main Component ===== */
-export default function ArtistDetailPage({ params }: { params: { id: string } }) {
+export default function ArtistDetailPage() {
+  const params = useParams();
+  const artistId = params.id as string;
+  
+  const router = useRouter();
   const [data, setData] = useState<ArtistDetailDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"intro" | "services" | "reviews" | "portfolio">("intro");
-
+  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
+  
+  // Add user state management
+  const [user, setUser] = useState<UserResponseDTO | null>(null);
+  
   useEffect(() => {
     (async () => {
       try {
         setLoading(true);
         setError(null);
-        const result = await fetchArtistDetail(params.id);
+        const result = await fetchArtistDetail(artistId);
         setData(result);
       } catch (e: any) {
         setError(e?.message || "Artist not found");
@@ -54,7 +63,12 @@ export default function ArtistDetailPage({ params }: { params: { id: string } })
         setLoading(false);
       }
     })();
-  }, [params.id]);
+  }, [artistId]);
+
+  // Initialize user from localStorage
+  useEffect(() => {
+    setUser(localStorage.getItem('currentUser') ? JSON.parse(localStorage.getItem('currentUser') as string) : null);
+  }, []);
 
   const handleBookService = (serviceId: string, serviceName: string) => {
     // TODO: Implement booking modal or navigation
@@ -63,16 +77,16 @@ export default function ArtistDetailPage({ params }: { params: { id: string } })
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-white">
-        <Navbar />
-        <div className="max-w-screen-2xl mx-auto px-5 sm:px-8 lg:px-10 py-8">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-32 mb-6"></div>
-            <div className="h-96 bg-gray-200 rounded-2xl mb-8"></div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 space-y-6">
-                <div className="h-64 bg-gray-200 rounded-2xl"></div>
-                <div className="h-64 bg-gray-200 rounded-2xl"></div>
+      <main className="min-h-screen" style={{ backgroundColor: '#faf8f9' }}>
+        <div className="w-[85%] mx-auto px-3 sm:px-4 lg:px-6 py-6">
+          <div className="animate-pulse space-y-6">
+            <div className="h-6 rounded w-24" style={{ backgroundColor: '#f4e8eb' }}></div>
+            <div className="h-64 rounded-xl" style={{ backgroundColor: '#f4e8eb' }}></div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="h-40 rounded-xl" style={{ backgroundColor: '#f4e8eb' }}></div>
+                ))}
               </div>
               <div className="space-y-4">
                 <div className="h-48 rounded-xl" style={{ backgroundColor: '#f4e8eb' }}></div>
@@ -80,44 +94,52 @@ export default function ArtistDetailPage({ params }: { params: { id: string } })
             </div>
           </div>
         </div>
+      </main>
     );
   }
 
   if (error || !data) {
     return (
-      <main className="min-h-screen bg-white">
-        <Navbar />
-        <div className="max-w-screen-2xl mx-auto px-5 sm:px-8 lg:px-10 py-8">
-          <div className="text-center py-16">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Artist Not Found</h1>
-            <p className="text-gray-600 mb-8">{error}</p>
+      <main className="min-h-screen" style={{ backgroundColor: '#faf8f9' }}>
+        <div className="w-[85%] mx-auto px-3 sm:px-4 lg:px-6 py-6">
+          <div className="text-center py-8">
+            <div className="text-4xl mb-4">💄</div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-3">Artist Not Found</h1>
+            <p className="text-gray-600 mb-6 text-base">{error}</p>
             <Link
-              href="/artists/makeup-artist-list"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-rose-600 text-white rounded-xl hover:bg-rose-700"
+              href="/user/artists/makeup-artist-list"
+              className="inline-flex items-center gap-2 px-6 py-2 text-white rounded-lg transition-all duration-300 shadow-md hover:shadow-lg font-medium"
+              style={{ backgroundColor: '#ecbdc5' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e0a8b1'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ecbdc5'}
             >
               <ArrowLeft size={16} />
               Back to Artists
             </Link>
           </div>
         </div>
+      </main>
     );
   }
 
   const { artist, services, portfolio } = data;
 
   return (
-    <main className="min-h-screen bg-white">
-      <Navbar />
-      
-      <div className="max-w-screen-2xl mx-auto px-5 sm:px-8 lg:px-10 py-8">
-        {/* Back Link */}
-        <Link
-          href="/artists/makeup-artist-list"
-          className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6"
-        >
-          <ArrowLeft size={20} />
-          Back to List
-        </Link>
+    <main className="min-h-screen" style={{ backgroundColor: '#faf8f9' }}>
+      <div className="w-[85%] mx-auto px-3 sm:px-4 lg:px-6 py-6">
+        {/* Back Navigation */}
+        <div className="mb-6">
+          <Link
+            href="/user/artists/makeup-artist-list"
+            className="inline-flex items-center gap-2 text-gray-600 transition-colors group"
+            style={{ color: '#8b5a6b' }}
+            onMouseEnter={(e) => e.currentTarget.style.color = '#ecbdc5'}
+            onMouseLeave={(e) => e.currentTarget.style.color = '#8b5a6b'}
+          >
+            <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+            <span className="font-medium text-sm">Back to Makeup Artists</span>
+          </Link>
+        </div>
 
         {/* Hero Section */}
         <section className="bg-white rounded-xl shadow-sm overflow-hidden mb-6" style={{ borderColor: '#f4e8eb', borderWidth: '1px' }}>
@@ -222,22 +244,92 @@ export default function ArtistDetailPage({ params }: { params: { id: string } })
                 <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#f0a8b1' }}>
                   <Calendar size={12} className="text-white" />
                 </div>
-              </div>
-            )}
+                Services & Packages
+              </h2>
+              
+              {services.length > 0 ? (
+                <div className="space-y-4">
+                  {services.map((service) => (
+                    <div 
+                      key={service._id} 
+                      onClick={() => setSelectedServiceId(service._id)}
+                      className={`group border rounded-xl p-4 hover:shadow-sm transition-all duration-300 cursor-pointer ${
+                        selectedServiceId === service._id
+                          ? 'border-pink-500 shadow-lg shadow-pink-200/50'
+                          : 'border-gray-200 hover:border-pink-300'
+                      }`} 
+                      style={{ borderColor: selectedServiceId === service._id ? '#ec4899' : '#f4e8eb', backgroundColor: '#fdfcfc' }}
+                    >
+                      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                        {/* Service Info */}
+                        <div className="flex-1">
+                          <div className="flex items-start justify-between mb-3">
+                            <h3 className="text-lg font-bold text-gray-900 group-hover:transition-colors" 
+                                style={{ color: '#8b5a6b' }}
+                                onMouseEnter={(e) => e.currentTarget.style.color = '#ecbdc5'}
+                                onMouseLeave={(e) => e.currentTarget.style.color = '#8b5a6b'}>
+                              {service.name || "Service Package"}
+                            </h3>
+                            <div className="text-right lg:hidden">
+                              <div className="text-xl font-bold" style={{ color: '#f0a8b1' }}>
+                                {formatPrice(service.price)}
+                              </div>
+                              <div className="flex items-center gap-1 text-xs text-gray-500">
+                                <Clock size={12} />
+                                {formatDuration(service.duration)}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {service.description && (
+                            <p className="text-gray-700 mb-3 leading-relaxed text-sm">
+                              {service.description}
+                            </p>
+                          )}
 
-            {activeTab === "services" && (
-              <div className="space-y-4">
-                <h2 className="text-xl font-semibold mb-4">Service Packages</h2>
-                {services.length > 0 ? (
-                  <div className="grid gap-4">
-                    {services.map((service) => (
-                      <div key={service.id} className="bg-white rounded-2xl border border-gray-200 p-6">
-                        <div className="flex justify-between items-start mb-3">
-                          <h3 className="text-lg font-semibold text-gray-900">
-                            {service.name || "Service Package"}
-                          </h3>
-                          <div className="text-right">
-                            <div className="text-xl font-bold text-green-600">
+                          {/* Benefits */}
+                          {service.benefits && service.benefits.length > 0 && (
+                            <div className="mb-3">
+                              <h4 className="text-xs font-semibold text-gray-900 mb-2">What's Included:</h4>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+                                {service.benefits.slice(0, 4).map((benefit, idx) => (
+                                  <div key={idx} className="flex items-center gap-2 text-xs text-green-700">
+                                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                                    {benefit}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Add-ons */}
+                          {service.addons && service.addons.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {service.addons.slice(0, 3).map((addon) => (
+                                <span
+                                  key={addon}
+                                  className="px-2 py-1 rounded-full text-xs font-medium"
+                                  style={{ backgroundColor: '#f0e6f7', color: '#6b46c1' }}
+                                >
+                                  {addon.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+
+                          {selectedServiceId === service._id && (
+                            <div className="mt-3">
+                              <span className="inline-block px-3 py-1 bg-pink-100 text-pink-700 text-sm rounded-full font-medium">
+                                Selected
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Pricing & Booking */}
+                        <div className="lg:ml-4 flex lg:flex-col items-center lg:items-end gap-3">
+                          <div className="text-right hidden lg:block">
+                            <div className="text-xl font-bold mb-1" style={{ color: '#d23f51' }}>
                               {formatPrice(service.price)}
                             </div>
                             <div className="flex items-center gap-1 text-xs text-gray-500">
@@ -246,38 +338,24 @@ export default function ArtistDetailPage({ params }: { params: { id: string } })
                             </div>
                           </div>
                           <button
-                            onClick={() => handleBookService(service._id, service.name)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleBookService(service._id, service.name);
+                            }}
                             className="w-full lg:w-auto px-4 py-2 text-white rounded-lg transition-all duration-300 font-medium shadow-sm hover:shadow-md transform hover:-translate-y-0.5 flex items-center justify-center gap-2 text-sm"
-                            style={{ backgroundColor: '#f0a8b1' }}
+                            style={{ backgroundColor: '#d23f51' }}
                             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e0a8b1'}
-                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#f0a8b1'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#d23f51'}
                           >
                             <Calendar size={14} />
                             Book Now
                           </button>
                         </div>
-                        {service.description && (
-                          <p className="text-gray-700">{service.description}</p>
-                        )}
-                        {service.isAvailable === false && (
-                          <span className="inline-block mt-2 px-3 py-1 bg-red-100 text-red-700 text-sm rounded-full">
-                            Service Unavailable
-                          </span>
-                        )}
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    No service packages available yet
-                  </div>
-                )}
-              </div>
-            )}
-
-            {activeTab === "reviews" && (
-              <div className="bg-white rounded-2xl border border-gray-200 p-6">
-                <h2 className="text-xl font-semibold mb-4">Customer Reviews</h2>
+                    </div>
+                  ))}
+                </div>
+              ) : (
                 <div className="text-center py-8 text-gray-500">
                   <div className="text-3xl mb-3">📅</div>
                   <p className="text-base">No services available yet</p>
@@ -367,7 +445,7 @@ export default function ArtistDetailPage({ params }: { params: { id: string } })
                   </span>
                 </div>
               </div>
-            )}
+            </div>
 
             {/* Book Your Session */}
             <div className="bg-gradient-to-br from-rose-50 to-pink-50 rounded-2xl border border-rose-200 p-6">
@@ -379,12 +457,27 @@ export default function ArtistDetailPage({ params }: { params: { id: string } })
               <p className="text-gray-600 mb-6 text-sm">
                 Limited slots available - book your desired date now!
               </p>
-              <button className="w-full px-6 py-3 bg-rose-600 text-white rounded-xl hover:bg-rose-700 font-semibold transition">
-                BOOK NOW!
+              <button 
+                onClick={() => {
+                  if (selectedServiceId) {
+                    router.push(`/user/booking/${params.id}/${selectedServiceId}` as any);
+                  } else {
+                    alert('Please select a service package first!');
+                  }
+                }}
+                className={`w-full px-6 py-3 rounded-xl font-semibold transition ${
+                  selectedServiceId 
+                    ? 'bg-rose-600 text-white hover:bg-rose-700' 
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+                disabled={!selectedServiceId}
+              >
+                {selectedServiceId ? 'BOOK NOW!' : 'SELECT A SERVICE FIRST'}
               </button>
             </div>
           </div>
         </div>
       </div>
+    </main>
   );
 }

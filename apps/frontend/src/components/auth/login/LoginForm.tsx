@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/lib/ui/button';
@@ -35,11 +34,14 @@ const LoginForm: React.FC = () => {
 				localStorage.setItem('currentUser', JSON.stringify(res.data.user));
 				localStorage.setItem('currentMUA', JSON.stringify(res.data.mua));
 
+				// Dispatch custom event to notify components about user update
+				window.dispatchEvent(new CustomEvent('userUpdated'));
+
 				setSuccess('Login successful!');
 				// console.log('Logged in user:', res.data.user.role);
-				if(res.data.user.role === 'ARTIST') {
+				if(res.data && res.data.user.role === 'ARTIST') {
 					//need change redirect to artist dashboard
-					window.location.href = `/manage-artist/${res.data.mua._id}/dashboard`;
+					window.location.href = `/manage-artist/${res.data.mua?._id}/dashboard`;
 				}else{
 					window.location.href = '/';
 				}
@@ -64,10 +66,31 @@ const LoginForm: React.FC = () => {
 					try {
 						// Gửi credential (JWT) về backend để xác thực
 						const res = await authService.loginWithGoogle({ credential: response.credential });
+						
 						if (res.success && res.data?.token) {
 							localStorage.setItem('token', res.data.token);
+							localStorage.setItem('currentUser', JSON.stringify(res.data.user));
+							
+							// Only save MUA data if it exists
+							if (res.data.mua) {
+								localStorage.setItem('currentMUA', JSON.stringify(res.data.mua));
+							} else {
+								localStorage.removeItem('currentMUA');
+							}
+							
+							// Dispatch custom event to notify components about user update
+							window.dispatchEvent(new CustomEvent('userUpdated'));
+							
 							setSuccess('Login successful!');
-							window.location.href = '/';
+							
+							// Small delay before redirect
+							setTimeout(() => {
+								if(res.data && res.data.user.role === 'ARTIST') {
+									window.location.href = `/manage-artist/${res.data.mua?._id}/dashboard`;
+								} else {
+									window.location.href = '/';
+								}
+							}, 100);
 						} else {
 							setError(res.message || 'Google login failed');
 						}

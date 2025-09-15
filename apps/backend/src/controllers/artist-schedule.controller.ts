@@ -1,11 +1,9 @@
-import { updateWorkingSlot, updateOverrideSlot, updateBlockedSlot, deleteWorkingSlot, deleteOverrideSlot, deleteBlockedSlot } from "@services/slot.service";
-// apps/backend/src/controllers/artists.controller.ts
+// apps/backend/src/controllers/artist-schedule.controller.ts
 import type { Request, Response } from "express";
-import { getArtists, ArtistsService } from "../services/artists.service";
-import type { ListArtistsQueryDTO } from "../types/artists.dtos";
-import { getFinalSlots, getOriginalWorkingSlots, getPendingBookingSlots } from "@services/schedule.service";
-import { addWorkingSlot, addOverrideSlot, addBlockedSlot } from "@services/slot.service";
-import type { ApiResponseDTO } from "types";
+import { ArtistsService } from "../services/artists.service";
+import { getFinalSlots, getOriginalWorkingSlots, getPendingBookingSlots } from "../services/schedule.service";
+import { addWorkingSlot, addOverrideSlot, addBlockedSlot, updateWorkingSlot, updateOverrideSlot, updateBlockedSlot, deleteWorkingSlot, deleteOverrideSlot, deleteBlockedSlot } from "../services/slot.service";
+import type { ApiResponseDTO } from "../types";
 
 export class ArtistsScheduleController {
   // ====================== WORKING SLOT ======================

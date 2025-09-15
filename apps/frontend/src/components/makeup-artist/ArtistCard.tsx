@@ -92,7 +92,7 @@ export default function ArtistCard({ artist, onViewProfile, onBookService }: Art
                 className="px-6 py-2 bg-gradient-to-r from-pink-600 to-pink-700 text-white text-sm font-medium rounded-lg hover:from-pink-700 hover:to-pink-800 transition-all duration-200 shadow-sm"
               >
                 <Eye size={14} className="inline mr-2" />
-                Xem Portfolio
+                    View Portfolio
               </button>
             </div>
           </div>
@@ -187,7 +187,7 @@ export default function ArtistCard({ artist, onViewProfile, onBookService }: Art
                           onClick={() => onBookService(_id, service._id)}
                           className="px-4 py-2 rounded-lg bg-gradient-to-r from-pink-500 to-pink-600 text-white hover:from-pink-600 hover:to-pink-700 transition-all text-sm font-medium whitespace-nowrap"
                         >
-                          Đặt lịch ngay
+                          Book Now
                         </button>
                       </div>
                     </div>

@@ -450,4 +450,69 @@ async googleLogin(req: Request, res: Response): Promise<void> {
       res.status(500).json(response);
     }
   }
+
+  // Get user booking history
+  async getBookingHistory(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = (req as any).user?.userId;
+      
+      if (!userId) {
+        const response: ApiResponseDTO = {
+          success: false,
+          message: 'Unauthorized'
+        };
+        res.status(401).json(response);
+        return;
+      }
+
+      const { status } = req.query;
+      const bookings = await authService.getBookingHistory(userId, status as string);
+      
+      const response: ApiResponseDTO = {
+        success: true,
+        message: 'Booking history retrieved successfully',
+        data: bookings
+      };
+      
+      res.status(200).json(response);
+    } catch (error) {
+      const response: ApiResponseDTO = {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to retrieve booking history'
+      };
+      res.status(500).json(response);
+    }
+  }
+
+  // Get user statistics (total spent, booking counts, etc.)
+  async getUserStats(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = (req as any).user?.userId;
+      
+      if (!userId) {
+        const response: ApiResponseDTO = {
+          success: false,
+          message: 'Unauthorized'
+        };
+        res.status(401).json(response);
+        return;
+      }
+
+      const stats = await authService.getUserStats(userId);
+      
+      const response: ApiResponseDTO = {
+        success: true,
+        message: 'User statistics retrieved successfully',
+        data: stats
+      };
+      
+      res.status(200).json(response);
+    } catch (error) {
+      const response: ApiResponseDTO = {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to retrieve user statistics'
+      };
+      res.status(500).json(response);
+    }
+  }
 }

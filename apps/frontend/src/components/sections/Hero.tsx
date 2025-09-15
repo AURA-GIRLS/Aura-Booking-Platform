@@ -45,20 +45,13 @@ export default function Hero() {
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row items-center lg:justify-start justify-center gap-4 mb-8">
               <Link
-                href="/artists/makeup-artist-list"
+                href="/user/artists/makeup-artist-list"
                 className="group px-8 py-4 bg-gradient-to-r from-pink-600 to-rose-600 text-white rounded-full font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex items-center gap-2"
               >
                 <Sparkles size={20} className="group-hover:rotate-12 transition-transform" />
                 Find Your Artist
               </Link>
-              
-              <Link
-                href="/about"
-                className="px-8 py-4 bg-white/80 text-pink-600 rounded-full font-semibold text-lg border-2 border-pink-200 hover:border-pink-300 hover:bg-pink-50 transition-all duration-300 flex items-center gap-2"
-              >
-                <Heart size={20} />
-                Learn More
-              </Link>
+            
             </div>
           </div>
 

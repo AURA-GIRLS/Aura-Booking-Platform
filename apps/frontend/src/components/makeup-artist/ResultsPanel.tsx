@@ -46,7 +46,7 @@ export default function ResultsPanel({
 
   const handleViewProfile = (artistId: string) => {
     // Navigate to artist portfolio page
-    window.location.href = `/artists/portfolio/${artistId}`;
+    window.location.href = `/user/artists/portfolio/${artistId}`;
   };
 
   const handleBookService = (artistId: string, serviceId: string) => {

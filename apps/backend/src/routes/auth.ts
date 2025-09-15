@@ -18,6 +18,8 @@ router.post('/reset-password', authController.resetPassword.bind(authController)
 // Protected routes (authentication required)
 router.get('/profile', authenticateToken, authController.getProfile.bind(authController));
 router.put('/profile', authenticateToken, authController.updateProfile.bind(authController));
+router.get('/booking-history', authenticateToken, authController.getBookingHistory.bind(authController));
+router.get('/stats', authenticateToken, authController.getUserStats.bind(authController));
 router.post('/resend-verification', authenticateToken, authController.resendVerificationEmail.bind(authController));
 router.get('/check-verification', authenticateToken, authController.checkEmailVerification.bind(authController));
 

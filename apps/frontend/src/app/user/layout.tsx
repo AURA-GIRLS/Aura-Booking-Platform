@@ -10,9 +10,59 @@ import { useState,useEffect } from "react";
 
 export default function UserLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserResponseDTO | null>(null);
+  
   useEffect(() => {
-    setUser(localStorage.getItem('currentUser') ? JSON.parse(localStorage.getItem('currentUser') as string) : null);
+    // Load user from localStorage on mount
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+      } catch (error) {
+        console.error('Error parsing stored user:', error);
+      }
+    }
+
+    // Listen for localStorage changes (from other tabs/windows)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'currentUser') {
+        if (e.newValue) {
+          try {
+            const parsedUser = JSON.parse(e.newValue);
+            setUser(parsedUser);
+          } catch (error) {
+            console.error('Error parsing user from storage event:', error);
+          }
+        } else {
+          setUser(null);
+        }
+      }
+    };
+
+    // Listen for custom userUpdated event (from same tab)
+    const handleUserUpdated = () => {
+      const storedUser = localStorage.getItem('currentUser');
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+        } catch (error) {
+          console.error('Error parsing updated user:', error);
+        }
+      } else {
+        setUser(null);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('userUpdated', handleUserUpdated);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('userUpdated', handleUserUpdated);
+    };
   }, []);
+  
   return (
     <main
       className="flex flex-col min-h-screen bg-white text-[#191516]"

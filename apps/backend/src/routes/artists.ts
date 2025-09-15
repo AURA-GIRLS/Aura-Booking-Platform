@@ -1,17 +1,15 @@
 import { Router } from "express";
 import { ArtistsController } from "../controllers/artists.controller";
-import { authenticateToken } from "middleware/auth.middleware"; 
+import { authenticateToken } from "../middleware/auth.middleware"; 
 
 const router = Router();
-const ctrl = new ArtistsController();
 const artistsController = new ArtistsController();
 
-// ====== Routes từ Huyền (Booking) ======
-router.get("/", (req, res) => ctrl.list(req, res));
-router.get("/:id", (req, res) => ctrl.getDetail(req, res));
-router.get("/:id/services", (req, res) => ctrl.getArtistServices(req, res));
 
-// ====== Routes từ Ngọc (UI) ======
+// router.get("/", (req, res) => ctrl.list(req, res));
+// router.get("/:id", (req, res) => ctrl.getDetail(req, res));
+// router.get("/:id/services", (req, res) => ctrl.getArtistServices(req, res));
+
 // Public routes (no authentication required)
 router.get('/', artistsController.getArtists.bind(artistsController));
 router.get('/:id', artistsController.getArtistById.bind(artistsController));

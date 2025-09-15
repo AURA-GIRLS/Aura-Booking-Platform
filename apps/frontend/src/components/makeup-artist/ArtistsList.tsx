@@ -97,16 +97,16 @@ export default function ArtistsList() {
 
   const handleViewProfile = (artistId: string, tab?: string) => {
     if (tab === 'portfolio') {
-      window.location.href = `/artists/portfolio/${artistId}`;
+      window.location.href = `/user/artists/portfolio/${artistId}`;
     } else {
       // Default behavior - could be contact page or general profile
-      window.location.href = `/artists/portfolio/${artistId}`;
+      window.location.href = `/user/artists/portfolio/${artistId}`;
     }
   };
 
   const handleBookService = (artistId: string, serviceId: string) => {
-    // TODO: Implement booking modal or navigation
-    alert(`Book service ${serviceId} from artist ${artistId}`);
+    // Navigate to booking page with artist and service parameters
+    window.location.href = `/user/booking/mua?artistId=${artistId}&serviceId=${serviceId}`;
   };
 
   return (

@@ -57,21 +57,14 @@ export default function CallToAction() {
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-12">
           <Link
-            href="/artists/makeup-artist-list"
+            href="/user/artists/makeup-artist-list"
             className="group px-10 py-5 bg-white text-pink-600 rounded-full font-bold text-lg shadow-2xl hover:shadow-3xl transform hover:-translate-y-2 transition-all duration-300 flex items-center gap-3 hover:bg-pink-50"
           >
             <Calendar size={24} />
             Book Now
             <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
           </Link>
-          
-          <Link
-            href="/about"
-            className="px-10 py-5 bg-white/20 backdrop-blur-sm text-white rounded-full font-semibold text-lg border-2 border-white/40 hover:border-white/60 hover:bg-white/30 transition-all duration-300 flex items-center gap-3"
-          >
-            <Heart size={20} />
-            Learn More
-          </Link>
+        
         </div>
 
         {/* Trust indicators */}

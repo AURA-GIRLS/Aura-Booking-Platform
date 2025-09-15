@@ -1,12 +1,20 @@
 // apps/backend/src/controllers/artists.controller.ts
 import type { Request, Response } from "express";
-import { getArtists, ArtistsService } from "../services/artists.service";
-import type { ListArtistsQueryDTO } from "../types/artists.dtos";
-import { getFinalSlots, getOriginalWorkingSlots } from "@services/schedule.service";
-import type { ApiResponseDTO } from "types";
-
+import { ArtistsService } from "../services/artists.service";
+import type { 
+  GetArtistsQueryDTO, 
+  GetArtistServicesQueryDTO
+} from "../types/artists.dtos";
+import { getFinalSlots, getOriginalWorkingSlots } from "../services/schedule.service";
+import type { ApiResponseDTO } from "../types";
+import { parseAddonsQuery } from "../utils/artists.utils";
 
 export class ArtistsController {
+  private artistsService: ArtistsService;
+
+  constructor() {
+    this.artistsService = new ArtistsService();
+  }
   
   /**
    * GET /api/artists
@@ -53,7 +61,7 @@ export class ArtistsController {
         return;
       }
 
-      const result = await artistsService.getArtists(query);
+      const result = await this.artistsService.getArtists(query);
       
       // Return flat JSON response as requested
       res.status(200).json(result);
@@ -110,7 +118,7 @@ export class ArtistsController {
         return;
       }
 
-      const result = await artistsService.getArtistServices(artistId, query);
+      const result = await this.artistsService.getArtistServices(artistId, query);
       
       // Return flat JSON response
       res.status(200).json(result);
@@ -147,7 +155,7 @@ export class ArtistsController {
         return;
       }
 
-      const result = await artistsService.getArtistById(artistId);
+      const result = await this.artistsService.getArtistById(artistId);
       
       res.status(200).json({
         success: true,
@@ -192,7 +200,7 @@ export class ArtistsController {
         limit: req.query.limit ? Number(req.query.limit) : undefined
       };
 
-      const result = await artistsService.getArtistPortfolio(artistId, query);
+      const result = await this.artistsService.getArtistPortfolio(artistId, query);
       
       res.status(200).json(result);
       
@@ -228,7 +236,7 @@ export class ArtistsController {
         return;
       }
 
-      const result = await artistsService.getArtistDetail(artistId);
+      const result = await this.artistsService.getArtistDetail(artistId);
       
       res.status(200).json({
         success: true,
@@ -317,20 +325,6 @@ export class ArtistsController {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to create booking'
       });
-    }
-  }
-  async getArtistServices(req: Request, res: Response): Promise<void> {
-    try {
-      const { id } = req.params;
-      const data =  await this.artistsService.getArtistServices(id);
-      const response: ApiResponseDTO = { success: true, data };
-      res.status(200).json(response);
-    } catch (err) {
-       const response: ApiResponseDTO = {
-        success: false,
-        message: err instanceof Error ? err.message : "Failed to get services",
-      };
-      res.status(500).json(response);
     }
   }
 }

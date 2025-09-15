@@ -64,7 +64,7 @@ export default function FeaturedLocations() {
           {cities.map((city, i) => (
             <Link
               key={i}
-              href={`/artists/makeup-artist-list?location=${city.name}`}
+              href={`/user/artists/makeup-artist-list?location=${city.name}`}
               className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-pink-100/50 hover:border-pink-200 transform hover:-translate-y-2"
             >
               {/* Image Container */}
@@ -122,7 +122,7 @@ export default function FeaturedLocations() {
         {/* View All Button */}
         <div className="text-center mt-12">
           <Link
-            href="/artists/makeup-artist-list"
+            href="/user/artists/makeup-artist-list"
             className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-pink-600 to-rose-600 text-white rounded-full font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
           >
             <MapPin size={20} />
