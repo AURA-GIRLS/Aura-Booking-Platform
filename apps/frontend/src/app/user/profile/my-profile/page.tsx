@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { User, Mail, Phone, MapPin, Calendar, Camera, Edit2, Save, X } from "lucide-react";
+import { User, Mail, Phone, Camera, Edit2, Save, X } from "lucide-react";
 import Navbar from "@/components/generalUI/Navbar";
 import Footer from "@/components/generalUI/Footer";
 import Notification from "@/components/generalUI/Notification";
@@ -15,11 +15,7 @@ export default function MyProfilePage() {
   const [profile, setProfile] = useState<UserResponseDTO | null>(null);
   const [editedProfile, setEditedProfile] = useState({
     fullName: "",
-    email: "",
     phoneNumber: "",
-    location: "",
-    birthDate: "",
-    bio: "",
     avatarUrl: ""
   });
 
@@ -47,11 +43,7 @@ export default function MyProfilePage() {
         setProfile(response.data);
         setEditedProfile({
           fullName: response.data.fullName || "",
-          email: response.data.email || "",
           phoneNumber: response.data.phoneNumber || "",
-          location: "", // This field doesn't exist in UserResponseDTO, keeping for UI
-          birthDate: "", // This field doesn't exist in UserResponseDTO, keeping for UI
-          bio: "", // This field doesn't exist in UserResponseDTO, keeping for UI
           avatarUrl: response.data.avatarUrl || ""
         });
       }
@@ -119,11 +111,7 @@ export default function MyProfilePage() {
     if (profile) {
       setEditedProfile({
         fullName: profile.fullName || "",
-        email: profile.email || "",
         phoneNumber: profile.phoneNumber || "",
-        location: "",
-        birthDate: "",
-        bio: "",
         avatarUrl: profile.avatarUrl || ""
       });
     }
@@ -142,7 +130,7 @@ export default function MyProfilePage() {
                   <div className="h-6 bg-gray-200 rounded w-3/4 mx-auto mt-4"></div>
                 </div>
                 <div className="lg:col-span-2 space-y-6">
-                  {[1, 2, 3, 4, 5].map((i) => (
+                  {[1, 2, 3].map((i) => (
                     <div key={i}>
                       <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
                       <div className="h-12 bg-gray-200 rounded"></div>
@@ -284,66 +272,22 @@ export default function MyProfilePage() {
                   )}
                 </div>
 
-                {/* Location - UI only field */}
-                <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                    <MapPin size={16} />
-                    Location
-                  </label>
-                  {isEditing ? (
+                {/* Avatar URL */}
+                {isEditing && (
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                      <Camera size={16} />
+                      Avatar URL
+                    </label>
                     <input
-                      type="text"
-                      value={editedProfile.location}
-                      onChange={(e) => setEditedProfile({...editedProfile, location: e.target.value})}
+                      type="url"
+                      value={editedProfile.avatarUrl}
+                      onChange={(e) => setEditedProfile({...editedProfile, avatarUrl: e.target.value})}
                       className="w-full px-4 py-3 border border-rose-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-300"
-                      placeholder="Enter your location"
+                      placeholder="Enter avatar image URL"
                     />
-                  ) : (
-                    <div className="px-4 py-3 bg-gray-50 rounded-xl text-gray-900">
-                      {editedProfile.location || "Not provided"}
-                    </div>
-                  )}
-                </div>
-
-                {/* Birth Date - UI only field */}
-                <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                    <Calendar size={16} />
-                    Birth Date
-                  </label>
-                  {isEditing ? (
-                    <input
-                      type="date"
-                      value={editedProfile.birthDate}
-                      onChange={(e) => setEditedProfile({...editedProfile, birthDate: e.target.value})}
-                      className="w-full px-4 py-3 border border-rose-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-300"
-                    />
-                  ) : (
-                    <div className="px-4 py-3 bg-gray-50 rounded-xl text-gray-900">
-                      {editedProfile.birthDate ? new Date(editedProfile.birthDate).toLocaleDateString('en-US') : "Not provided"}
-                    </div>
-                  )}
-                </div>
-
-                {/* Bio - UI only field */}
-                <div>
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">
-                    About Me
-                  </label>
-                  {isEditing ? (
-                    <textarea
-                      value={editedProfile.bio}
-                      onChange={(e) => setEditedProfile({...editedProfile, bio: e.target.value})}
-                      rows={4}
-                      className="w-full px-4 py-3 border border-rose-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-300 resize-none"
-                      placeholder="Tell us about yourself..."
-                    />
-                  ) : (
-                    <div className="px-4 py-3 bg-gray-50 rounded-xl text-gray-900 min-h-[100px]">
-                      {editedProfile.bio || "No bio added yet."}
-                    </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -359,21 +303,25 @@ export default function MyProfilePage() {
             </div>
           </div>
 
-          {/* Preferences */}
+          {/* Account Info */}
           <div className="bg-white rounded-2xl shadow-sm border border-rose-200/60 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Preferences</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Information</h3>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-gray-700">Email Notifications</span>
-                <input type="checkbox" className="w-4 h-4 text-pink-600 rounded" defaultChecked />
+                <span className="text-gray-700">Account Status</span>
+                <span className="text-green-600 font-medium">{profile?.status || 'Active'}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-gray-700">SMS Notifications</span>
-                <input type="checkbox" className="w-4 h-4 text-pink-600 rounded" />
+                <span className="text-gray-700">Email Verified</span>
+                <span className={`font-medium ${profile?.isEmailVerified ? 'text-green-600' : 'text-red-600'}`}>
+                  {profile?.isEmailVerified ? 'Verified' : 'Not Verified'}
+                </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-gray-700">Marketing Updates</span>
-                <input type="checkbox" className="w-4 h-4 text-pink-600 rounded" />
+                <span className="text-gray-700">Member Since</span>
+                <span className="text-gray-600">
+                  {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString('en-US') : 'N/A'}
+                </span>
               </div>
             </div>
           </div>

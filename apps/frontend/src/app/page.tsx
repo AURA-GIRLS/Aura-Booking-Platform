@@ -15,7 +15,7 @@ export default function HomePage() {
     setUser(localStorage.getItem('currentUser') ? JSON.parse(localStorage.getItem('currentUser') as string) : null);
   }, []);
   return (
-    <main>
+    <main className="min-h-screen bg-gradient-to-b from-pink-50 to-white">
       {user?.role === "ARTIST" ? <ArtistNavbar user={user} setUser={setUser} /> : <Navbar user={user} setUser={setUser} />}
       <Hero />
       <FeaturedLocations />
