@@ -1,5 +1,6 @@
 // apps/backend/src/types/artists.dtos.ts
 import type { ServiceCategory, ServiceAddon } from '../constants';
+import type { ServiceResponseDTO } from './service.dtos';
 
 // ===== REQUEST DTOs =====
 export interface GetArtistsQueryDTO {
@@ -65,7 +66,7 @@ export interface ServicePreviewDTO {
   images?: string[];
 }
 
-export interface ServiceResponseDTO {
+export interface ArtistServiceResponseDTO {
   _id: string;
   name: string;
   description?: string;

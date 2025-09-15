@@ -15,38 +15,42 @@ export default function HomePage() {
   const [mua, setMua] = useState<MuaResponseDTO | null>(null);
   
   useEffect(() => {
-    // Initial load from localStorage
     const loadUserData = () => {
-      const storedUser = localStorage.getItem('currentUser');
-      const storedMua = localStorage.getItem('currentMUA');
-      
-      setUser(storedUser ? JSON.parse(storedUser) : null);
-      setMua(storedMua ? JSON.parse(storedMua) : null);
+      try {
+        const storedUser = localStorage.getItem("currentUser");
+        const storedMua = localStorage.getItem("currentMUA");
+  
+        setUser(storedUser && storedUser !== "undefined" ? JSON.parse(storedUser) : null);
+        setMua(storedMua && storedMua !== "undefined" ? JSON.parse(storedMua) : null);
+      } catch (error) {
+        console.error("Error parsing localStorage data:", error);
+        setUser(null);
+        setMua(null);
+      }
     };
-    
+  
     loadUserData();
-    
-    // Listen for storage changes (when user logs in/out)
+  
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'currentUser' || e.key === 'currentMUA') {
+      if (e.key === "currentUser" || e.key === "currentMUA") {
         loadUserData();
       }
     };
-    
-    // Listen for custom events (for same-tab updates)
+  
     const handleUserUpdate = () => {
       loadUserData();
     };
-    
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('userUpdated', handleUserUpdate);
-    
+  
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("userUpdated", handleUserUpdate);
+  
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('userUpdated', handleUserUpdate);
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("userUpdated", handleUserUpdate);
     };
   }, []);
 
+  
   return (
     <main className="min-h-screen bg-gradient-to-b from-pink-50 to-white">
       {user?.role === "ARTIST" ? (

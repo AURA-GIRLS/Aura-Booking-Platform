@@ -5,7 +5,7 @@ import { ServiceResponseDTO } from "../types";
 export const ArtistService = {
  async getArtistServices(muaId: string): Promise<ApiResponseDTO<ServiceResponseDTO[]>> {
     try {
-      const res = await api.get<ApiResponseDTO<ServiceResponseDTO[]>>(`/artists/${muaId}/services`);
+      const res = await api.get<ApiResponseDTO<ServiceResponseDTO[]>>(`/artists/${muaId}/services-package`);
       return res.data;
     } catch (error: any) {
       throw error.response?.data || error;

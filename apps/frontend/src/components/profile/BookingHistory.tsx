@@ -322,12 +322,12 @@ const BookingHistory: React.FC = () => {
                           <span className="text-gray-600">Service Price:</span>
                           <span className="font-medium">{formatCurrency(booking.servicePackage.price)}</span>
                         </div>
-                        {booking.transportFee && booking.transportFee > 0 && (
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-gray-600">Transport Fee:</span>
-                            <span className="font-medium">{formatCurrency(booking.transportFee)}</span>
-                          </div>
-                        )}
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600">Transport Fee:</span>
+                          <span className="font-medium">
+                            {booking.transportFee != null ? formatCurrency(booking.transportFee) : "0"}
+                          </span>
+                        </div>
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-gray-600">Duration:</span>
                           <span className="font-medium">{booking.servicePackage.duration} minutes</span>

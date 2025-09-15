@@ -39,7 +39,13 @@ export default function BookingWizardPage() {
   const [viewYear, setViewYear] = useState<number>(new Date().getFullYear());
   const [viewMonth, setViewMonth] = useState<number>(new Date().getMonth()); // 0-based
 
-  const currentUser = localStorage.getItem("currentUser") ? JSON.parse(localStorage.getItem("currentUser") as string) : null;
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  // Initialize currentUser from localStorage on client-side
+  useEffect(() => {
+    const user = localStorage.getItem("currentUser");
+    setCurrentUser(user ? JSON.parse(user) : null);
+  }, []);
 
   // Simulated service fetch (replace with real API call)
   // If route already contains service id we could prefetch details here (future enhancement)

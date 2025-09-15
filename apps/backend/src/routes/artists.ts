@@ -8,7 +8,7 @@ const artistsController = new ArtistsController();
 
 // router.get("/", (req, res) => ctrl.list(req, res));
 // router.get("/:id", (req, res) => ctrl.getDetail(req, res));
-// router.get("/:id/services", (req, res) => ctrl.getArtistServices(req, res));
+router.get("/:id/services-package", (req, res) => artistsController.getArtistServicesPackage(req, res));
 
 // Public routes (no authentication required)
 router.get('/', artistsController.getArtists.bind(artistsController));

@@ -71,10 +71,10 @@ export default function ArtistDetailPage() {
   }, []);
 
   const handleBookService = (serviceId: string, serviceName: string) => {
-    // TODO: Implement booking modal or navigation
-    alert(`Book service: ${serviceName} (ID: ${serviceId})`);
+    // Navigate to booking page with artist and service parameters
+    router.push(`/user/booking/${artistId}/${serviceId}`);
   };
-
+  
   if (loading) {
     return (
       <main className="min-h-screen" style={{ backgroundColor: '#faf8f9' }}>
@@ -445,36 +445,7 @@ export default function ArtistDetailPage() {
                   </span>
                 </div>
               </div>
-            </div>
-
-            {/* Book Your Session */}
-            <div className="bg-gradient-to-br from-rose-50 to-pink-50 rounded-2xl border border-rose-200 p-6">
-              <h3 className="text-lg font-semibold mb-4 text-gray-900">Book Your Session Today</h3>
-              <p className="text-gray-700 mb-4 leading-relaxed">
-                Whether you're preparing for a wedding, special event, or personal photoshoot,{" "}
-                <span className="font-semibold">{artist.fullName || "this artist"}</span> will help you look and feel your absolute best.
-              </p>
-              <p className="text-gray-600 mb-6 text-sm">
-                Limited slots available - book your desired date now!
-              </p>
-              <button 
-                onClick={() => {
-                  if (selectedServiceId) {
-                    router.push(`/user/booking/${params.id}/${selectedServiceId}` as any);
-                  } else {
-                    alert('Please select a service package first!');
-                  }
-                }}
-                className={`w-full px-6 py-3 rounded-xl font-semibold transition ${
-                  selectedServiceId 
-                    ? 'bg-rose-600 text-white hover:bg-rose-700' 
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-                disabled={!selectedServiceId}
-              >
-                {selectedServiceId ? 'BOOK NOW!' : 'SELECT A SERVICE FIRST'}
-              </button>
-            </div>
+            </div> 
           </div>
         </div>
       </div>

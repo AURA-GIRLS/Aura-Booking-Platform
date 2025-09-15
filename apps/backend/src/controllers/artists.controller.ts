@@ -327,4 +327,19 @@ export class ArtistsController {
       });
     }
   }
+
+  async getArtistServicesPackage(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const data =  await this.artistsService.getArtistServicesPackage(id);
+      const response: ApiResponseDTO = { success: true, data };
+      res.status(200).json(response);
+    } catch (err) {
+       const response: ApiResponseDTO = {
+        success: false,
+        message: err instanceof Error ? err.message : "Failed to get services",
+      };
+      res.status(500).json(response);
+    }
+  }
 }

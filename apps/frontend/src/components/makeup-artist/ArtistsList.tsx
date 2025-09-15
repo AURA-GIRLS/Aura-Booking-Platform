@@ -7,6 +7,7 @@ import type { Artist, ApiResp, SortKey } from "@/config/types";
 import FiltersPanel from "./FiltersPanel";
 import ResultsPanel from "./ResultsPanel";
 import { MapPin } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 const budgetToRange = (b: string) => {
   const m = b.match(/(\d[\d\.]*)\s*VND\s*-\s*(\d[\d\.]*)/i);
@@ -23,7 +24,7 @@ export default function ArtistsList() {
   const [pages, setPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const router = useRouter();
   // Filters
   const [q, setQ] = useState("");
   const [location, setLocation] = useState("All Areas");
@@ -106,7 +107,7 @@ export default function ArtistsList() {
 
   const handleBookService = (artistId: string, serviceId: string) => {
     // Navigate to booking page with artist and service parameters
-    window.location.href = `/user/booking/mua?artistId=${artistId}&serviceId=${serviceId}`;
+    router.push(`/user/booking/${artistId}/${serviceId}`);
   };
 
   return (

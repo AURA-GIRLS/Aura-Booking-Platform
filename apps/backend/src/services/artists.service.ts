@@ -9,8 +9,10 @@ import type {
   ArtistsListResponseDTO,
   ServicesListResponseDTO,
   ArtistResponseDTO,
-  ServiceResponseDTO
+  ArtistServiceResponseDTO
 } from "../types/artists.dtos";
+
+import type { ServiceResponseDTO } from "../types/service.dtos";
 import { 
   buildArtistMatchQuery,
   buildServiceMatchQuery,
@@ -25,7 +27,27 @@ export class ArtistsService {
   /**
    * Get paginated list of artists with comprehensive filtering
    * Includes service preview (max 2 services per artist)
-   */
+   */ async getArtistServicesPackage(muaId: string): Promise<ServiceResponseDTO[]> {
+    if (!mongoose.isValidObjectId(muaId)) return [];
+    const _id = new mongoose.Types.ObjectId(muaId);
+    const docs = await ServicePackage.find({ muaId: _id, isAvailable: { $ne: false } })
+      .select("_id muaId name description price duration imageUrl isAvailable createdAt updatedAt")
+      .sort({ price: 1 })
+      .lean();
+    return docs.map((d: any) => ({
+      _id: String(d._id),
+      muaId: String(d.muaId),
+      name: d.name ?? "",
+      description: d.description ?? "",
+      imageUrl: d.imageUrl ?? "",
+      duration: typeof d.duration === 'number' ? d.duration : 0,
+      price: typeof d.price === 'number' ? d.price : 0,
+      isActive: d.isAvailable !== false,
+      createdAt: d.createdAt instanceof Date ? d.createdAt : new Date(d.createdAt ?? Date.now()),
+      updatedAt: d.updatedAt instanceof Date ? d.updatedAt : new Date(d.updatedAt ?? d.createdAt ?? Date.now()),
+    }));
+  }
+
   async getArtists(query: GetArtistsQueryDTO): Promise<ArtistsListResponseDTO> {
     try {
       // Normalize pagination parameters
@@ -242,7 +264,7 @@ export class ArtistsService {
       const pagination = calculatePagination(total, page, limit);
 
       return {
-        items: services.map(this.formatServiceResponse),
+        items: services.map(this.formatServiceResponseDTO),
         total,
         pages: pagination.pages,
         page
@@ -401,6 +423,14 @@ export class ArtistsService {
         },
         { $unwind: '$user' },
         {
+          $lookup: {
+            from: 'servicepackages',
+            localField: '_id',
+            foreignField: 'muaId',
+            as: 'services'
+          }
+        },
+        {
           $project: {
             _id: 1,
             fullName: '$user.fullName',
@@ -440,7 +470,7 @@ export class ArtistsService {
 
       return {
         artist: artistResult,
-        services: services.map(this.formatServiceResponse),
+        services: services.map(this.formatServiceResponseDTO),
         portfolio: portfolioItems.map(this.formatPortfolioResponse)
       };
 
@@ -506,9 +536,27 @@ export class ArtistsService {
   }
 
   /**
-   * Format service document to response DTO
+   * Format service document to ServiceResponseDTO (for compatibility with existing API)
    */
-  private formatServiceResponse(service: any): ServiceResponseDTO {
+  private formatServiceResponseDTO(service: any): ServiceResponseDTO {
+    return {
+      _id: service._id.toString(),
+      muaId: service.muaId.toString(),
+      name: service.name,
+      description: service.description || '',
+      imageUrl: service.images?.[0] || service.imageUrl || '',
+      duration: service.duration,
+      price: service.price,
+      isActive: service.isAvailable !== false,
+      createdAt: service.createdAt,
+      updatedAt: service.updatedAt || service.createdAt
+    };
+  }
+
+  /**
+   * Format service document to ArtistServiceResponseDTO (for artist-specific service data)
+   */
+  private formatArtistServiceResponse(service: any): ArtistServiceResponseDTO {
     return {
       _id: service._id.toString(),
       name: service.name,

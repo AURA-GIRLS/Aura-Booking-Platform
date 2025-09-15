@@ -183,7 +183,7 @@ export default function ArtistCard({ artist, onViewProfile, onBookService }: Art
                         <div className="text-lg font-bold text-pink-600 mb-3">
                           {formatVND(service.price)}
                         </div>
-                        <button
+                        <button type="button"
                           onClick={() => onBookService(_id, service._id)}
                           className="px-4 py-2 rounded-lg bg-gradient-to-r from-pink-500 to-pink-600 text-white hover:from-pink-600 hover:to-pink-700 transition-all text-sm font-medium whitespace-nowrap"
                         >

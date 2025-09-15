@@ -50,8 +50,7 @@ export default function ResultsPanel({
   };
 
   const handleBookService = (artistId: string, serviceId: string) => {
-    // TODO: Implement booking modal or navigation
-    alert(`Book service ${serviceId} from artist ${artistId}`);
+    window.location.href = `/user/booking/${artistId}/${serviceId}`;
   };
 
   return (
