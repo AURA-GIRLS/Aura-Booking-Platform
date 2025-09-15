@@ -27,7 +27,8 @@ export class ArtistsService {
   /**
    * Get paginated list of artists with comprehensive filtering
    * Includes service preview (max 2 services per artist)
-   */ async getArtistServicesPackage(muaId: string): Promise<ServiceResponseDTO[]> {
+   */ 
+  async getArtistServicesPackage(muaId: string): Promise<ServiceResponseDTO[]> {
     if (!mongoose.isValidObjectId(muaId)) return [];
     const _id = new mongoose.Types.ObjectId(muaId);
     const docs = await ServicePackage.find({ muaId: _id, isAvailable: { $ne: false } })

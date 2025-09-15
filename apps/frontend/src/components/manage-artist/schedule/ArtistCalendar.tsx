@@ -40,6 +40,8 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [currentView, setCurrentView] = useState<View>("week");
   const [loading, setLoading] = useState(false);
+  const [scheduleLoading, setScheduleLoading] = useState(false);
+  const [pendingBookingsLoading, setPendingBookingsLoading] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [modalSlotInfo, setModalSlotInfo] = useState<any>(null);
@@ -81,6 +83,7 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
 
   const fetchSchedule = useCallback(async (weekStart?: string) => {
     console.log("Artist ID:", id);
+    setScheduleLoading(true);
     setLoading(true);
     if (!weekStart) {
       const today = new Date();
@@ -98,11 +101,13 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
     } catch (err: any) {
       showError(err.message || 'Failed to fetch schedule');
     } finally {
+      setScheduleLoading(false);
       setLoading(false);
     }
   }, [id, showError]);
 
   const fetchPendingBookings = useCallback(async()=>{
+    setPendingBookingsLoading(true);
     try {
       const res = await artistScheduleService.getPendingBookings(id,pageNumber.toString(),pageSize.toString());
       if (res.success) {
@@ -115,7 +120,7 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
     } catch (err: any) {
       showError(err.message || 'Failed to fetch pending bookings');
     } finally {
-      setLoading(false);
+      setPendingBookingsLoading(false);
     }
   }, [id, pageNumber, pageSize, showError])
   // Initialize calendar event handlers
@@ -150,7 +155,7 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
 
   useEffect(() => {
     fetchSchedule();
-  }, [fetchSchedule,currentDate]);
+  }, [fetchSchedule]);
 
   useEffect(() => {
     fetchPendingBookings();
@@ -234,7 +239,7 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
     const filteredBg = filterOverlaps(bgEvts).map(({ _p, ...rest }) => rest);
 
     return { events: filteredEvents, backgroundEvents: filteredBg };
-  }, [slotData]);
+  }, [slotData,fetchSchedule]);
 
   // Điều chỉnh bảng màu: nhấn mạnh tông hồng nhẹ nhưng vẫn phân biệt rõ các loại slot
   // BOOKING: hồng rõ ràng (để nhận biết khách đã đặt) – nền hồng nhạt + viền hồng đậm
@@ -343,14 +348,155 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
         });
     }, [slotData]);
 
+// Skeleton Components
+const CalendarSkeleton = () => (
+  <div className="w-2/3 border-r border-neutral-200 bg-white flex flex-col">
+    {/* Legend Skeleton */}
+    <div className="flex flex-wrap gap-5 px-6 pt-4 pb-2">
+      {[1, 2, 3, 4].map((i) => (
+        <div key={i} className="flex items-center gap-1">
+          <div className="h-3 w-3 rounded-sm bg-gray-200 animate-pulse" />
+          <div className="h-3 w-16 bg-gray-200 rounded animate-pulse" />
+        </div>
+      ))}
+    </div>
+    
+    {/* Calendar Skeleton */}
+    <div className="flex-1 px-6 pb-4 flex flex-col">
+      <div className="flex-1 rounded-md border border-neutral-200 bg-white">
+        {/* Calendar Header */}
+        <div className="p-4 border-b border-neutral-200">
+          <div className="flex justify-between items-center">
+            <div className="h-6 w-32 bg-gray-200 rounded animate-pulse" />
+            <div className="flex gap-2">
+              <div className="h-8 w-16 bg-gray-200 rounded animate-pulse" />
+              <div className="h-8 w-16 bg-gray-200 rounded animate-pulse" />
+            </div>
+          </div>
+        </div>
+        
+        {/* Calendar Grid */}
+        <div className="p-4">
+          {/* Week days header */}
+          <div className="grid grid-cols-7 gap-1 mb-4">
+            {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+              <div key={i} className="h-8 bg-gray-200 rounded animate-pulse" />
+            ))}
+          </div>
+          
+          {/* Time slots */}
+          <div className="space-y-2">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
+              <div key={i} className="grid grid-cols-7 gap-1">
+                {[1, 2, 3, 4, 5, 6, 7].map((j) => (
+                  <div key={j} className="h-12 bg-gray-100 rounded animate-pulse" />
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
 
+const PendingBookingsSkeleton = () => (
+  <div className="border-t bg-white p-6 rounded-br-lg">
+    <div className="mb-4 flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <div className="h-5 w-5 bg-gray-200 rounded-full animate-pulse" />
+        <div className="h-5 w-32 bg-gray-200 rounded animate-pulse" />
+      </div>
+      <div className="h-6 w-16 bg-gray-200 rounded animate-pulse" />
+    </div>
+    
+    {/* Pagination skeleton */}
+    <div className="mb-4 flex items-center justify-between gap-4">
+      <div className="flex items-center gap-2">
+        <div className="h-4 w-10 bg-gray-200 rounded animate-pulse" />
+        <div className="h-8 w-12 bg-gray-200 rounded animate-pulse" />
+        <div className="h-4 w-16 bg-gray-200 rounded animate-pulse" />
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="h-8 w-8 bg-gray-200 rounded animate-pulse" />
+        <div className="h-4 w-16 bg-gray-200 rounded animate-pulse" />
+        <div className="h-8 w-8 bg-gray-200 rounded animate-pulse" />
+      </div>
+    </div>
+    
+    {/* Booking cards skeleton */}
+    <div className="space-y-3">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="p-4 border border-neutral-200 bg-white rounded">
+          <div className="flex items-start justify-between mb-2">
+            <div className="space-y-2">
+              <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+              <div className="h-3 w-40 bg-gray-200 rounded animate-pulse" />
+              <div className="h-3 w-32 bg-gray-200 rounded animate-pulse" />
+            </div>
+            <div className="h-6 w-16 bg-gray-200 rounded animate-pulse" />
+          </div>
+          <div className="flex gap-2">
+            <div className="flex-1 h-8 bg-gray-200 rounded animate-pulse" />
+            <div className="flex-1 h-8 bg-gray-200 rounded animate-pulse" />
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+if(loading && scheduleLoading && pendingBookingsLoading){
+  return (
+    <div className="min-h-screen bg-white text-[#191516] font-sans tracking-wide">
+      {/* Header */}
+      <div className="border-b border-[#EC5A86]/30 bg-white">
+        <div className="flex h-16 items-center justify-between px-6">
+          <div className="select-none">
+            <h1 className="text-[1.4rem] font-black tracking-wider uppercase text-[#111]">Calendar</h1>
+            <p className="text-[0.8rem] font-medium text-[#EC5A86]">Manage your bookings & schedule</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="h-6 w-20 bg-gray-200 rounded animate-pulse" />
+            <div className="h-10 w-28 bg-gray-200 rounded-full animate-pulse" />
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-1">
+        <CalendarSkeleton />
+        
+        {/* Sidebar */}
+        <div className="w-1/3 flex flex-col">
+          <div className="p-6 pb-4">
+            <Card className="border-neutral-200 bg-white">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <div className="h-5 w-5 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-5 w-32 bg-gray-200 rounded animate-pulse" />
+                </div>
+              </CardHeader>
+              <CardContent className="px-6 space-y-4">
+                <div className="text-center py-8">
+                  <div className="h-12 w-12 bg-gray-200 rounded mx-auto mb-4 animate-pulse" />
+                  <div className="h-4 w-40 bg-gray-200 rounded mx-auto animate-pulse" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          <PendingBookingsSkeleton />
+        </div>
+      </div>
+    </div>
+  );
+}
   return (
   <div className={`min-h-screen bg-white text-[#191516] font-sans tracking-wide ${styles.calendarRoot}`}> 
       {extraStyles /* kept for structure; null now */}
       {matchedHeight && (
         <style>{`[data-equal-height]{height:var(--equal-col-height);}`}</style>
       )}
-      {/* Header giữ nguyên */}
+      {/* Header */}
   <div className="border-b border-[#EC5A86]/30 bg-white">
         <div className="flex h-16 items-center justify-between px-6">
           <div className="select-none">
@@ -358,12 +504,12 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
             <p className="text-[0.8rem] font-medium text-[#EC5A86]">Manage your bookings & schedule</p>
           </div>
           <div className="flex items-center gap-4">
-            <Badge className="bg-[#111] text-white border border-[#EC5A86]/40 font-semibold">
+            <Badge className="bg-[#111] text-white border border-[#EC5A86]/40 font-semibold hover:scale-105 transition-transform duration-200">
               {pendingBookings.length} Pending
             </Badge>
             <Button
               onClick={() => setShowAddEventModal(true)}
-              className="bg-[#EC5A86] hover:bg-[#d54e77] text-white font-semibold rounded-full shadow-sm px-5 focus-visible:ring-2 focus-visible:ring-[#EC5A86]/40 focus-visible:outline-none"
+              className="bg-[#EC5A86] hover:bg-[#d54e77] text-white font-semibold rounded-full shadow-sm px-5 focus-visible:ring-2 focus-visible:ring-[#EC5A86]/40 focus-visible:outline-none hover:scale-105 hover:shadow-md transition-all duration-200"
             >
               <Icon icon="lucide:plus" className="mr-2 h-4 w-4" />
               New Event
@@ -391,37 +537,74 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
             <div className="flex items-center gap-1"><span className="inline-block h-3 w-3 rounded-sm bg-[rgba(17,17,17,0.04)] border border-[rgba(17,17,17,0.25)]" /> <span className="text-[#111]">Blocked</span></div>
           </div>
           <div className="flex-1 px-6 pb-4 flex flex-col">
-            <div className=" flex-1 rounded-md border border-neutral-200 bg-white calendar-shell">
-              <DragAndDropCalendar
-                localizer={localizer}
-                selectable
-                resizable
-                popup
-                events={events}
-                backgroundEvents={backgroundEvents}
-                views={["week", "day"]}
-                style={{ height: "70rem" }}
-                step={30}
-                timeslots={1}
-                eventPropGetter={eventStyleGetter}
-                defaultView="week"
-                onEventDrop={handleEventDrop}
-                onEventResize={handleEventResize}
-                onSelectEvent={handleSelectEvent}
-                onSelectSlot={handleOpenAddEventModal}
-                date={currentDate}
-                onNavigate={handleNavigate}
-                view={currentView}
-                onView={handleViewChange}
-              />
+            <div className=" flex-1 rounded-md border border-neutral-200 bg-white calendar-shell hover:shadow-lg transition-shadow duration-300">
+              {scheduleLoading ? (
+                <div className="p-4">
+                  {/* Calendar Header */}
+                  <div className="p-4 border-b border-neutral-200">
+                    <div className="flex justify-between items-center">
+                      <div className="h-6 w-32 bg-gray-200 rounded animate-pulse" />
+                      <div className="flex gap-2">
+                        <div className="h-8 w-16 bg-gray-200 rounded animate-pulse" />
+                        <div className="h-8 w-16 bg-gray-200 rounded animate-pulse" />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Calendar Grid */}
+                  <div className="p-4">
+                    {/* Week days header */}
+                    <div className="grid grid-cols-7 gap-1 mb-4">
+                      {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+                        <div key={i} className="h-8 bg-gray-200 rounded animate-pulse" />
+                      ))}
+                    </div>
+                    
+                    {/* Time slots */}
+                    <div className="space-y-2">
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
+                        <div key={i} className="grid grid-cols-7 gap-1">
+                          {[1, 2, 3, 4, 5, 6, 7].map((j) => (
+                            <div key={j} className="h-12 bg-gray-100 rounded animate-pulse" />
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <DragAndDropCalendar
+                  localizer={localizer}
+                  selectable
+                  resizable
+                  popup
+                  events={events}
+                  backgroundEvents={backgroundEvents}
+                  views={["week", "day"]}
+                  style={{ height: "62rem" }}
+                  step={30}
+                  timeslots={1}
+                  eventPropGetter={eventStyleGetter}
+                  defaultView="week"
+                  scrollToTime={new Date(1970, 1, 1, 5, 0, 0)}
+                  onEventDrop={handleEventDrop}
+                  onEventResize={handleEventResize}
+                  onSelectEvent={handleSelectEvent}
+                  onSelectSlot={handleOpenAddEventModal}
+                  date={currentDate}
+                  onNavigate={handleNavigate}
+                  view={currentView}
+                  onView={handleViewChange}
+                />
+              )}
             </div>
           </div>
         </div>
 
-        {/* Sidebar giữ nguyên */}
+        {/* Sidebar */}
         <div ref={rightColumnRef} className="w-1/3 flex flex-col">
           <div className="p-6 pb-4">{/* event details (no internal scroll; page will scroll) */}
-            <Card className="border-neutral-200 bg-white">
+            <Card className="border-neutral-200 bg-white hover:shadow-lg transition-shadow duration-300">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-[#111]">
                   <Icon icon="lucide:calendar" className="h-5 w-5 text-[#EC5A86]" />
@@ -503,7 +686,7 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
                       <>
                         <Button
                           variant="outline"
-                          className="flex-1 border-[#EC5A86] text-[#111] hover:bg-[#EC5A86]/10 focus-visible:ring-2 focus-visible:ring-[#EC5A86]/40"
+                          className="flex-1 border-[#EC5A86] text-[#111] hover:bg-[#EC5A86]/10 focus-visible:ring-2 focus-visible:ring-[#EC5A86]/40 hover:scale-105 transition-all duration-200"
                           onClick={() => handleOpenEditEvent(selectedEvent, setNewEventForm, setModalSlotInfo, setShowAddEventModal)}
                         >
                           <Icon icon="lucide:edit" className="mr-2 h-4 w-4" />
@@ -511,7 +694,7 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
                         </Button>
                         <Button
                           variant="destructive"
-                          className="flex-1 bg-[#EC5A86] hover:bg-[#d54e77] text-white border-none focus-visible:ring-2 focus-visible:ring-[#EC5A86]/40"
+                          className="flex-1 bg-[#EC5A86] hover:bg-[#d54e77] text-white border-none focus-visible:ring-2 focus-visible:ring-[#EC5A86]/40 hover:scale-105 transition-all duration-200"
                           onClick={() => handleDeleteEvent(selectedEvent)}
                           disabled={loading}
                         >
@@ -564,7 +747,7 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
                   variant="outline"
                   onClick={() => setPageNumber(prev => Math.max(1, prev - 1))}
                   disabled={pageNumber === 1}
-                  className="h-8 px-2 border-neutral-300 text-neutral-600 hover:bg-neutral-50"
+                  className="h-8 px-2 border-neutral-300 text-neutral-600 hover:bg-neutral-50 hover:scale-105 transition-all duration-200"
                 >
                   <Icon icon="lucide:chevron-left" className="h-4 w-4" />
                 </Button>
@@ -574,16 +757,34 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
                   variant="outline"
                   onClick={() => setPageNumber(prev => prev + 1)}
                   disabled={pendingBookings.length < pageSize}
-                  className="h-8 px-2 border-neutral-300 text-neutral-600 hover:bg-neutral-50"
+                  className="h-8 px-2 border-neutral-300 text-neutral-600 hover:bg-neutral-50 hover:scale-105 transition-all duration-200"
                 >
                   <Icon icon="lucide:chevron-right" className="h-4 w-4" />
                 </Button>
               </div>
             </div>
             <div className="space-y-3">
-              {pendingBookings.length > 0 ? (
+              {pendingBookingsLoading ? (
+                // Skeleton for pending bookings
+                [1, 2, 3].map((i) => (
+                  <div key={i} className="p-4 border border-neutral-200 bg-white rounded">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="space-y-2">
+                        <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+                        <div className="h-3 w-40 bg-gray-200 rounded animate-pulse" />
+                        <div className="h-3 w-32 bg-gray-200 rounded animate-pulse" />
+                      </div>
+                      <div className="h-6 w-16 bg-gray-200 rounded animate-pulse" />
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="flex-1 h-8 bg-gray-200 rounded animate-pulse" />
+                      <div className="flex-1 h-8 bg-gray-200 rounded animate-pulse" />
+                    </div>
+                  </div>
+                ))
+              ) : pendingBookings.length > 0 ? (
                 pendingBookings.map((booking) => (
-                  <Card key={booking._id} className="p-4 border-neutral-200 bg-white hover:bg-[#FFE3EE] hover:shadow-sm transition-colors">
+                  <Card key={booking._id} className="p-4 border-neutral-200 bg-white hover:bg-[#FFE3EE] hover:shadow-md hover:scale-[1.02] transition-all duration-300">
                     <div className="flex items-start justify-between mb-2">
                       <div>
                         <p className="font-medium text-sm text-neutral-800">{booking.customerName}</p>
@@ -602,11 +803,11 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
                       </Badge>
                     </div>
                     <div className="flex gap-2">
-                      <Button size="sm" className="flex-1 h-8 text-xs bg-[#EC5A86] hover:bg-[#d54e77] text-white shadow-sm focus-visible:ring-2 focus-visible:ring-[#EC5A86]/40">
+                      <Button size="sm" className="flex-1 h-8 text-xs bg-[#EC5A86] hover:bg-[#d54e77] text-white shadow-sm focus-visible:ring-2 focus-visible:ring-[#EC5A86]/40 hover:scale-105 transition-transform duration-200">
                         <Icon icon="lucide:check" className="mr-1 h-3 w-3" />
                         Accept
                       </Button>
-                      <Button variant="outline" size="sm" className="flex-1 h-8 text-xs border-[#EC5A86] text-[#EC5A86] hover:bg-[#FFE3EE] focus-visible:ring-2 focus-visible:ring-[#EC5A86]/40">
+                      <Button variant="outline" size="sm" className="flex-1 h-8 text-xs border-[#EC5A86] text-[#EC5A86] hover:bg-[#FFE3EE] focus-visible:ring-2 focus-visible:ring-[#EC5A86]/40 hover:scale-105 transition-transform duration-200">
                         <Icon icon="lucide:x" className="mr-1 h-3 w-3" />
                         Decline
                       </Button>
@@ -621,7 +822,7 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
                 </div>
               )}
             </div>
-            <Button variant="ghost" className="w-full mt-4 text-sm text-neutral-600 hover:bg-neutral-100">
+            <Button variant="ghost" className="w-full mt-4 text-sm text-neutral-600 hover:bg-neutral-100 hover:scale-105 transition-all duration-200">
               View All Requests
               <Icon icon="lucide:arrow-right" className="ml-2 h-4 w-4" />
             </Button>

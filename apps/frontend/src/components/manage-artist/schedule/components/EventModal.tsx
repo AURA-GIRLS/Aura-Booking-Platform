@@ -57,9 +57,9 @@ export const EventModal: React.FC<EventModalProps> = ({
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
               disabled={modalSlotInfo?.isEdit}
             >
-              <option value="BLOCKED">Blocked</option>
-              <option value="OVERRIDE">Override</option>
-              <option value="ORIGINAL_WORKING">Working</option>
+              <option value="BLOCKED">Blocked Time</option>
+              <option value="OVERRIDE">Override Time</option>
+              <option value="ORIGINAL_WORKING">Working Time</option>
               <option value="NEW_WORKING" hidden>Working</option>
             </select>
           </div>
@@ -71,7 +71,7 @@ export const EventModal: React.FC<EventModalProps> = ({
               id="name"
               disabled
               type="text"
-              value={newEventForm.type === "BLOCKED" ? "Blocked" : newEventForm.type === "OVERRIDE" ? "Override" : "Working"}
+              value={newEventForm.type === "BLOCKED" ? "Blocked Time" : newEventForm.type === "OVERRIDE" ? "Override Time" : "Working Time"}
               onChange={(e) => handleInputChange('name', e.target.value)}
               className="w-full"
               placeholder="Enter event name"
