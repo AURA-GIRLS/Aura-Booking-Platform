@@ -54,36 +54,24 @@ export default function ResultsPanel({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Tabs for occasions */}
-      <div className="bg-white rounded-2xl shadow-sm border border-rose-200 overflow-hidden">
-        <div className="flex overflow-x-auto scrollbar-hide">
+    <div className="space-y-6 animate-fade-in">
+      {/* Category Tabs and Sort */}
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6 animate-slide-up">
+        {/* Category Tabs */}
+        <div className="flex flex-wrap gap-2 animate-slide-up">
           {occasionTabs.map(([key, label]) => (
             <button
               key={key}
               onClick={() => onOccasionChange(key as ServiceCategory)}
-              className={`flex-shrink-0 px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-300 hover:scale-105 hover:shadow-lg transform active:scale-95 ${
                 occasion === key
-                  ? "border-rose-500 text-rose-600 bg-rose-50"
-                  : "border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  ? "bg-gradient-to-r from-rose-500 to-pink-600 text-white shadow-lg "
+                  : "bg-white border border-gray-200 text-gray-700 hover:bg-gradient-to-r hover:from-rose-50 hover:to-pink-50 hover:border-rose-300 hover:text-rose-700"
               }`}
             >
               {label}
             </button>
           ))}
-        </div>
-      </div>
-
-      {/* Sort and Results Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="text-lg font-semibold text-gray-900">
-          {total.toLocaleString("en-US")} Makeup Artists
-          {occasion !== "ALL" && (
-            <span className="text-gray-600 font-normal">
-              {" "}
-              for {SERVICE_CATEGORY_LABELS[occasion]} occasions
-            </span>
-          )}
         </div>
 
         {/* Sort dropdown */}
@@ -92,7 +80,7 @@ export default function ResultsPanel({
           <select
             value={sort}
             onChange={(e) => onSortChange(e.target.value as SortKey)}
-            className="h-10 px-3 rounded-lg border border-gray-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 focus:border-rose-400"
+            className="h-10 px-3 rounded-lg border border-gray-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 focus:border-rose-400 hover:border-rose-400 hover:shadow-md transition-all duration-300"
           >
             {sortOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -103,9 +91,19 @@ export default function ResultsPanel({
         </div>
       </div>
 
+      {/* Results Header */}
+      <div className="mb-6 animate-slide-up">
+        <h2 className="text-2xl font-bold bg-clip-text text-gray-900 mb-1 animate-fade-in">
+          All Areas: {total.toLocaleString("en-US")} Makeup Artists waiting for you to choose
+        </h2>
+        <p className="text-gray-600 animate-slide-up">
+          Recently found high-quality makeup services nationwide
+        </p>
+      </div>
+
       {/* Error State */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 animate-shake hover:shadow-lg transition-all duration-300">
           <div className="flex items-center gap-2">
             <span className="text-red-600">⚠️</span>
             <span className="text-red-800 font-medium">An error occurred</span>
@@ -138,18 +136,18 @@ export default function ResultsPanel({
           {[...Array(6)].map((_, i) => (
             <div
               key={i}
-              className="bg-white rounded-xl shadow-sm border border-rose-100 overflow-hidden animate-pulse"
+              className="bg-white rounded-xl shadow-sm border border-rose-100 overflow-hidden animate-pulse hover:shadow-lg transition-all duration-300"
             >
               <div className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-16 h-16 bg-gray-200 rounded-full"></div>
+                  <div className="w-16 h-16 bg-gradient-to-br from-rose-200 to-pink-200 rounded-full animate-pulse"></div>
                   <div className="flex-1">
-                    <div className="h-5 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                    <div className="h-4 bg-gray-200 rounded w-1/2 mb-3"></div>
+                    <div className="h-5 bg-gradient-to-r from-rose-200 to-pink-200 rounded mb-2 animate-pulse"></div>
+                    <div className="h-4 bg-gradient-to-r from-rose-200 to-pink-200 rounded w-3/4 mb-2 animate-pulse"></div>
+                    <div className="h-4 bg-gradient-to-r from-rose-200 to-pink-200 rounded w-1/2 mb-3 animate-pulse"></div>
                     <div className="flex gap-2">
-                      <div className="flex-1 h-8 bg-gray-200 rounded-lg"></div>
-                      <div className="flex-1 h-8 bg-gray-200 rounded-lg"></div>
+                      <div className="flex-1 h-8 bg-gradient-to-r from-rose-200 to-pink-200 rounded-lg animate-pulse"></div>
+                      <div className="flex-1 h-8 bg-gradient-to-r from-rose-200 to-pink-200 rounded-lg animate-pulse"></div>
                     </div>
                   </div>
                 </div>
@@ -161,17 +159,17 @@ export default function ResultsPanel({
 
       {/* Empty State */}
       {!loading && artists.length === 0 && !error && (
-        <div className="text-center py-12">
-          <div className="text-6xl mb-4">💄</div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+        <div className="text-center py-12 animate-fade-in">
+          <div className="text-6xl mb-4 animate-bounce">💄</div>
+          <h3 className="text-xl font-semibold bg-gradient-to-r from-rose-700 to-pink-700 bg-clip-text text-transparent mb-2 animate-slide-up">
             No Makeup Artist found
           </h3>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 mb-6 animate-slide-up">
             Try adjusting the filters or searching with different keywords
           </p>
           <button
             onClick={() => window.location.reload()}
-            className="px-6 py-3 bg-rose-600 text-white rounded-xl hover:bg-rose-700 transition-colors"
+            className="px-6 py-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-xl hover:from-rose-600 hover:to-pink-700 hover:scale-105 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-rose-300 focus:ring-offset-2 transition-all duration-300 transform active:scale-95"
           >
             Reset Search
           </button>
@@ -180,10 +178,10 @@ export default function ResultsPanel({
 
       {/* Load More Button */}
       {canLoadMore && !loading && (
-        <div className="text-center pt-6">
+        <div className="text-center pt-6 animate-slide-up">
           <button
             onClick={onLoadMore}
-            className="px-8 py-3 bg-white border-2 border-rose-300 text-rose-700 rounded-xl hover:bg-rose-50 hover:border-rose-400 transition-colors font-medium"
+            className="px-8 py-3 bg-white border-2 border-rose-300 text-rose-700 rounded-xl hover:bg-gradient-to-r hover:from-rose-50 hover:to-pink-50 hover:border-rose-400 hover:scale-105 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-rose-300 focus:ring-offset-2 transition-all duration-300 font-medium transform active:scale-95"
           >
             Load More Makeup Artists
           </button>

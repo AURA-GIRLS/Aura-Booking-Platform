@@ -111,78 +111,107 @@ export default function ArtistsList() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50 to-pink-100">
-      {/* Header search bar */}
-      <div className="bg-gradient-to-r from-pink-100 to-pink-200 py-6 md:py-8 shadow-[inset_0_-1px_0_0_rgba(244,114,182,0.25)]">
+    <div className="min-h-screen bg-gradient-to-b from-rose-50 to-white relative overflow-hidden">
+      {/* Header section with title and search */}
+      <div className="bg-gradient-to-r from-rose-50 to-pink-50 py-16 md:py-20 relative overflow-hidden">
         <div className="max-w-screen-2xl mx-auto px-5 sm:px-8 lg:px-10">
-          <div className="w-full bg-white rounded-2xl shadow-sm border border-rose-200/70 px-4 py-4 md:px-6 md:py-5">
-            <div className="grid grid-cols-1 lg:grid-cols-[2.2fr_1.2fr_1.2fr_auto] gap-3 lg:gap-4 items-center">
-              {/* Location */}
-              <div className="relative">
-                <span aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-rose-500">
-                  <MapPin size={18} strokeWidth={2} />
-                </span>
-                <select
-                  aria-label="Location"
-                  value={location}
-                  onChange={(e) => { setLocation(e.target.value); setPage(1); }}
-                  className="appearance-none h-12 w-full pl-10 pr-8 rounded-xl md:rounded-2xl border-2 border-rose-200 bg-white text-base
-                             focus:outline-none focus:ring-2 focus:ring-rose-300 focus:border-rose-400"
-                >
-                  {PROVINCES.map((p) => <option key={p} value={p}>{p}</option>)}
-                </select>
-                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
-              </div>
-
-              {/* Date placeholder */}
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-rose-500">📅</span>
-                <input
-                  aria-label="Makeup Date"
-                  type="date"
-                  className="h-12 w-full pl-10 pr-3 rounded-xl md:rounded-2xl border-2 border-rose-200 bg-white text-base
-                             focus:outline-none focus:ring-2 focus:ring-rose-300 focus:border-rose-400 [color-scheme:light]"
-                />
-              </div>
-
-              {/* Style */}
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-rose-500">💄</span>
-                <input
-                  aria-label="Makeup Style"
-                  value={styleText}
-                  onChange={(e) => { setStyleText(e.target.value); setPage(1); }}
-                  placeholder="Style (e.g., Natural, Elegant...)"
-                  className="h-12 w-full pl-10 pr-3 rounded-xl md:rounded-2xl border-2 border-rose-200 bg-white text-base
-                             focus:outline-none focus:ring-2 focus:ring-rose-300 focus:border-rose-400"
-                />
-              </div>
-
-              <div className="flex justify-end">
-                <button
-                  onClick={() => setPage(1)}
-                  className="h-12 px-5 rounded-xl md:rounded-2xl bg-green-600 text-white text-base hover:bg-green-700 whitespace-nowrap"
-                >
-                  Find Makeup Artist
-                </button>
-              </div>
-            </div>
+          {/* Title and subtitle */}
+          {/* Floating decorative elements */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute top-10 left-10 w-20 h-20 bg-rose-200/30 rounded-full blur-xl animate-pulse"></div>
+            <div className="absolute top-32 right-20 w-16 h-16 bg-pink-200/40 rounded-full blur-lg animate-bounce"></div>
+            <div className="absolute bottom-20 left-1/4 w-24 h-24 bg-rose-300/20 rounded-full blur-2xl animate-pulse"></div>
+            <div className="absolute top-1/3 right-1/3 w-12 h-12 bg-pink-300/30 rounded-full blur-md animate-bounce"></div>
           </div>
 
-          {/* Meta line */}
-          <div className="mt-5">
-            <div className="text-xl md:text-2xl font-bold text-gray-900">
-              {metaLine}
-            </div>
-            <p className="text-gray-600 mt-1">
-              Recently found high-quality makeup services {location !== "All Areas" ? `in ${location}` : "nationwide"}
+          <div className="text-center mb-8 relative z-10">
+          <h1 className="text-3xl lg:text-4xl font-semibold mb-3 bg-gray-900 bg-clip-text text-transparent leading-tight">
+          Find Your Perfect Makeup Artist
+            </h1>
+            <p className="font-normal md:font-lg text-gray-600 max-w-2xl mx-auto animate-slide-up">
+              Discover talented professionals for your special moments
             </p>
+          </div>
+
+          {/* Search filter bar */}
+          <div className="max-w-4xl mx-auto relative z-10">
+            <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg border border-rose-200/50 p-4 md:p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 animate-slide-up">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                {/* Location */}
+                <div className="relative">
+                  <span aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                    <MapPin size={18} strokeWidth={2} />
+                  </span>
+                  <select
+                    aria-label="Location"
+                    value={location}
+                    onChange={(e) => { setLocation(e.target.value); setPage(1); }}
+                    className="appearance-none h-12 w-full pl-10 pr-8 rounded-lg border border-gray-300 bg-white text-sm
+                               focus:outline-none  hover:border-rose-300  hover:shadow-md"
+                  >
+                    {PROVINCES.map((p) => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </span>
+                </div>
+
+                {/* Date */}
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </span>
+                  <input
+                    aria-label="Makeup Date"
+                    type="date"
+                    placeholder="dd/mm/yyyy"
+                    className="h-12 w-full pl-10 pr-3 rounded-lg border border-gray-300 bg-white text-sm
+                               focus:outline-none hover:border-rose-300 hover:shadow-md
+                               [color-scheme:light] placeholder:text-gray-400 "
+                  />
+                </div>
+
+                {/* Style */}
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                    </svg>
+                  </span>
+                  <input
+                    aria-label="Makeup Style"
+                    value={styleText}
+                    onChange={(e) => { setStyleText(e.target.value); setPage(1); }}
+                    placeholder="Style (e.g., Natural, Elegant)"
+                    className="h-12 w-full pl-10 pr-3 rounded-lg border border-gray-300 bg-white text-sm
+                               focus:outline-none hover:border-rose-300 hover:shadow-md
+                               placeholder:text-gray-400 "
+                  />
+                </div>
+
+                {/* Search Button */}
+                <div className="flex justify-center md:justify-end">
+                  <button
+                    onClick={() => setPage(1)}
+                    className="h-12 px-6 rounded-lg bg-gradient-to-r from-rose-500 to-pink-600 text-white text-sm font-medium hover:from-rose-600 hover:to-pink-700 hover:scale-105 hover:shadow-lg
+                               focus:outline-none focus:ring-2 focus:ring-rose-300 focus:ring-offset-2 
+                               transition-all duration-300 whitespace-nowrap min-w-[140px] transform active:scale-95"
+                  >
+                    Find Makeup Artist
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Main grid: Filters 3/12 – Results 9/12 */}
-      <div className="max-w-screen-2xl mx-auto px-5 sm:px-8 lg:px-10 py-8">
+      <div className="bg-white max-w-screen-2xl mx-auto px-5 sm:px-8 lg:px-10 py-8" style={{minHeight:"70rem"}}>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-3">
             <FiltersPanel
