@@ -329,9 +329,12 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
           end: end.format('YYYY-MM-DDTHH:mm'),
           day: start.format('YYYY-MM-DD')
         });
+       if(slotInfo.action==="select") {
         setShowAddEventModal(true);
-         const weekStart = getMondayOfWeek(start.format('YYYY-MM-DD'));
-        fetchSchedule(weekStart);
+        const weekStart = getMondayOfWeek(start.format('YYYY-MM-DD'));
+       fetchSchedule(weekStart);
+       }
+       
     }, []);
 
   const handleSelectEvent = useCallback((event:any) => {
@@ -448,7 +451,7 @@ const PendingBookingsSkeleton = () => (
 
 if(loading && scheduleLoading && pendingBookingsLoading){
   return (
-    <div className="min-h-screen bg-white text-[#191516] font-sans tracking-wide">
+    <div style={{height:"fit-content"}} className="min-h-screen bg-white text-[#191516] font-sans tracking-wide">
       {/* Header */}
       <div className="border-b border-[#EC5A86]/30 bg-white">
         <div className="flex h-16 items-center justify-between px-6">
@@ -522,7 +525,8 @@ if(loading && scheduleLoading && pendingBookingsLoading){
     {/* Calendar chiếm 2/3 */}
   <div
         ref={leftColumnRef}
-        data-equal-height
+        // data-equal-height
+        style={{ height: "fit-content" }}
         className="w-2/3 border-r border-neutral-200 bg-white flex flex-col"
       >
           {/* Legend */}
@@ -537,7 +541,7 @@ if(loading && scheduleLoading && pendingBookingsLoading){
             <div className="flex items-center gap-1"><span className="inline-block h-3 w-3 rounded-sm bg-[rgba(17,17,17,0.04)] border border-[rgba(17,17,17,0.25)]" /> <span className="text-[#111]">Blocked</span></div>
           </div>
           <div className="flex-1 px-6 pb-4 flex flex-col">
-            <div className=" flex-1 rounded-md border border-neutral-200 bg-white calendar-shell hover:shadow-lg transition-shadow duration-300">
+            <div  style={{ height: "70rem" }} className=" flex-1 rounded-md border border-neutral-200 bg-white calendar-shell hover:shadow-lg transition-shadow duration-300">
               {scheduleLoading ? (
                 <div className="p-4">
                   {/* Calendar Header */}
@@ -581,7 +585,7 @@ if(loading && scheduleLoading && pendingBookingsLoading){
                   events={events}
                   backgroundEvents={backgroundEvents}
                   views={["week", "day"]}
-                  style={{ height: "62rem" }}
+                  style={{ height: "70rem" }}
                   step={30}
                   timeslots={1}
                   eventPropGetter={eventStyleGetter}
@@ -605,71 +609,167 @@ if(loading && scheduleLoading && pendingBookingsLoading){
         <div ref={rightColumnRef} className="w-1/3 flex flex-col">
           <div className="p-6 pb-4">{/* event details (no internal scroll; page will scroll) */}
             <Card className="border-neutral-200 bg-white hover:shadow-lg transition-shadow duration-300">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-[#111]">
-                  <Icon icon="lucide:calendar" className="h-5 w-5 text-[#EC5A86]" />
-                {selectedEvent && (selectedEvent.canUpdate?"Event Details": "Booking Details")}  
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-6 space-y-4">
+              <CardContent className="p-0">
                 {selectedEvent ? (
                   <>
-                    <div>
-                      <h3 className="font-semibold text-neutral-800">{selectedEvent.title}</h3>
-                      <p className="text-sm text-neutral-400">{dayjs(selectedEvent.start).format('dddd, MMMM D, YYYY')}</p>
-                    </div>
-                    <Separator />
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm text-neutral-500">Type:</span>
-                        <span className="text-sm font-medium text-neutral-700">{selectedEvent.type}</span>
+                    {/* Booking Details - Special Layout */}
+                    {selectedEvent.type === 'BOOKING' ? (
+                      <div className="p-4 space-y-4">
+                        {/* Service Header with Status */}
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-[#EC5A86]/10 rounded-lg flex items-center justify-center">
+                              <Icon icon="lucide:sparkles" className="w-4 h-4 text-[#EC5A86]" />
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-[#111] text-base">{selectedEvent.slotData?.serviceName || 'Service'}</h3>
+                              <p className="text-xs text-neutral-500">#{selectedEvent.id?.slice(-6) || '456789'}</p>
+                            </div>
+                          </div>
+                          {selectedEvent.slotData?.status && (() => {
+                            const st = selectedEvent.slotData.status;
+                            let badgeClass = 'bg-green-500';
+                            let label = 'Confirmed';
+                            if (st === 'COMPLETED') { badgeClass = 'bg-[#111]'; label = 'Completed'; }
+                            else if (st === 'CONFIRMED') { badgeClass = 'bg-green-700'; label = 'Confirmed'; }
+                            return (
+                              <Badge className={`${badgeClass} text-white px-2 py-1 text-xs`}>
+                                {label}
+                              </Badge>
+                            );
+                          })()}
+                        </div>
+
+                        {/* Customer Info */}
+                        {selectedEvent.slotData?.customerName && (
+                          <div className="flex items-center gap-2">
+                            <Icon icon="lucide:user" className="w-3 h-3 text-neutral-400" />
+                            <div>
+                              <p className="text-sm text-[#111]">{selectedEvent.slotData.customerName}</p>
+                              <p className="text-xs text-neutral-500">+84 123 456 789</p>
+                            </div>
+                          </div>
+                        )}
+                        
+                        <Separator className="bg-gray-300"/>
+                        
+                        {/* Date & Time */}
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Icon icon="lucide:calendar-days" className="w-3 h-3 text-neutral-400" />
+                            <p className="text-sm text-[#111]">{dayjs(selectedEvent.start).format('MMM D, YYYY')}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Icon icon="lucide:clock" className="w-3 h-3 text-neutral-400" />
+                            <p className="text-sm text-[#111]">
+                              {dayjs(selectedEvent.start).format('HH:mm')} - {dayjs(selectedEvent.end).format('HH:mm')}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Location */}
+                        <div className="flex items-start gap-2">
+                          <Icon icon="lucide:map-pin" className="w-3 h-3 text-neutral-400 mt-0.5" />
+                          <p className="text-sm text-[#111]">Beauty Salon - District 1, HCMC</p>
+                        </div>
+
+                        <Separator className="bg-gray-300"/>
+
+                        {/* Total Price */}
+                        {selectedEvent.slotData?.totalPrice && (
+                          <div className="flex items-center justify-between bg-gray-100 p-2 rounded">
+                            <div className="flex items-center gap-1">
+                              <Icon icon="lucide:dollar-sign" className="w-3 h-3 text-green-700" />
+                              <span className="text-sm font-medium text-[#111]">Total</span>
+                            </div>
+                            <span className="text-lg font-bold text-green-700">
+                              {selectedEvent.slotData.totalPrice.toLocaleString()}đ
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Notes */}
+                        {selectedEvent.slotData?.note && (
+                          <div className="bg-gray-50 p-2 rounded">
+                            <p className="text-xs font-medium text-[#111] mb-1">Notes:</p>
+                            <p className="text-xs text-neutral-600">{selectedEvent.slotData.note}</p>
+                          </div>
+                        )}
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-neutral-500">Time:</span>
-                        <span className="text-sm font-medium text-neutral-700">
-                          {dayjs(selectedEvent.start).format('HH:mm')} - {dayjs(selectedEvent.end).format('HH:mm')}
-                        </span>
+                    ) : (
+                      /* Other Event Types - Card Layout */
+                      <div className="p-4 space-y-4">
+                        {/* Event Header with Status */}
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-neutral-100 rounded-lg flex items-center justify-center">
+                              <Icon icon={
+                                selectedEvent.type === 'BLOCKED' ? "lucide:ban" :
+                                selectedEvent.type === 'OVERRIDE' || selectedEvent.type === 'NEW_OVERRIDE' ? "lucide:edit" :
+                                "lucide:clock"
+                              } className="w-4 h-4 text-neutral-600" />
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-[#111] text-base">
+                                {selectedEvent.type ==="ORIGINAL_WORKING"||selectedEvent.type ==="NEW_WORKING" ? "Working Time" : 
+                                 selectedEvent.type ==="OVERRIDE"||selectedEvent.type ==="NEW_OVERRIDE" ? "Override Time" : 
+                                 selectedEvent.type ==="BLOCKED" ? "Blocked Time" : "Event"}
+                              </h3>
+                              <p className="text-xs text-neutral-500">Event #{selectedEvent.id?.slice(-6) || '456789'}</p>
+                            </div>
+                          </div>
+                          {(() => {
+                            let badgeClass = 'bg-gray-500';
+                            let label = 'Blocked Time';
+                            if (selectedEvent.type === 'ORIGINAL_WORKING' || selectedEvent.type === 'NEW_WORKING') {
+                              badgeClass = 'bg-pink-500';
+                              label = 'Working Time';
+                            } else if (selectedEvent.type === 'OVERRIDE' || selectedEvent.type === 'NEW_OVERRIDE') {
+                              badgeClass = 'bg-purple-500';
+                              label = 'Override Time';
+                            }
+                            return (
+                              <Badge className={`${badgeClass} text-white px-2 py-1 text-xs`}>
+                                {label}
+                              </Badge>
+                            );
+                          })()}
+                        </div>
+
+                        <Separator className="bg-gray-300"/>
+                        
+                        {/* Date & Time */}
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Icon icon="lucide:calendar-days" className="w-3 h-3 text-neutral-400" />
+                            <div>
+                              <p className="text-sm text-[#111]">{dayjs(selectedEvent.start).format('dddd, MMMM D, YYYY')}</p>
+                              <p className="text-xs text-neutral-500">Date</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Icon icon="lucide:clock" className="w-3 h-3 text-neutral-400" />
+                            <div>
+                              <p className="text-sm text-[#111]">
+                                {dayjs(selectedEvent.start).format('HH:mm')} - {dayjs(selectedEvent.end).format('HH:mm')} 
+                                ({dayjs(selectedEvent.end).diff(dayjs(selectedEvent.start), 'hour', true)} hour)
+                              </p>
+                              <p className="text-xs text-neutral-500">Time</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Notes */}
+                        {selectedEvent.slotData?.note && (
+                          <>
+                            <Separator className="bg-gray-300"/>
+                            <div className="bg-gray-50 p-2 rounded">
+                              <p className="text-xs font-medium text-[#111] mb-1">Notes:</p>
+                              <p className="text-xs text-neutral-600">{selectedEvent.slotData.note}</p>
+                            </div>
+                          </>
+                        )}
                       </div>
-                      {selectedEvent.slotData?.customerName && (
-                        <div className="flex justify-between">
-                          <span className="text-sm text-neutral-500">Customer:</span>
-                          <span className="text-sm font-medium text-neutral-700">{selectedEvent.slotData.customerName}</span>
-                        </div>
-                      )}
-                       {selectedEvent.slotData?.serviceName && (
-                        <div className="flex justify-between">
-                          <span className="text-sm text-neutral-500">Service:</span>
-                          <span className="text-sm font-medium text-neutral-700">{selectedEvent.slotData.serviceName}</span>
-                        </div>
-                      )}
-                       {selectedEvent.slotData?.totalPrice && (
-                        <div className="flex justify-between">
-                          <span className="text-sm text-neutral-500">Total:</span>
-                          <span className="text-sm font-medium text-neutral-700">{selectedEvent.slotData.totalPrice.toLocaleString() ?? 0}đ</span>
-                        </div>
-                      )}
-                     {selectedEvent.slotData?.status && (() => {
-                       const st = selectedEvent.slotData.status;
-                       let badgeClass = 'bg-[#EC5A86]';
-                       let label = 'Working';
-                       if (st === 'COMPLETED') { badgeClass = 'bg-[#111]'; label = 'Completed'; }
-                       else if (st === 'CONFIRMED') { badgeClass = 'bg-[#EC5A86]/80'; label = 'Confirmed'; }
-                       return (
-                         <div className="flex justify-between">
-                           <span className="text-sm text-neutral-500">Status:</span>
-                           <Badge className={`${badgeClass} text-white`}>{label}</Badge>
-                         </div>
-                       );
-                     })()}
-                    </div>
-                    {selectedEvent.slotData?.note && (
-                      <>
-                        <Separator />
-                        <div>
-                          <p className="text-sm font-medium mb-2 text-neutral-600">Notes:</p>
-                          <p className="text-sm text-neutral-500">{selectedEvent.slotData.note}</p>
-                        </div>
-                      </>
                     )}
                   </>
                 ) : (
@@ -680,9 +780,31 @@ if(loading && scheduleLoading && pendingBookingsLoading){
                 )}
               </CardContent>
               {selectedEvent && (
-                <CardFooter>
-                  <div className="flex gap-2 w-full">
-                    {selectedEvent.canUpdate ? (
+                <CardFooter className="px-6 pb-6">
+                  <div className="flex gap-3 w-full">
+                    {selectedEvent.type === 'BOOKING' ? (
+                      /* Booking Actions - Reschedule/Cancel */
+                      <>
+                        <Button
+                          variant="outline" disabled={true}
+                          className="flex-1 border-neutral-300 text-[#111] hover:bg-neutral-50 focus-visible:ring-2 focus-visible:ring-neutral-300 transition-all duration-200"
+                          onClick={() => handleOpenEditEvent(selectedEvent, setNewEventForm, setModalSlotInfo, setShowAddEventModal)}
+                        >
+                          <Icon icon="lucide:calendar" className="mr-2 h-4 w-4" />
+                          Reschedule
+                        </Button>
+                        <Button
+                          variant="outline" 
+                          className="flex-1 border-red-300 text-red-600 hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-300 transition-all duration-200"
+                          onClick={() => handleDeleteEvent(selectedEvent)}
+                          disabled={true}
+                        >
+                          <Icon icon="lucide:x" className="mr-2 h-4 w-4" />
+                          {loading ? 'Canceling...' : 'Cancel'}
+                        </Button>
+                      </>
+                    ) : selectedEvent.canUpdate ? (
+                      /* Other Event Actions - Edit/Delete */
                       <>
                         <Button
                           variant="outline"
@@ -690,7 +812,7 @@ if(loading && scheduleLoading && pendingBookingsLoading){
                           onClick={() => handleOpenEditEvent(selectedEvent, setNewEventForm, setModalSlotInfo, setShowAddEventModal)}
                         >
                           <Icon icon="lucide:edit" className="mr-2 h-4 w-4" />
-                          Edit
+                          Reschedule
                         </Button>
                         <Button
                           variant="destructive"
@@ -699,12 +821,12 @@ if(loading && scheduleLoading && pendingBookingsLoading){
                           disabled={loading}
                         >
                           <Icon icon="lucide:trash" className="mr-2 h-4 w-4" />
-                          {loading ? 'Deleting...' : 'Delete'}
+                          {loading ? 'Canceling...' : 'Cancel'}
                         </Button>
                       </>
                     ) : (
                       <div className="w-full text-center py-2">
-                        <p className="text-sm text-neutral-400">Booking cannot be modified</p>
+                        <p className="text-sm text-neutral-400">This event cannot be modified</p>
                       </div>
                     )}
                   </div>
