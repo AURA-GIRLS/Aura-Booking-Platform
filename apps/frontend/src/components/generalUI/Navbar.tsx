@@ -33,7 +33,7 @@ export default function Navbar({ user, setUser }: Readonly<NavbarProps>)  {
           <li><Link href="/user/artists/makeup-artist-list">Makeup Artist</Link></li>
           {/* <li><Link href="/booking">Booking</Link></li> */}
           <li><Link href="/user/community">Community</Link></li>
-          <li><Link href="/about">About Us</Link></li>
+          <li><Link href="/user/about">About Us</Link></li>
         </ul>
 
         {/* Right: Icons */}
@@ -79,7 +79,7 @@ export default function Navbar({ user, setUser }: Readonly<NavbarProps>)  {
           <li><Link href="/user/artists/makeup-artist-list">Makeup Artist</Link></li>
           {/* <li><Link href="/booking">Booking</Link></li> */}
           <li><Link href="/user/blog">Blog</Link></li>
-          <li><Link href="/about">About Us</Link></li>
+          <li><Link href="/user/about">About Us</Link></li>
           </ul>
           <div className="mt-3 flex items-center gap-3">
             <button aria-label="Cart" className="p-2 hover:bg-gray-100 rounded">🛒</button>

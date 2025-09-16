@@ -53,7 +53,7 @@ export default function ArtistNavbar({ mua, setMua }:  Readonly<ArtistNavbarProp
             <li><a href={`/manage-artist/${id}/calendar`}>My Calendar</a></li>
             <li><a href={`/manage-artist/${id}/feedback`}>My Feedback</a></li>
             <li><a href={`/manage-artist/${id}/blog`}>My Blog</a></li>
-            <li><a href="/about">About Us</a></li>
+            <li><a href="/manage-artist/about">About Us</a></li>
           </ul>
         )}
 
