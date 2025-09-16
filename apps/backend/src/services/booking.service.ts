@@ -4,7 +4,7 @@ import { getFinalSlots } from "./schedule.service";
 import { fromUTC } from "utils/timeUtils";
 import { SLOT_TYPES, BOOKING_STATUS, BOOKING_TYPES } from "constants/index";
 import { Booking } from "models/bookings.models";
-import type { CreateBookingDTO, UpdateBookingDTO, BookingResponseDTO, IBookingSlot, IAvailableMuaService, IAvailableMuaServices } from "types/booking.dtos";
+import type { CreateBookingDTO, UpdateBookingDTO, BookingResponseDTO, IBookingSlot, IAvailableMuaServices } from "types/booking.dtos";
 import dayjs from "dayjs";
 import type { MuaResponseDTO, ServiceResponseDTO } from "types";
 import { MUA } from "@models/muas.models";
@@ -309,13 +309,14 @@ export async function getAvailableMuaServicesByDay(day:string):Promise<IAvailabl
     const muaIds = await MUA.find({}).populate('userId', '_id fullName').exec();
     const result = await Promise.all(muaIds.map(async (element:any) => {
         const validAvailableSlots = await getAvailableServicesOfMuaByDay(element._id,day);
+        if(!validAvailableSlots.length) return null;
         return {
             day,
             mua: await mapToMuaResponse(element),
-            services:validAvailableSlots
-        }
+            services: validAvailableSlots
+        } as IAvailableMuaServices;
     }));
-    return result;
+    return result.filter((item): item is IAvailableMuaServices => item !== null);
 }
 
 // ==================== OVERLAP CHECKING FUNCTIONS ====================
