@@ -4,6 +4,8 @@ import {
   type BookingStatus,
   type BookingType
 } from "../constants/index";
+import { ServiceResponseDTO } from "./service.dtos";
+import { MuaResponseDTO } from "./user.dtos";
 
 // ===== BOOKING DTOs =====
 export interface CreateBookingDTO {
@@ -109,4 +111,10 @@ export interface BookingDraft {
   customerId?: string;
   customerName?: string;
   payed?: boolean;
+}
+
+export interface IAvailableMuaServices{
+    day:string;
+    mua:MuaResponseDTO; 
+    services:ServiceResponseDTO[]
 }

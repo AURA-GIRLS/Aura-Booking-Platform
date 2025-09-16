@@ -11,8 +11,9 @@ import {
   updateBookingStatus,
   cancelBooking,
   deleteBooking,
-  getAvailableSlots,
-  getAvailableMonthlySlots
+  getAvailableSlotsOfService,
+  getAvailableMonthlySlots,
+  getAvailableMuaServicesByDay
 } from "../services/booking.service";
 import type { CreateBookingDTO, UpdateBookingDTO } from "../types/booking.dtos";
 import type { ApiResponseDTO } from "types";
@@ -34,7 +35,7 @@ export class BookingController {
         return;
       }
 
-      const data = await getAvailableSlots(
+      const data = await getAvailableSlotsOfService(
         muaId,
         serviceId,
         day,
@@ -103,6 +104,28 @@ export class BookingController {
         status: 500,
         success: false,
         message: error instanceof Error ? error.message : "Failed to get monthly available slots"
+      };
+      res.status(500).json(response);
+    }
+  }
+
+  //READ - lấy mua thỏa mãn day 
+  async getAvailableMuaServicesByDay(req:Request, res:Response):Promise<void>{
+    try {
+      const { day } = req.params;
+      const data = await getAvailableMuaServicesByDay(day);
+      const response: ApiResponseDTO = {
+        status: 200,
+        success: true,
+        message: "Available services retrieved successfully",
+        data
+      };
+      res.status(200).json(response);
+    } catch (error) {
+      const response: ApiResponseDTO = {
+        status: 500,
+        success: false,
+        message: error instanceof Error ? error.message : "Failed to get available services"
       };
       res.status(500).json(response);
     }

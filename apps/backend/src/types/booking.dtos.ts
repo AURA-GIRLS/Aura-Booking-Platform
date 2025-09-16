@@ -2,6 +2,8 @@ import {
   type BookingStatus,
   type BookingType
 } from "../constants/index";
+import type { ServiceResponseDTO } from "./service.dtos";
+import type { ArtistResponseDTO, MuaResponseDTO } from "./user.dtos";
 
 // ===== BOOKING DTOs =====
 export interface CreateBookingDTO {
@@ -54,4 +56,18 @@ export interface BookingResponseDTO {
   payed?: boolean;
   createdAt: Date;
   updatedAt: Date;
+}
+
+
+export interface IBookingSlot {
+  serviceId:string;
+  day: string; 
+  startTime: string;
+  endTime: string;
+}
+
+export interface IAvailableMuaServices{
+    day:string;
+    mua:MuaResponseDTO; 
+    services:ServiceResponseDTO[]
 }

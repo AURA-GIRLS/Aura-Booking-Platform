@@ -1,6 +1,6 @@
 import { api } from '@/config/api';
 import type { ApiResponseDTO } from '../types/common.dtos';
-import type { CreateBookingDTO, BookingResponseDTO, BookingSlot, PaginatedBookingsResponse, UpdateBookingDTO } from '../types/booking.dtos';
+import type { CreateBookingDTO, BookingResponseDTO, BookingSlot, PaginatedBookingsResponse, UpdateBookingDTO, IAvailableMuaServices } from '../types/booking.dtos';
 
 export const BookingService = {
 
@@ -44,6 +44,14 @@ export const BookingService = {
       const res = await api.get<ApiResponseDTO<Record<string, [string, string, string][]>>>(
         `/booking/available-slots/monthly?${queryParams.toString()}`
       );
+      return res.data;
+    } catch (error: any) {
+      throw error.response?.data || error;
+    }
+  },
+  async getAvailableMuaByDay(day: string): Promise<ApiResponseDTO<IAvailableMuaServices>> {
+    try {
+      const res = await api.get<ApiResponseDTO<IAvailableMuaServices>>(`/booking/available-mua/${day}`);
       return res.data;
     } catch (error: any) {
       throw error.response?.data || error;

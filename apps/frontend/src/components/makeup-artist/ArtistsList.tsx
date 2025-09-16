@@ -4,6 +4,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { PROVINCES, BUDGET_OPTIONS, type ServiceCategory, ServiceAddon } from "../../constants/constants";
 import { fetchArtists } from "@/config/api";
 import type { Artist, ApiResp, SortKey } from "@/config/types";
+import { BookingService } from "@/services/booking";
+import type { IAvailableMuaServices } from "@/types/booking.dtos";
 import FiltersPanel from "./FiltersPanel";
 import ResultsPanel from "./ResultsPanel";
 import { MapPin } from "lucide-react";
@@ -20,10 +22,14 @@ const budgetToRange = (b: string) => {
 export default function ArtistsList() {
   // Data
   const [artists, setArtists] = useState<Artist[]>([]);
+  const [availableMuas, setAvailableMuas] = useState<IAvailableMuaServices[]>([]);
+  const [filteredAvailableMuas, setFilteredAvailableMuas] = useState<IAvailableMuaServices[]>([]);
   const [total, setTotal] = useState(0);
   const [pages, setPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [isDateFiltered, setIsDateFiltered] = useState(false);
   const router = useRouter();
   // Filters
   const [q, setQ] = useState("");
@@ -48,30 +54,106 @@ export default function ArtistsList() {
     return { priceMin: mins.length ? Math.min(...mins) : undefined, priceMax: maxs.length ? Math.max(...maxs) : undefined };
   }, [selectedBudgets]);
 
-  // Fetch
+  // Client-side filtering for date-filtered MUAs
+  const filteredMuas = useMemo(() => {
+    if (!isDateFiltered || availableMuas.length === 0) {
+      return availableMuas;
+    }
+
+    return availableMuas.map((muaService) => {
+      const mua = muaService.mua;
+      
+      // Location filter
+      if (location !== "All Areas" && mua.location !== location) {
+        return null;
+      }
+
+      // Rating filter
+      if (rating !== null && (mua.ratingAverage || 0) < rating) {
+        return null;
+      }
+
+      // Search query filter
+      if (q.trim()) {
+        const searchTerm = q.toLowerCase();
+        const matchesName = mua.userName?.toLowerCase().includes(searchTerm);
+        const matchesBio = mua.bio?.toLowerCase().includes(searchTerm);
+        const matchesLocation = mua.location?.toLowerCase().includes(searchTerm);
+        const matchesServices = muaService.services.some(service => 
+          service.name.toLowerCase().includes(searchTerm)
+        );
+        
+        if (!matchesName && !matchesBio && !matchesLocation && !matchesServices) {
+          return null;
+        }
+      }
+
+      // Filter services by price range - combine multiple selected budget ranges
+      let filteredServices = muaService.services;
+      if (selectedBudgets.length > 0) {
+        // Create array of all price ranges from selected budgets
+        const priceRanges = selectedBudgets.map(budget => budgetToRange(budget));
+        
+        filteredServices = muaService.services.filter(service => {
+          // Check if service price falls within ANY of the selected ranges
+          return priceRanges.some(range => {
+            const { min, max } = range;
+            if (min !== undefined && service.price < min) return false;
+            if (max !== undefined && service.price > max) return false;
+            return true;
+          });
+        });
+        
+        // If no services match any price range, exclude this MUA
+        if (filteredServices.length === 0) {
+          return null;
+        }
+      }
+
+      // Return MUA with filtered services
+      return {
+        ...muaService,
+        services: filteredServices
+      };
+    }).filter((muaService): muaService is IAvailableMuaServices => muaService !== null);
+  }, [availableMuas, isDateFiltered, location, rating, selectedBudgets, q]);
+
+  // Fetch artists or available MUAs by date
   useEffect(() => {
     (async () => {
       try {
         setLoading(true);
         setError(null);
 
-        const data: ApiResp = await fetchArtists({
-          q,
-          location,
-          occasion, 
-          style: styleText,
-          rating,
-          priceMin,
-          priceMax,
-          addons: selectedAddons,
-          sort,
-          page,
-          limit,
-        });
+        if (selectedDate && isDateFiltered) {
+          // Fetch available MUAs for the selected date
+          const response = await BookingService.getAvailableMuaByDay(selectedDate);
+          if (response.success && response.data) {
+            const muaData = Array.isArray(response.data) ? response.data : [response.data];
+            setAvailableMuas(muaData);
+            setArtists([]); // Clear regular artists when showing date-filtered results
+          }
+        } else {
+          // Regular artist search
+          const data: ApiResp = await fetchArtists({
+            q,
+            location,
+            occasion, 
+            style: styleText,
+            rating,
+            priceMin,
+            priceMax,
+            addons: selectedAddons,
+            sort,
+            page,
+            limit,
+          });
 
-        setTotal(data.total ?? 0);
-        setPages(data.pages ?? 1);
-        setArtists((prev) => (page === 1 ? data.items : [...prev, ...data.items]));
+          setTotal(data.total ?? 0);
+          setPages(data.pages ?? 1);
+          setArtists((prev) => (page === 1 ? data.items : [...prev, ...data.items]));
+          setAvailableMuas([]); // Clear available MUAs when showing regular results
+        }
       } catch (e: any) {
         setError(e?.message || "Failed to fetch");
       } finally {
@@ -79,7 +161,14 @@ export default function ArtistsList() {
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, location, occasion, styleText, rating, priceMin, priceMax, selectedAddons, sort, page]);
+  }, [q, location, occasion, styleText, rating, priceMin, priceMax, selectedAddons, sort, page, selectedDate, isDateFiltered]);
+
+  // Update total count when filters change for date-filtered results
+  useEffect(() => {
+    if (isDateFiltered) {
+      setTotal(filteredMuas.length);
+    }
+  }, [filteredMuas, isDateFiltered]);
 
   const canLoadMore = page < pages;
   const metaLine = `${location}: ${total.toLocaleString("en-US")} Makeup Artists waiting for you to choose`;
@@ -93,6 +182,14 @@ export default function ArtistsList() {
     setRating(null);
     setSelectedAddons([]);
     setSort("rating_desc");
+    setPage(1);
+    setSelectedDate("");
+    setIsDateFiltered(false);
+  };
+
+  const handleDateChange = (date: string) => {
+    setSelectedDate(date);
+    setIsDateFiltered(!!date);
     setPage(1);
   };
 
@@ -168,6 +265,8 @@ export default function ArtistsList() {
                   <input
                     aria-label="Makeup Date"
                     type="date"
+                    value={selectedDate}
+                    onChange={(e) => handleDateChange(e.target.value)}
                     placeholder="dd/mm/yyyy"
                     className="h-12 w-full pl-10 pr-3 rounded-lg border border-gray-300 bg-white text-sm
                                focus:outline-none hover:border-rose-300 hover:shadow-md
@@ -235,6 +334,8 @@ export default function ArtistsList() {
                 setPage(1);
               }}
               onReset={handleReset}
+              isDateFiltered={isDateFiltered}
+              selectedDate={selectedDate}
             />
           </div>
 
@@ -245,10 +346,13 @@ export default function ArtistsList() {
               sort={sort}
               onSortChange={(v) => { setSort(v); setPage(1); }}
               artists={artists}
+              availableMuas={filteredMuas}
+              isDateFiltered={isDateFiltered}
+              selectedDate={selectedDate}
               loading={loading}
               total={total}
               error={error}
-              canLoadMore={canLoadMore}
+              canLoadMore={canLoadMore && !isDateFiltered}
               onLoadMore={() => !loading && setPage((p) => p + 1)}
               onViewProfile={handleViewProfile}
               onBookService={handleBookService}

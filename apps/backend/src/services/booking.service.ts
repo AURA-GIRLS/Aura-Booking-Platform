@@ -1,11 +1,15 @@
-import type { IBookingSlot, ISlot } from "types/schedule.interfaces";
+import type {ISlot } from "types/schedule.interfaces";
 import { getMondayOfWeek } from "utils/calendarUtils";
 import { getFinalSlots } from "./schedule.service";
 import { fromUTC } from "utils/timeUtils";
 import { SLOT_TYPES, BOOKING_STATUS, BOOKING_TYPES } from "constants/index";
 import { Booking } from "models/bookings.models";
-import type { CreateBookingDTO, UpdateBookingDTO, BookingResponseDTO } from "types/booking.dtos";
+import type { CreateBookingDTO, UpdateBookingDTO, BookingResponseDTO, IBookingSlot, IAvailableMuaService, IAvailableMuaServices } from "types/booking.dtos";
 import dayjs from "dayjs";
+import type { MuaResponseDTO, ServiceResponseDTO } from "types";
+import { MUA } from "@models/muas.models";
+import { ServicePackage } from "@models/services.models";
+import mongoose from "mongoose";
 
 // Helper function to check if two time slots overlap
 function slotsOverlap(slot1: ISlot, slot2: ISlot): boolean {
@@ -76,8 +80,23 @@ function splitSlotByDuration(slot: any, durationMinutes: number): IBookingSlot[]
     
     return result;
 }
+async function mapToMuaResponse(ele:any):Promise<MuaResponseDTO>{
+    return{
+        _id:ele._id,
+        userId:ele.userId?._id?.toString() || '',
+        userName:ele.userId?.fullName?.toString()||'',
+        avatarUrl:ele.userId?.avatarUrl?.toString()||'',
+        experienceYears:ele.experienceYears || 0,
+        bio:ele.bio,
+        location:ele.location,
+        ratingAverage:ele.ratingAverage,
+        feedbackCount:ele.feedbackCount,
+        bookingCount:ele.bookingCount,
+        isVerified:ele.isVerified
+    }
+}
 
-export async function getAvailableSlots(muaId: string, serviceId: string, day: string, durationMinutes: number): Promise<IBookingSlot[]> {
+async function getAvailableSlotsOfMuaByDay(muaId:string,day:string):Promise<ISlot[]>{
     // Get final slots (includes working and booking slots)
     const weekStart = getMondayOfWeek(day,"YYYY-MM-DD"); // Monday of the week
     const finalSlotsData = await getFinalSlots(muaId, weekStart);
@@ -116,6 +135,84 @@ export async function getAvailableSlots(muaId: string, serviceId: string, day: s
         const end = dayjs(`${slot.day} ${slot.endTime}`, "YYYY-MM-DD HH:mm");
         return start.isBefore(end);
     });
+    return validAvailableSlots;
+}
+async function getAvailableServicesOfMuaByDay(muaId:string,day:string):Promise<ServiceResponseDTO[]>{
+    // Get final slots (includes working and booking slots)
+    const weekStart = getMondayOfWeek(day,"YYYY-MM-DD"); // Monday of the week
+    const finalSlotsData = await getFinalSlots(muaId, weekStart);
+    const finalSlots = finalSlotsData.slots;
+    
+    // Filter working slots for the specific day
+    const workingTypes = [SLOT_TYPES.ORIGINAL_WORKING, SLOT_TYPES.OVERRIDE, SLOT_TYPES.NEW_WORKING, SLOT_TYPES.NEW_OVERRIDE];
+    const workingsOfDay = finalSlots.filter(slot => 
+        slot.day === fromUTC(day).format("YYYY-MM-DD") && 
+        workingTypes.includes(slot.type as any)
+    );
+    
+    // Filter booking slots for the specific day
+    const bookingsOfDay = finalSlots.filter(slot => 
+        slot.day === fromUTC(day).format("YYYY-MM-DD") && 
+        slot.type === SLOT_TYPES.BOOKING
+    );
+    
+    // Calculate available slots by removing booked time from working slots
+    let availableSlots: ISlot[] = [...workingsOfDay];
+    
+    for (const booking of bookingsOfDay) {
+        const newAvailableSlots: ISlot[] = [];
+        
+        for (const workingSlot of availableSlots) {
+            const remainingSlots = subtractBookedFromWorking(workingSlot, booking);
+            newAvailableSlots.push(...remainingSlots);
+        }
+        
+        availableSlots = newAvailableSlots;
+    }
+    
+    // Filter out slots with invalid time ranges (startTime >= endTime)
+    const validAvailableSlots = availableSlots.filter(slot => {
+        const start = dayjs(`${slot.day} ${slot.startTime}`, "YYYY-MM-DD HH:mm");
+        const end = dayjs(`${slot.day} ${slot.endTime}`, "YYYY-MM-DD HH:mm");
+        return start.isBefore(end);
+    });
+    
+    const services = await ServicePackage.find({ muaId: new mongoose.Types.ObjectId(muaId), isAvailable: { $ne: false } })
+    .select("_id muaId name description price duration imageUrl isAvailable createdAt updatedAt")
+    .sort({ price: 1 })
+    .lean();
+ 
+    const validAvailableServices = services.filter(service => {
+        // Skip services without duration
+        if (!service.duration) return false;
+        
+        // Check if this service's duration can fit in any available slot
+        return validAvailableSlots.some(slot => {
+            const slotStart = dayjs(`${slot.day} ${slot.startTime}`, "YYYY-MM-DD HH:mm");
+            const slotEnd = dayjs(`${slot.day} ${slot.endTime}`, "YYYY-MM-DD HH:mm");
+            const slotDurationMinutes = slotEnd.diff(slotStart, 'minute');
+            
+            // Service can be performed if its duration fits within the slot
+            return service.duration! <= slotDurationMinutes;
+        });
+    });
+
+    return validAvailableServices.map((service) => ({
+        _id: service._id.toString(),
+        muaId: service.muaId?._id.toString() || '',
+        name: service.name || '',
+        description: service.description || '',
+        price: service.price || 0,
+        duration: service.duration || 0,
+        imageUrl: service.imageUrl || '',
+        isActive: service.isAvailable !== false,
+        createdAt: service.createdAt,
+        updatedAt: service.updatedAt
+    }));
+}
+export async function getAvailableSlotsOfService(muaId: string, serviceId: string, day: string, durationMinutes: number): Promise<IBookingSlot[]> {
+    // Filter out slots with invalid time ranges (startTime >= endTime)
+    const validAvailableSlots = await getAvailableSlotsOfMuaByDay(muaId,day);
     
     // Split each available slot into duration-based time slots
     const durationBasedSlots: IBookingSlot[] = [];
@@ -205,6 +302,19 @@ export async function getAvailableMonthlySlots(muaId: string, day: string, durat
         }
     }
 
+    return result;
+}
+
+export async function getAvailableMuaServicesByDay(day:string):Promise<IAvailableMuaServices[]>{
+    const muaIds = await MUA.find({}).populate('userId', '_id fullName').exec();
+    const result = await Promise.all(muaIds.map(async (element:any) => {
+        const validAvailableSlots = await getAvailableServicesOfMuaByDay(element._id,day);
+        return {
+            day,
+            mua: await mapToMuaResponse(element),
+            services:validAvailableSlots
+        }
+    }));
     return result;
 }
 
