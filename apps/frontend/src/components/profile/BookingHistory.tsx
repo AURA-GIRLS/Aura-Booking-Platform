@@ -134,6 +134,20 @@ const BookingHistory: React.FC = () => {
       hour12: true
     });
   };
+  const getTimeOfBooking = (date: string) => {
+    try {
+      if (!date) return "";
+      const d = new Date(date);
+      if (isNaN(d.getTime())) return "";
+      return d.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+    } catch {
+      return "";
+    }
+  }
 
   const getLocationTypeLabel = (type: string) => {
     switch (type) {
@@ -298,7 +312,7 @@ const BookingHistory: React.FC = () => {
                           </div>
                           <div className="flex items-center gap-1">
                             <Clock size={14} />
-                            <span>{formatTime(booking.bookingTime)}</span>
+                            <span>{getTimeOfBooking(booking.bookingDate)}</span>
                           </div>
                           <div className="flex items-center gap-1">
                             <MapPin size={14} />

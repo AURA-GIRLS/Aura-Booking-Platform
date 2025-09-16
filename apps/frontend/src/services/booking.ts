@@ -182,6 +182,26 @@ export const BookingService = {
     }
   },
 
+  // UPDATE - Accept booking request (MUA calendar)
+  async acceptBooking(id: string): Promise<ApiResponseDTO<BookingResponseDTO>> {
+    try {
+      const res = await api.patch<ApiResponseDTO<BookingResponseDTO>>(`/booking/${id}/accept`);
+      return res.data;
+    } catch (error: any) {
+      throw error.response?.data || error;
+    }
+  },
+
+  // UPDATE - Reject booking request (MUA calendar)
+  async rejectBooking(id: string): Promise<ApiResponseDTO<BookingResponseDTO>> {
+    try {
+      const res = await api.patch<ApiResponseDTO<BookingResponseDTO>>(`/booking/${id}/reject`);
+      return res.data;
+    } catch (error: any) {
+      throw error.response?.data || error;
+    }
+  },
+
   // DELETE - Cancel booking (soft delete)
   async cancel(id: string): Promise<ApiResponseDTO<BookingResponseDTO>> {
     try {

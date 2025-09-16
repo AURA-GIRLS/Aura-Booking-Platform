@@ -35,6 +35,12 @@ router.put("/:id", authenticateToken, (req, res) => ctrl.update(req, res));
 // UPDATE - Cập nhật status booking
 router.patch("/:id/status", authenticateToken, (req, res) => ctrl.updateStatus(req, res));
 
+// UPDATE - Accept booking request (MUA calendar)
+router.patch("/:id/accept", authenticateToken, (req, res) => ctrl.acceptBooking(req, res));
+
+// UPDATE - Reject booking request (MUA calendar)
+router.patch("/:id/reject", authenticateToken, (req, res) => ctrl.rejectBooking(req, res));
+
 // DELETE - Cancel booking (soft delete)
 router.patch("/:id/cancel", authenticateToken, (req, res) => ctrl.cancel(req, res));
 

@@ -398,6 +398,76 @@ export class BookingController {
     }
   }
 
+  // UPDATE - Accept booking request (MUA calendar)
+  async acceptBooking(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      
+      const data = await updateBookingStatus(id, 'CONFIRMED');
+
+      if (!data) {
+        const response: ApiResponseDTO = {
+          status: 404,
+          success: false,
+          message: "Booking not found"
+        };
+        res.status(404).json(response);
+        return;
+      }
+
+      const response: ApiResponseDTO = {
+        status: 200,
+        success: true,
+        message: "Booking accepted successfully",
+        data
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      const response: ApiResponseDTO = {
+        status: 500,
+        success: false,
+        message: error instanceof Error ? error.message : "Failed to accept booking"
+      };
+      res.status(500).json(response);
+    }
+  }
+
+  // UPDATE - Reject booking request (MUA calendar)
+  async rejectBooking(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      
+      const data = await updateBookingStatus(id, 'CANCELLED');
+
+      if (!data) {
+        const response: ApiResponseDTO = {
+          status: 404,
+          success: false,
+          message: "Booking not found"
+        };
+        res.status(404).json(response);
+        return;
+      }
+
+      const response: ApiResponseDTO = {
+        status: 200,
+        success: true,
+        message: "Booking rejected successfully",
+        data
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      const response: ApiResponseDTO = {
+        status: 500,
+        success: false,
+        message: error instanceof Error ? error.message : "Failed to reject booking"
+      };
+      res.status(500).json(response);
+    }
+  }
+
   // DELETE - Cancel booking (soft delete)
   async cancel(req: Request, res: Response): Promise<void> {
     try {
