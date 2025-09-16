@@ -23,7 +23,8 @@ const BookingSchema = new Schema({
   createdAt: { type: Date, default: Date.now },
   payed: { type: Boolean, default: false },
   note: String,
-  feedback: { type: Schema.Types.ObjectId, ref: "Feedback" },
+  feedbackId: { type: Schema.Types.ObjectId, ref: "Feedback" },
+  paymentId: { type: Schema.Types.ObjectId, ref: 'Transaction' },
 });
 
 export const Booking = model("Booking", BookingSchema);

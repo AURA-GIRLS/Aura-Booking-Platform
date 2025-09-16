@@ -48,6 +48,12 @@ export const config = {
   resendApiKey: process.env.RESEND_API_KEY || '',
   twilioApiKey: process.env.TWILIO_API_KEY || '',
   upstashRedisUrl: process.env.UPSTASH_REDIS_URL || '',
+
+  //Payos
+  payosClientId: process.env.PAYOS_CLIENT_ID || '',
+  payosApiKey: process.env.PAYOS_API_KEY || '',
+  payosChecksumKey: process.env.PAYOS_CHECKSUM_KEY || '',
+  payosApiUrl: process.env.PAYOS_API_URL || '',
   
   // Environment
   nodeEnv: process.env.NODE_ENV || 'development',

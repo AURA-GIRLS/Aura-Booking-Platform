@@ -31,6 +31,12 @@ export interface Config {
   resendApiKey: string;
   twilioApiKey: string;
   upstashRedisUrl: string;
+
+  //Payos
+  payosClientId: string;
+  payosApiKey: string;
+  payosChecksumKey: string;
+  payosApiUrl: string;
   
   // Environment
   nodeEnv: string;

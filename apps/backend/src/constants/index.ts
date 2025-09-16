@@ -87,6 +87,15 @@ export const SLOT_TYPES = {
   BOOKING: 'BOOKING'
 } as const;
 
+export const TRANSACTION_STATUS = {
+  HOLD:'HOLD' ,
+  CAPTURED: 'CAPTURED' ,
+  REFUNDED: 'REFUNDED'
+} as const;
+export const PAYMENT_METHODS  = {
+  CREDIT_CARD: 'BANK_TRANSFER',
+} as const;
+
 // Type definitions derived from constants
 export type UserRole = typeof USER_ROLES[keyof typeof USER_ROLES];
 export type UserStatus = typeof USER_STATUS[keyof typeof USER_STATUS];
@@ -99,3 +108,5 @@ export type ServiceAddon = typeof SERVICE_ADDONS[keyof typeof SERVICE_ADDONS];
 export type PaymentStatus = typeof PAYMENT_STATUS[keyof typeof PAYMENT_STATUS];
 export type NotificationType = typeof NOTIFICATION_TYPES[keyof typeof NOTIFICATION_TYPES];
 export type SlotType = typeof SLOT_TYPES[keyof typeof SLOT_TYPES];
+export type PaymentMethod = typeof PAYMENT_METHODS[keyof typeof PAYMENT_METHODS];
+export type TransactionStatus = typeof TRANSACTION_STATUS[keyof typeof TRANSACTION_STATUS];

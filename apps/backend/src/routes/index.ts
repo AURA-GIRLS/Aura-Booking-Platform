@@ -2,6 +2,7 @@ import { Router } from 'express';
 import authRoutes from './auth';
 import artistsRoutes from "./artists";
 import artistScheduleRoutes from "./artist-schedule";
+import transactionRoutes from "./transaction";
 import bookingRoutes from "./booking";
 const router = Router();
 
@@ -22,5 +23,6 @@ router.use('/auth', authRoutes);
 router.use("/artists", artistsRoutes);
 router.use("/artist-schedule", artistScheduleRoutes);
 router.use("/booking",bookingRoutes);
+router.use("/transaction", transactionRoutes);
 
 export default router;
