@@ -646,7 +646,12 @@ if(loading && scheduleLoading && pendingBookingsLoading){
                             <Icon icon="lucide:user" className="w-3 h-3 text-neutral-400" />
                             <div>
                               <p className="text-sm text-[#111]">{selectedEvent.slotData.customerName}</p>
-                              <p className="text-xs text-neutral-500">+84 123 456 789</p>
+                              {selectedEvent.slotData.phoneNumber && (
+                                <div className="flex items-center gap-1">
+                                  <Icon icon="lucide:phone" className="w-2.5 h-2.5 text-neutral-400" />
+                                  <p className="text-xs text-neutral-500">{selectedEvent.slotData.phoneNumber}</p>
+                                </div>
+                              )}
                             </div>
                           </div>
                         )}
@@ -670,7 +675,7 @@ if(loading && scheduleLoading && pendingBookingsLoading){
                         {/* Location */}
                         <div className="flex items-start gap-2">
                           <Icon icon="lucide:map-pin" className="w-3 h-3 text-neutral-400 mt-0.5" />
-                          <p className="text-sm text-[#111]">Beauty Salon - District 1, HCMC</p>
+                          <p className="text-sm text-[#111]">{selectedEvent.slotData?.address}</p>
                         </div>
 
                         <Separator className="bg-gray-300"/>

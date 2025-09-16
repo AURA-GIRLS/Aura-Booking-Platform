@@ -76,12 +76,12 @@ export default function ArtistNavbar({ mua, setMua }:  Readonly<ArtistNavbarProp
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44 bg-white rounded-xl shadow-lg py-2 z-50 border border-[#EC5A86]/20">
-                <DropdownMenuItem asChild>
+                {/* <DropdownMenuItem asChild>
                   <a href="/user/profile">My Profile</a>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <a href="/user/profile/booking-history">Booking History</a>
-                </DropdownMenuItem>
+                </DropdownMenuItem> */}
                 <DropdownMenuItem onClick={handleLogout} className="px-2 py-2 text-[#EC5A86] cursor-pointer hover:bg-[#EC5A86]/10">Logout</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
