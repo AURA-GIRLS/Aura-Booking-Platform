@@ -15,6 +15,7 @@ import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
 import {artistScheduleService} from "@/services/artist-schedule";
 import { ISlot } from "@/types/schedule.dtos";
 import Notification from "@/components/generalUI/Notification";
+import { BookingService } from "@/services/booking";
 
 // Imported hooks and components
 import { useNotification } from "./hooks/useNotification";
@@ -118,6 +119,47 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
       setLoading(false);
     }
   }, [id, pageNumber, pageSize, showError])
+
+  // Handle accept booking
+  const handleAcceptBooking = useCallback(async (bookingId: string) => {
+    setLoading(true);
+    try {
+      const response = await BookingService.acceptBooking(bookingId);
+      if (response.success) {
+        showSuccess('Booking accepted successfully!');
+        // Refresh both pending bookings and calendar schedule
+        await fetchPendingBookings();
+        await fetchSchedule();
+      } else {
+        showError(response.message || 'Failed to accept booking');
+      }
+    } catch (error: any) {
+      showError(error.message || 'Failed to accept booking');
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchPendingBookings, fetchSchedule, showSuccess, showError]);
+
+  // Handle reject booking
+  const handleRejectBooking = useCallback(async (bookingId: string) => {
+    setLoading(true);
+    try {
+      const response = await BookingService.rejectBooking(bookingId);
+      if (response.success) {
+        showSuccess('Booking rejected successfully!');
+        // Refresh both pending bookings and calendar schedule
+        await fetchPendingBookings();
+        await fetchSchedule();
+      } else {
+        showError(response.message || 'Failed to reject booking');
+      }
+    } catch (error: any) {
+      showError(error.message || 'Failed to reject booking');
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchPendingBookings, fetchSchedule, showSuccess, showError]);
+
   // Initialize calendar event handlers
   const { handleEventDrop, handleEventResize } = useCalendarEvents({
     id,
@@ -239,7 +281,7 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
   // Điều chỉnh bảng màu: nhấn mạnh tông hồng nhẹ nhưng vẫn phân biệt rõ các loại slot
   // BOOKING: hồng rõ ràng (để nhận biết khách đã đặt) – nền hồng nhạt + viền hồng đậm
   // WORKING (ORIGINAL/NEW_WORKING): nền trắng hơi hồng rất nhạt + viền hồng mềm để thể hiện khả dụng
-  // OVERRIDE (OVERRIDE/NEW_OVERRIDE): tím hồng (lavender) để nổi bật thời gian được chỉnh sửa/ghi đè
+  // OVERRIDE (OVERRIDE/NEW_OVERRIDE): tím hồng (lavender) để nổi bật thởi gian được chỉnh sửa/ghi đè
   // BLOCKED: xám trung tính để thể hiện không khả dụng
   const eventStyleGetter = (event: any) => {
     // Base: ultra-light backgrounds; booking slightly stronger tint & solid border
@@ -591,7 +633,7 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
                           {booking.serviceName} - {dayjs(booking.bookingDate).format('MMM DD')}, {booking.startTime} - {booking.endTime}
                         </p>
                         {booking.address && (
-                          <p className="text-xs text-neutral-500 mt-1">📍 {booking.address}</p>
+                          <p className="text-xs text-neutral-500 mt-1"> {booking.address}</p>
                         )}
                         {booking.notes && (
                           <p className="text-xs text-neutral-400 mt-1 italic">"{booking.notes}"</p>
@@ -602,11 +644,15 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
                       </Badge>
                     </div>
                     <div className="flex gap-2">
-                      <Button size="sm" className="flex-1 h-8 text-xs bg-[#EC5A86] hover:bg-[#d54e77] text-white shadow-sm focus-visible:ring-2 focus-visible:ring-[#EC5A86]/40">
+                      <Button size="sm" className="flex-1 h-8 text-xs bg-[#EC5A86] hover:bg-[#d54e77] text-white shadow-sm focus-visible:ring-2 focus-visible:ring-[#EC5A86]/40"
+                        onClick={() => handleAcceptBooking(booking._id)}
+                      >
                         <Icon icon="lucide:check" className="mr-1 h-3 w-3" />
                         Accept
                       </Button>
-                      <Button variant="outline" size="sm" className="flex-1 h-8 text-xs border-[#EC5A86] text-[#EC5A86] hover:bg-[#FFE3EE] focus-visible:ring-2 focus-visible:ring-[#EC5A86]/40">
+                      <Button variant="outline" size="sm" className="flex-1 h-8 text-xs border-[#EC5A86] text-[#EC5A86] hover:bg-[#FFE3EE] focus-visible:ring-2 focus-visible:ring-[#EC5A86]/40"
+                        onClick={() => handleRejectBooking(booking._id)}
+                      >
                         <Icon icon="lucide:x" className="mr-1 h-3 w-3" />
                         Decline
                       </Button>
