@@ -1,7 +1,8 @@
 import type { Request, Response } from "express";
 import type { ApiResponseDTO, CreateBookingDTO } from "types";
-import { createPayOSPaymentLink, handlePayOSWebhook, makeRefund } from "../services/transaction.service";
+import { createPayOSPaymentLink, getMUAWallet, getTransactionsByMuaId, handlePayOSWebhook, makeRefund } from "../services/transaction.service";
 import type { PaymentWebhookResponse, PayOSCreateLinkInput } from "types/transaction.dto";
+import type { TransactionStatus } from "constants/index";
 export class TransactionController {
   // Create a new transaction
   async createTransactionLink(req: Request, res: Response): Promise<void> {
@@ -112,9 +113,62 @@ async makeRefund(req: Request, res: Response): Promise<void> {
       res.status(500).json(response);
     }
   }
-
-  //confirm  -> capture payment (add money to mua virtual wallet)
-  // cancel -> refund payment (transfer real money, user request, admin refund, user confirm refund done)
+async fetchTransactionsByMuaId(req: Request, res: Response): Promise<void> {
+  try {
+    const { muaId } = req.params as { muaId: string };
+    const {page, pageSize, status} = req.query as {page?: string, pageSize?: string, status?: TransactionStatus};
+    if (!muaId) {
+      res.status(400).json({
+        status: 400,
+        success: false,
+        message: "Missing muaId"
+      }); 
+      return;
+    }
+    const data = await getTransactionsByMuaId(muaId, page ? parseInt(page) : 1, pageSize ? parseInt(pageSize) : 10, status);
+    const response: ApiResponseDTO = {
+      status: 200,
+      success: true,
+      data: data,
+      message: 'Get transaction successfully'
+    };
+    res.status(200).json(response);
+  } catch (error) {
+    const response: ApiResponseDTO = {
+      status: 500,
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to get transaction'
+    };
+    res.status(500).json(response);
+  }
 }
-
+async fetchWalletByMuaId(req: Request, res: Response): Promise<void> {
+  try {
+    const { muaId } = req.params as { muaId: string };
+    const data = await getMUAWallet(muaId);
+    if (!data) {
+      res.status(404).json({
+        status: 404,
+        success: false,
+        message: "Wallet not found"
+      });
+      return;
+    }
+    const response: ApiResponseDTO = {
+      status: 200,
+      success: true,
+      data: data,
+      message: 'Get wallet successfully'
+    };
+    res.status(200).json(response);
+  } catch (error) {
+    const response: ApiResponseDTO = {
+      status: 500,
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to get wallet'
+    };
+    res.status(500).json(response);
+  }
+}
+}
 

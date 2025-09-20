@@ -20,6 +20,9 @@ export interface TransactionResponseDTO {
     _id: string;
     bookingId: string;
     customerId: string;
+    customerName:string;
+    serviceName:string;
+    bookingTime:string;
     amount: number;
     currency: string;
     status: TransactionStatus;
@@ -29,6 +32,14 @@ export interface TransactionResponseDTO {
     updatedAt: Date;
 }
 
+export interface WalletResponseDTO {
+  _id: string;
+  muaId: string;
+  balance: number;
+  currency: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 export interface PayOSCreateLinkInput {
   amount: number;
   description: string;

@@ -1,5 +1,5 @@
 import { BankAccount, Transaction, Wallet } from "models/transactions.model";
-import type { CreateTransactionDTO, UpdateTransactionDTO, TransactionResponseDTO, PayOSCreateLinkInput, PayOSCreateLinkResult, PaymentWebhookResponse, PayoutInput, PayoutResponseDTO } from "types/transaction.dto";
+import type { CreateTransactionDTO, UpdateTransactionDTO, TransactionResponseDTO, PayOSCreateLinkInput, PayOSCreateLinkResult, PaymentWebhookResponse, PayoutInput, PayoutResponseDTO, WalletResponseDTO } from "types/transaction.dto";
 import { config } from "config";
 import { createPayOSSignedHttp, payosHttp } from "utils/payosHttp";
 import crypto from "crypto";
@@ -11,6 +11,17 @@ import mongoose from "mongoose";
 
 // UTIL - map mongoose doc to DTO
 function formatTransactionResponse(tx: any): TransactionResponseDTO {
+  // Attempt to extract friendly names from joined docs when available
+  const booking = tx.booking || tx._booking; // support potential aliases
+  const service = tx.service || tx._service;
+  const serviceName = service?.name || service?.serviceName || booking?.serviceName || "";
+  const customerName = booking?.customerName || tx.customerName || "";
+  // Derive bookingTime from bookingDate + duration (minutes) => "HH:mm - HH:mm"
+  const startDate: Date | null = booking?.bookingDate ? new Date(booking.bookingDate) : null;
+  const durationMinutes: number = typeof booking?.duration === 'number' ? booking.duration : 0;
+  const endDate: Date | null = startDate ? new Date(startDate.getTime() + durationMinutes * 60000) : null;
+  const fmtTime = (d: Date) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  const bookingTime = startDate && endDate ? `${fmtTime(startDate)} - ${fmtTime(endDate)}` : "";
   return {
     _id: String(tx._id),
     bookingId: tx.bookingId ? String(tx.bookingId) : "",
@@ -22,7 +33,11 @@ function formatTransactionResponse(tx: any): TransactionResponseDTO {
     paymentReference: tx.paymentReference || "",
     createdAt: tx.createdAt || new Date(),
     updatedAt: tx.updatedAt || tx.createdAt || new Date(),
-  };
+    // extra friendly fields expected by DTO
+    serviceName,
+    customerName,
+    bookingTime,
+  } as TransactionResponseDTO;
 }
 
 // CREATE
@@ -214,7 +229,7 @@ if(transaction && transaction.status===TRANSACTION_STATUS.HOLD && muaWallet){
 export async function handleRefundBooking(bookingId:string):Promise<void>{
 //payout(tim customer, lay bank account tu user)
 //update transaction
- const payoutRes = await makeRefund(bookingId);
+ await makeRefund(bookingId);
  const transaction = await Transaction.findOne({ bookingId: bookingId }).exec();
  if(transaction){
   transaction.status = TRANSACTION_STATUS.REFUNDED;
@@ -257,6 +272,68 @@ export async function getTransactions(
     };
   } catch (error) {
     throw new Error(`Failed to get transactions: ${error}`);
+  }
+}
+
+export async function getMUAWallet(muaId: string): Promise<WalletResponseDTO | null> {
+  try {
+    const wallet = await Wallet.findOne({ muaId }).exec();
+    if (!wallet) return null;
+    return {
+      _id: String(wallet._id),
+      muaId: wallet.muaId.toString(),
+      balance: wallet.balance,
+      currency: wallet.currency,
+      createdAt: wallet.createdAt,
+      updatedAt: wallet.updatedAt,
+    };
+  } catch (error) {
+    throw new Error(`Failed to get MUA wallet: ${error}`);
+  }
+}
+// READ - list by booking.muaId with optional status and pagination
+export async function getTransactionsByMuaId(
+  muaId: string,
+  page: number = 1,
+  pageSize: number = 10,
+  status?: 'HOLD' | 'CAPTURED' | 'REFUNDED'
+): Promise<{ transactions: TransactionResponseDTO[]; total: number; page: number; totalPages: number }>{
+  try {
+    const matchStage: any = {};
+    if (status) matchStage.status = status;
+
+    const pipeline: any[] = [
+      // Optional status filter at transaction level first
+      Object.keys(matchStage).length ? { $match: matchStage } : null,
+      // Join Booking to filter by muaId
+      { $lookup: { from: 'bookings', localField: 'bookingId', foreignField: '_id', as: 'booking' } },
+      { $unwind: '$booking' },
+      { $match: { 'booking.muaId': new mongoose.Types.ObjectId(muaId) } },
+      // Join Service via booking.serviceId
+      { $lookup: { from: 'services', localField: 'booking.serviceId', foreignField: '_id', as: 'service' } },
+      { $unwind: { path: '$service', preserveNullAndEmptyArrays: true } },
+      { $sort: { createdAt: -1 } },
+      // Facet for pagination + total count
+      {
+        $facet: {
+          docs: [
+            { $skip: (page - 1) * pageSize },
+            { $limit: pageSize }
+          ],
+          count: [ { $count: 'total' } ]
+        }
+      }
+    ].filter(Boolean);
+
+    const aggRes = await (Transaction as any).aggregate(pipeline);
+    const facet = aggRes[0] || { docs: [], count: [] };
+    const total = facet.count[0]?.total || 0;
+    // Note: formatTransactionResponse maps only transaction fields.
+    // If you need booking/service fields in the response, extend the DTO and mapper accordingly.
+    const transactions = (facet.docs || []).map(formatTransactionResponse);
+    return { transactions, total, page, totalPages: Math.ceil(total / pageSize) };
+  } catch (error) {
+    throw new Error(`Failed to get transactions by muaId: ${error}`);
   }
 }
 
