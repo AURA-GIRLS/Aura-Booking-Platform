@@ -19,6 +19,7 @@ import {
 import type { CreateBookingDTO, UpdateBookingDTO } from "../types/booking.dtos";
 import type { ApiResponseDTO } from "types";
 import { handleBalanceConfirmBooking } from "@services/transaction.service";
+import { BOOKING_STATUS } from "constants";
 
 export class BookingController {
 
@@ -426,7 +427,7 @@ export class BookingController {
     try {
       const { id } = req.params;
       
-      const data = await updateBookingStatus(id, 'CONFIRMED');
+      const data = await updateBookingStatus(id, BOOKING_STATUS.CONFIRMED);
       await handleBalanceConfirmBooking(id);
       if (!data) {
         const response: ApiResponseDTO = {
@@ -461,7 +462,7 @@ export class BookingController {
     try {
       const { id } = req.params;
       
-      const data = await updateBookingStatus(id, 'CANCELLED');
+      const data = await updateBookingStatus(id, BOOKING_STATUS.REJECTED);
 
       if (!data) {
         const response: ApiResponseDTO = {

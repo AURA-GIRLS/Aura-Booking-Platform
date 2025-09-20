@@ -2,7 +2,7 @@ import type {ISlot } from "types/schedule.interfaces";
 import { getMondayOfWeek } from "utils/calendarUtils";
 import { getFinalSlots } from "./schedule.service";
 import { fromUTC } from "utils/timeUtils";
-import { SLOT_TYPES, BOOKING_STATUS, BOOKING_TYPES } from "constants/index";
+import { SLOT_TYPES, BOOKING_STATUS, BOOKING_TYPES, TRANSACTION_STATUS } from "constants/index";
 import { Booking } from "models/bookings.models";
 import type { CreateBookingDTO, UpdateBookingDTO, BookingResponseDTO, IBookingSlot, IAvailableMuaServices, PendingBookingResponseDTO } from "types/booking.dtos";
 import dayjs from "dayjs";
@@ -715,6 +715,21 @@ export async function updateBookingStatus(
             const bookingDate: Date | undefined = updatedBooking.bookingDate as any;
             if (muaId && bookingDate) {
                 await invalidateWeeklyCache(muaId, bookingDate);
+            }
+
+            //update transaction and wallet
+            const transaction = await mongoose.model('Transaction').findOne({ bookingId: bookingId }).exec();
+            if (transaction) {
+                const Wallet = mongoose.model('Wallet');
+                if (status === BOOKING_STATUS.CONFIRMED) {
+                    transaction.status = TRANSACTION_STATUS.CAPTURED;
+                    await transaction.save();
+                    const muaWallet = await Wallet.findOne({ muaId: updatedBooking.muaId }).exec();
+                    if (muaWallet) {
+                        muaWallet.balance += transaction.amount;
+                        await muaWallet.save();
+                    }
+                }
             }
         } catch (e) {
             // eslint-disable-next-line no-console

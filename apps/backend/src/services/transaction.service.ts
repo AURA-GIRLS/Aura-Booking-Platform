@@ -161,7 +161,7 @@ export async function handlePayOSWebhook(data: PaymentWebhookResponse): Promise<
      await deleteRedisPendingBooking(data?.data?.orderCode);
     }
   // check transaction đã tồn tại
-  const existingTransaction = await Transaction.findOne({ paymentReference: data.data.reference }).exec();
+  const existingTransaction = await Transaction.findOne({ bookingId:bookingData._id }).exec();
   if (existingTransaction) {
     console.log(`Transaction with reference ${data.data.reference} already exists. Skipping creation.`);
     return formatTransactionResponse(existingTransaction);
@@ -172,7 +172,7 @@ export async function handlePayOSWebhook(data: PaymentWebhookResponse): Promise<
     bookingData,
     data.data.amount,
     data.data.reference,
-    data.data.currency,
+    "VND",
     TRANSACTION_STATUS.HOLD
   );
   return await createTransaction(input);

@@ -12,7 +12,7 @@ const BankAccountSchema = new Schema({
 }, { timestamps: true });
 
 const WalletSchema = new Schema({
-  userId: { type: Schema.Types.ObjectId, ref: "User", required: true, unique: true },
+  muaId: { type: Schema.Types.ObjectId, ref: "MUA", required: true, unique: true },
   balance: { type: Number, default: 0 },          // số dư khả dụng (được CAPTURED)
   currency: { type: String, default: "VND" }
 }, { timestamps: true });

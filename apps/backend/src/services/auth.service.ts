@@ -50,9 +50,7 @@ export class AuthService {
       });
       await user.save();
  
-      const muaWallet = new Wallet({userId: user._id});
-      await muaWallet.save();
-      
+
       // Create MUA profile
       const mua = new MUA({
         userId: user._id,
@@ -65,6 +63,10 @@ export class AuthService {
         isVerified: false
       });
       await mua.save();
+
+      const muaWallet = new Wallet({muaId: mua._id});
+      await muaWallet.save();
+      
 
       // Send verification email
       await this.emailService.sendEmailVerification(
