@@ -11,7 +11,12 @@ const poppins = Poppins({
 
 export const metadata: Metadata = {
   title: "AURA – Booking Make Up Online",
-  description: "Face it, You are Art!",
+  description: "Face it, You are Art!",icons: {
+    icon: [
+      { url: "/images/LOGO_icon.png", type: "image/png" }, // favicon dạng png
+    ],
+    apple: "/images/LOGO_icon.png", // icon khi add to homescreen trên iOS
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

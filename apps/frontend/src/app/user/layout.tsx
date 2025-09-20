@@ -68,7 +68,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
       className="flex flex-col min-h-screen bg-white "
     >
       <Navbar user={user} setUser={setUser} />
-      <div className="flex-1 px-20 py-8">{children}</div>
+      <div className="flex-1 ">{children}</div>
       <Footer />
     </main>
   );

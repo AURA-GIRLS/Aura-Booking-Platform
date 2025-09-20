@@ -15,7 +15,8 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ABOUT US heading */}
+      <div className="max-w-7xl mx-auto px-4">
+        {/* ABOUT US heading */}
       <section className="mb-10">
         <h1 className="text-5xl md:text-7xl font-extrabold italic tracking-tight text-black">ABOUT US</h1>
       </section>
@@ -86,6 +87,7 @@ export default function AboutPage() {
           />
         </div>
       </section>
+      </div>
     </>
   );
 }

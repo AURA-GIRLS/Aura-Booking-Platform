@@ -19,13 +19,13 @@ export default function Navbar({ user, setUser }: Readonly<NavbarProps>)  {
   const avatarUrl = user?.avatarUrl || '/images/danang.jpg';
 
   return (
-    <nav className="w-full bg-white shadow-sm">
+    <nav className="sticky top-0 z-50 w-full bg-white shadow-sm">
       <div className="w-full px-6 py-4 flex items-center justify-between">
         {/* Left: Logo + Site name */}
-        <div className="flex items-center gap-3">
-          <div className="h-8 w-8 bg-red-500 text-white text-[10px] flex items-center justify-center rounded">Logo</div>
-          <span className="font-semibold">AURA.com</span>
-        </div>
+        {/* <div className="flex items-center gap-3">
+          <img alt="AURA" src="/images/LOGO_pink.png" onClick={()=>window.location.href="/"} className="h-10 w-full cursor-pointer"/>
+        </div> */}
+        <img alt="AURA" src="/images/LOGO_black.png" onClick={()=>window.location.href="/"} className="h-12 w-24 cursor-pointer"/>
 
         {/* Center: Menu */}
         <ul className="hidden md:flex items-center gap-6 text-gray-700 font-medium">

@@ -36,13 +36,10 @@ export default function ArtistNavbar({ mua, setMua }:  Readonly<ArtistNavbarProp
   const avatarUrl = user?.avatarUrl || '/images/danang.jpg';
 
   return (
-    <nav className="w-full bg-white shadow-sm border-b border-[#EC5A86]/30">
+    <nav className="sticky top-0 z-50 w-full bg-white shadow-sm border-b border-[#EC5A86]/30">
       <div className="w-full px-8 py-4 flex items-center justify-between">
         {/* Left: Logo + Site name */}
-        <div className="flex items-center gap-3">
-          <div className="h-9 w-9 bg-[#EC5A86] text-white text-xs flex items-center justify-center rounded-full font-bold shadow">A</div>
-          <span className="font-semibold text-[#111] text-lg tracking-wide">AURA.com</span>
-        </div>
+        <img alt="AURA" src="/images/LOGO_black.png" onClick={()=>window.location.href="/"} className="h-12 w-24 cursor-pointer"/>
 
         {/* Center: Menu */}
         { /* Helper to build dynamic artist paths safely */ }

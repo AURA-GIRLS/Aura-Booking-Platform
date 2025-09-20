@@ -34,6 +34,7 @@ export const PORTFOLIO_CATEGORIES = {
 
 // Service Categories for makeup occasions
 export const SERVICE_CATEGORIES = {
+  ALL:"ALL",
   BRIDAL: 'BRIDAL',          
   PARTY: 'PARTY',             
   WEDDING_GUEST: 'WEDDING_GUEST', 

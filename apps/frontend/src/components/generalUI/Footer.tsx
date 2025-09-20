@@ -16,36 +16,40 @@ export default function Footer() {
           >
             AURA
           </h3>
-          <p className="text-[#AC274F] text-sm">Đặt lịch makeup hoàn hảo cho những khoảnh khắc đẹp.</p>
+          <p className="text-[#AC274F] text-sm">
+            Book flawless makeup appointments for your most beautiful moments.
+          </p>
         </div>
         <div>
-          <h4 className="font-bold mb-2 text-[#EB638B] uppercase text-base tracking-wide">Về công ty</h4>
+          <h4 className="font-bold mb-2 text-[#EB638B] uppercase text-base tracking-wide">Company</h4>
           <ul className="space-y-1 text-sm">
-            <li className="text-[#382E31] hover:text-[#EB638B] transition">Giới thiệu</li>
-            <li className="text-[#382E31] hover:text-[#EB638B] transition">Tin tức</li>
-            <li className="text-[#382E31] hover:text-[#EB638B] transition">Liên hệ</li>
+            <li className="text-[#382E31] hover:text-[#EB638B] transition">About Us</li>
+            <li className="text-[#382E31] hover:text-[#EB638B] transition">News</li>
+            <li className="text-[#382E31] hover:text-[#EB638B] transition">Contact</li>
           </ul>
         </div>
         <div>
-          <h4 className="font-bold mb-2 text-[#EB638B] uppercase text-base tracking-wide">Điều khoản & Chính sách</h4>
+          <h4 className="font-bold mb-2 text-[#EB638B] uppercase text-base tracking-wide">Terms & Policies</h4>
           <ul className="space-y-1 text-sm">
-            <li className="text-[#382E31] hover:text-[#EB638B] transition">Điều khoản dịch vụ</li>
-            <li className="text-[#382E31] hover:text-[#EB638B] transition">Chính sách bảo mật</li>
-            <li className="text-[#382E31] hover:text-[#EB638B] transition">Chính sách hoàn tiền</li>
+            <li className="text-[#382E31] hover:text-[#EB638B] transition">Terms of Service</li>
+            <li className="text-[#382E31] hover:text-[#EB638B] transition">Privacy Policy</li>
+            <li className="text-[#382E31] hover:text-[#EB638B] transition">Refund Policy</li>
           </ul>
         </div>
         <div>
-          <h4 className="font-bold mb-2 text-[#EB638B] uppercase text-base tracking-wide">Hỗ trợ</h4>
+          <h4 className="font-bold mb-2 text-[#EB638B] uppercase text-base tracking-wide">Support</h4>
           <ul className="space-y-1 text-sm">
-            <li className="text-[#382E31] hover:text-[#EB638B] transition">Câu hỏi thường gặp</li>
-            <li className="text-[#382E31] hover:text-[#EB638B] transition">Trợ giúp</li>
+            <li className="text-[#382E31] hover:text-[#EB638B] transition">FAQ</li>
+            <li className="text-[#382E31] hover:text-[#EB638B] transition">Help Center</li>
           </ul>
         </div>
       </div>
-      <div className="text-center text-sm mt-10 tracking-widest" style={{ color: '#EB638B', fontWeight: 700 }}>
+      <div
+        className="text-center text-sm mt-10 tracking-widest"
+        style={{ color: '#EB638B', fontWeight: 700 }}
+      >
         © AURA 2025 - Face it, You are Art!
       </div>
     </footer>
   );
 }
-  

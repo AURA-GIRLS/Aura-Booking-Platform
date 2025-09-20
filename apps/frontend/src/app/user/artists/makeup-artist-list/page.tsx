@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import ArtistsList from "@/components/makeup-artist/ArtistsList";
+import ArtistsList from "@/components/mua-list/ArtistsList";
 import type { UserResponseDTO } from "@/types/user.dtos";
 // import ArtistsListPreview from "@/components/makeup-artist/ArtistsListPreview";
 
@@ -15,7 +15,7 @@ export default function Page() {
   }, []);
 
   return (
-    <div className="bg-gradient-to-b from-pink-50 to-pink-100 -mx-20 -my-8">
+    <div className="bg-gradient-to-b from-pink-50 to-pink-100 ">
       <ArtistsList/>
     </div>
   );

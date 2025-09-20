@@ -545,7 +545,7 @@ if(loading && scheduleLoading && pendingBookingsLoading){
   );
 }
   return (
-  <div className={`min-h-screen bg-white text-[#191516] font-sans tracking-wide ${styles.calendarRoot}`}> 
+  <div className={`min-h-screen max-w-7xl mx-auto px-4 bg-white text-[#191516] font-sans tracking-wide ${styles.calendarRoot}`}> 
       {extraStyles /* kept for structure; null now */}
       {matchedHeight && (
         <style>{`[data-equal-height]{height:var(--equal-col-height);}`}</style>

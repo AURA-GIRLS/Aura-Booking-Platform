@@ -2,14 +2,14 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { PROVINCES, BUDGET_OPTIONS, type ServiceCategory, ServiceAddon } from "../../constants/constants";
-import { fetchArtists } from "@/config/api";
-import type { Artist, ApiResp, SortKey } from "@/config/types";
 import { BookingService } from "@/services/booking";
 import type { IAvailableMuaServices } from "@/types/booking.dtos";
 import FiltersPanel from "./FiltersPanel";
 import ResultsPanel from "./ResultsPanel";
 import { MapPin } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { ApiResp, Artist, SortKey } from "@/types/artist.dto";
+import { ArtistService } from "@/services/artist";
 
 const budgetToRange = (b: string) => {
   const m = b.match(/(\d[\d\.]*)\s*VND\s*-\s*(\d[\d\.]*)/i);
@@ -135,7 +135,7 @@ export default function ArtistsList() {
           }
         } else {
           // Regular artist search
-          const data: ApiResp = await fetchArtists({
+          const data: ApiResp = await ArtistService.fetchArtists({
             q,
             location,
             occasion, 
@@ -310,8 +310,8 @@ export default function ArtistsList() {
       </div>
 
       {/* Main grid: Filters 3/12 – Results 9/12 */}
-      <div className="bg-white max-w-screen-2xl mx-auto px-5 sm:px-8 lg:px-10 py-8" style={{minHeight:"70rem"}}>
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="bg-white  py-8" style={{minHeight:"70rem"}}>
+        <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-3">
             <FiltersPanel
               q={q}

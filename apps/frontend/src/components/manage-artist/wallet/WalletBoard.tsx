@@ -87,7 +87,7 @@ export const WalletBoard = ({ muaId }: WalletBoardProps) => {
     const formatMoney = (n: number) => (n ?? 0).toLocaleString();
 
     return (
-        <div className="w-full space-y-6 px-4">
+        <div className="max-w-7xl mx-auto px-4 space-y-6">
             {/* Wallet summary */}
             <div className="rounded-xl border border-rose-200 bg-white shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md hover:-translate-y-[2px]">
                 <div className="flex items-center justify-between p-5 border-b border-rose-100 bg-gradient-to-r from-rose-50 to-white">

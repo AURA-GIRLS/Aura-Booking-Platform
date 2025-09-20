@@ -1,8 +1,9 @@
 import React from "react";
 import { MapPin, Star } from "lucide-react";
-import { formatVND } from "../../config/api";
 import { SERVICE_ADDON_LABELS } from "../../constants/constants";
-import type { Artist } from "../../config/types";
+import { Artist } from "@/types/artist.dto";
+import { ArtistService } from "@/services/artist";
+import { Button } from "../lib/ui/button";
 
 interface ArtistCardProps {
   artist: Artist;
@@ -81,11 +82,11 @@ export default function ArtistCard({ artist, onViewProfile, onBookService }: Art
                 </span>
               </div>
               {/* Heart Icon */}
-              <button className="p-2 hover:bg-gray-50 rounded-full transition-colors">
+              <Button className="p-2 hover:bg-gray-50 rounded-full transition-colors">
                 <svg className="w-5 h-5 text-gray-400 hover:text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                 </svg>
-              </button>
+              </Button>
             </div>
             
 
@@ -141,7 +142,7 @@ export default function ArtistCard({ artist, onViewProfile, onBookService }: Art
                         <div className="flex items-center justify-between mt-2">
                           <div>
                             <p className="text-sm text-rose-600 font-medium">
-                              {formatVND(service.price)}
+                              {ArtistService.formatVND(service.price)}
                             </p>
                             <p className="text-xs text-gray-500">
                               60 mins
