@@ -1,8 +1,13 @@
-import { Transaction } from "models/transactions.model";
-import type { CreateTransactionDTO, UpdateTransactionDTO, TransactionResponseDTO, PayOSCreateLinkInput, PayOSCreateLinkResult } from "types/transaction.dto";
+import { BankAccount, Transaction, Wallet } from "models/transactions.model";
+import type { CreateTransactionDTO, UpdateTransactionDTO, TransactionResponseDTO, PayOSCreateLinkInput, PayOSCreateLinkResult, PaymentWebhookResponse, PayoutInput, PayoutResponseDTO } from "types/transaction.dto";
 import { config } from "config";
-import axios from "axios";
+import { createPayOSSignedHttp, payosHttp } from "utils/payosHttp";
 import crypto from "crypto";
+import { createBooking, deleteRedisPendingBooking, getBookingById, getRedisPendingBooking } from "./booking.service";
+import { PAYMENT_METHODS,PAYOUT_CATEGORIES,TRANSACTION_STATUS, type TransactionStatus } from "constants/index";
+import type { BookingResponseDTO } from "types";
+import type { CreateBookingDTO, PendingBookingResponseDTO } from "types/booking.dtos";
+import mongoose from "mongoose";
 
 // UTIL - map mongoose doc to DTO
 function formatTransactionResponse(tx: any): TransactionResponseDTO {
@@ -21,6 +26,21 @@ function formatTransactionResponse(tx: any): TransactionResponseDTO {
 }
 
 // CREATE
+export async function getCreateTransactionDTO(bookingData: BookingResponseDTO,amount:number,paymentReference:string,currency:string,status:TransactionStatus): Promise<CreateTransactionDTO> {
+  try {
+    return {
+      bookingId: bookingData._id,
+      customerId: bookingData?.customerId || '',
+      amount: amount,
+      currency,
+      status,
+      paymentMethod: PAYMENT_METHODS.BANK_TRANSFER,
+      paymentReference,
+    };
+  } catch (error) {
+    throw new Error(`Failed to create transaction: ${error}`);
+  }
+}
 export async function createTransaction(data: CreateTransactionDTO): Promise<TransactionResponseDTO> {
   try {
     const tx = await Transaction.create({
@@ -28,7 +48,7 @@ export async function createTransaction(data: CreateTransactionDTO): Promise<Tra
       customerId: data.customerId,
       amount: data.amount,
       currency: data.currency,
-      // default status = HOLD from schema
+      status: data.status,
       paymentMethod: data.paymentMethod,
       paymentReference: data.paymentReference,
     });
@@ -40,11 +60,29 @@ export async function createTransaction(data: CreateTransactionDTO): Promise<Tra
 
 // ==================== PayOS Payment Link ====================
 
+export function generateOrderCode(): number {
+  const random = crypto.randomInt(100000, 999999); // random 6 số
+  return random;
+}
 
-
-function createPayOSSignature({ amount, cancelUrl, description, orderCode, returnUrl }: Required<Omit<PayOSCreateLinkInput, 'orderCode'>> & { orderCode: number }): string {
+function createPayOSPaymentSignature({ amount, cancelUrl, description, orderCode, returnUrl }: Required<Omit<PayOSCreateLinkInput, 'orderCode'>> & { orderCode: number }): string {
   // Alphabetical concatenation required by PayOS
   const dataString = `amount=${amount}&cancelUrl=${cancelUrl}&description=${description}&orderCode=${orderCode}&returnUrl=${returnUrl}`;
+  const hmac = crypto.createHmac("sha256", config.payosChecksumKey);
+  hmac.update(dataString);
+  return hmac.digest("hex");
+}
+function createPayOSOutSignature({
+  amount,
+  category,
+  description,
+  referenceId,
+  toAccountNumber,
+  toBin,
+}: Required<PayoutInput>): string {
+  // Alphabetical concatenation required by PayOS
+  const dataString = `amount=${amount}&category=${Array.isArray(category) ? category.join(",") : category}&description=${description}&referenceId=${referenceId}&toAccountNumber=${toAccountNumber}&toBin=${toBin}`;
+  
   const hmac = crypto.createHmac("sha256", config.payosChecksumKey);
   hmac.update(dataString);
   return hmac.digest("hex");
@@ -54,8 +92,9 @@ export async function createPayOSPaymentLink(input: PayOSCreateLinkInput): Promi
     if (!config.payosClientId || !config.payosApiKey || !config.payosChecksumKey) {
       throw new Error("Missing PayOS credentials (clientId/apiKey/checksumKey)");
     }
-    const orderCode = input.orderCode ?? Date.now();
-    const signature = createPayOSSignature({
+    // Generate a simple 6-digit order code (similar to PayOS sample). Allow override via input.
+    const orderCode = input.orderCode || generateOrderCode();
+    const signature = createPayOSPaymentSignature({
       amount: input.amount,
       cancelUrl: input.cancelUrl,
       description: input.description,
@@ -72,35 +111,116 @@ export async function createPayOSPaymentLink(input: PayOSCreateLinkInput): Promi
       signature,
     };
 
-    const apiUrl = config.payosApiUrl + "/v2/payment-requests";
-    const response = await axios.post(apiUrl, payload, {
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": config.payosApiKey,
-        "x-client-id": config.payosClientId,
-      }
-    });
+    const response = await payosHttp.post("/v2/payment-requests", payload);
     const checkoutUrl = (response.data && (response.data.checkoutUrl || response.data.data?.checkoutUrl)) || "";
     return { checkoutUrl, orderCode, signature, raw: response.data };
   
 }
+export async function makeRefund(bookingId:string ): Promise<PayoutResponseDTO> {
+   if (!config.payosClientId || !config.payosApiKey || !config.payosChecksumKey) {
+      throw new Error("Missing PayOS credentials (clientId/apiKey/checksumKey)");
+    }
+    const bookingData = await getBookingById(bookingId);
+    if(!bookingData){
+      throw new Error(`Booking with ID ${bookingId} not found.`);
+    }
+    const bankAccount = await BankAccount.findOne({ userId: bookingData.customerId }).exec();
+    const transaction = await Transaction.findOne({ bookingId: bookingId }).exec();
+    if(!transaction){
+      throw new Error(`Transaction with bookingId ${bookingId} not found.`);
+    }
+    const payload: PayoutInput = {
+      referenceId: transaction.paymentReference || '',
+      amount: transaction.amount || 0,
+      description: `Refund for booking ${bookingId}`,
+      toBin: bankAccount?.bankBin || '',
+      toAccountNumber: bankAccount?.accountNumber || '',
+      category: [PAYOUT_CATEGORIES.REFUND]
+    };
 
-// Convenience: create transaction and payment link together
-// export async function createTransactionWithPaymentLink(
-//   txData: CreateTransactionDTO,
-//   urls: { returnUrl: string; cancelUrl: string; description?: string }
-// ): Promise<{ transaction: TransactionResponseDTO; checkoutUrl: string; orderCode: number; signature: string }>{
-//   const transaction = await createTransaction(txData);
-//   const description = urls.description || `Payment for booking ${transaction.bookingId}`;
-//   const link = await createPayOSPaymentLink({
-//     amount: transaction.amount,
-//     description,
-//     returnUrl: urls.returnUrl,
-//     cancelUrl: urls.cancelUrl,
-//   });
-//   return { transaction, checkoutUrl: link.checkoutUrl, orderCode: link.orderCode, signature: link.signature };
-// }
+    console.info("makePayout called", {payload});
+    const signedHttp = createPayOSSignedHttp(
+      crypto.randomUUID(),
+      createPayOSOutSignature({ ...payload })
+    );
+    const response = await signedHttp.post("/v1/payouts", payload);
+    console.info("makePayout response", {responseData: response.data});
+    return response.data;
+}
 
+export async function handlePayOSWebhook(data: PaymentWebhookResponse): Promise<TransactionResponseDTO | null> {
+  // tìm booking và tạo booking
+  const pb = await getRedisPendingBooking(data?.data?.orderCode);
+  if(!pb){
+    console.warn(`Pending booking with orderCode ${data?.data?.orderCode} not found. Possibly user cancelled.`);
+    return null;
+  }
+  const b = mapPendingBookingToCreate(pb);
+  const bookingData = await createBooking(b);
+  if(bookingData){
+     await deleteRedisPendingBooking(data?.data?.orderCode);
+    }
+  // check transaction đã tồn tại
+  const existingTransaction = await Transaction.findOne({ paymentReference: data.data.reference }).exec();
+  if (existingTransaction) {
+    console.log(`Transaction with reference ${data.data.reference} already exists. Skipping creation.`);
+    return formatTransactionResponse(existingTransaction);
+  }
+
+  // tạo transaction HOLD
+  const input = await getCreateTransactionDTO(
+    bookingData,
+    data.data.amount,
+    data.data.reference,
+    data.data.currency,
+    TRANSACTION_STATUS.HOLD
+  );
+  return await createTransaction(input);
+}
+
+// ==================== MAPPERS ====================
+function mapPendingBookingToCreate(pb: PendingBookingResponseDTO): CreateBookingDTO {
+  // Combine bookingDate (YYYY-MM-DD) and startTime (HH:mm) into a Date
+  const bookingDate = new Date(`${pb.bookingDate}T${pb.startTime}:00`);
+  return {
+    customerId: pb.customerId,
+    serviceId: pb.serviceId,
+    muaId: pb.artistId,
+    bookingDate,
+    customerPhone: pb.customerPhone,
+    duration: pb.duration,
+    locationType: pb.locationType,
+    address: pb.address,
+    transportFee: pb.transportFee,
+    totalPrice: pb.totalPrice,
+    payed: pb.payed ?? false,
+    note: pb.note,
+  };
+}
+export async function handleBalanceConfirmBooking(bookingId:string):Promise<void>{
+//update wallet
+//update transaction
+const bookingData = await getBookingById(bookingId);  
+const muaWallet = await Wallet.findById(bookingData?.artistId).exec();
+
+const transaction = await Transaction.findOne({ bookingId: bookingId }).exec();
+if(transaction && transaction.status===TRANSACTION_STATUS.HOLD && muaWallet){
+  muaWallet.balance += transaction.amount??0;
+  await muaWallet.save();
+  transaction.status = TRANSACTION_STATUS.CAPTURED;
+  await transaction.save();
+}
+}
+export async function handleRefundBooking(bookingId:string):Promise<void>{
+//payout(tim customer, lay bank account tu user)
+//update transaction
+ const payoutRes = await makeRefund(bookingId);
+ const transaction = await Transaction.findOne({ bookingId: bookingId }).exec();
+ if(transaction){
+  transaction.status = TRANSACTION_STATUS.REFUNDED;
+  await transaction.save();
+ }
+}
 // READ - by id
 export async function getTransactionById(id: string): Promise<TransactionResponseDTO | null> {
   try {
@@ -163,3 +283,22 @@ export async function deleteTransaction(id: string): Promise<boolean> {
     throw new Error(`Failed to delete transaction: ${error}`);
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

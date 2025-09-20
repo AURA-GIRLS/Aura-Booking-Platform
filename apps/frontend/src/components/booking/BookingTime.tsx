@@ -30,6 +30,13 @@ export function BookingTime({
   const [selectedSlot, setSelectedSlot] = useState<BookingSlot | undefined>(undefined);
   // Presentation component: relies purely on passed-in slots/loading/error
 
+  // Start of today for past-day checks
+  const todayStart = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
+
   const daysInMonth = useMemo(() => new Date(viewYear, viewMonth + 1, 0).getDate(), [viewYear, viewMonth]);
 
   const monthSlots = useMemo(() => slots.filter(s => {
@@ -53,6 +60,12 @@ export function BookingTime({
     const daySlots = slotsByDay[key] || [];
     // define full: 0 available slots or maybe flagged externally; here mock: if no slots => full
     return daySlots.length === 0;
+  };
+
+  const isPastDay = (year: number, month: number, dayNum: number) => {
+    const d = new Date(year, month, dayNum);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime() < todayStart.getTime();
   };
 
   const handlePrevMonth = () => {
@@ -115,20 +128,22 @@ export function BookingTime({
             const key = formatDayKey(viewYear, viewMonth, dayNum);
             const selected = activeDay === key;
             const full = isDayFull(dayNum);
+            const past = isPastDay(viewYear, viewMonth, dayNum);
+            const disabled = full || past;
             return (
               <button
                 key={key}
-                disabled={full}
+                disabled={disabled}
                 onClick={() => selectDay(dayNum)}
                 className={[
                   "relative h-10 flex flex-col items-center justify-center rounded-md text-[11px] font-medium border transition",
                   selected && "bg-pink-500 text-white border-pink-500 shadow-inner",
-                  !selected && !full && "bg-white hover:border-pink-400",
-                  full && "opacity-30 cursor-not-allowed bg-neutral-50"
+                  !selected && !disabled && "bg-white hover:border-pink-400",
+                  disabled && "opacity-30 cursor-not-allowed bg-neutral-50"
                 ].filter(Boolean).join(" ")}
               >
                 <span>{dayNum}</span>
-                {full && <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-pink-500/60 rounded" />}
+                {disabled && <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-pink-500/60 rounded" />}
               </button>
             );
           })}

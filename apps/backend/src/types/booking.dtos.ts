@@ -8,6 +8,7 @@ import type { ArtistResponseDTO, MuaResponseDTO } from "./user.dtos";
 // ===== BOOKING DTOs =====
 export interface CreateBookingDTO {
   customerId: string;
+  customerPhone?: string;
   serviceId: string;
   muaId: string;
   bookingDate: Date;
@@ -19,6 +20,7 @@ export interface CreateBookingDTO {
   payed?: boolean;
   note?: string;
 }
+
 
 export interface UpdateBookingDTO {
   customerId?: string;
@@ -41,6 +43,7 @@ export interface BookingResponseDTO {
   artistId: string;
   serviceId: string;
   customerName: string;
+  customerPhone?: string;
   serviceName: string;
   servicePrice: number;
   bookingDate: string;
@@ -58,7 +61,30 @@ export interface BookingResponseDTO {
   updatedAt: Date;
 }
 
-
+export interface PendingBookingResponseDTO {
+  _id?: string;
+  customerId: string;
+  artistId: string;
+  serviceId: string;
+  orderCode?: number;
+  customerPhone?: string;
+  customerName: string;
+  serviceName: string;
+  bookingDate: string;
+  servicePrice: number;
+  startTime: string;
+  endTime: string;
+  duration: number;
+  locationType: BookingType;
+  address: string;
+  status: BookingStatus;
+  transportFee?: number;
+  totalPrice: number;
+  note?: string;
+  payed?: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
 export interface IBookingSlot {
   serviceId:string;
   day: string; 

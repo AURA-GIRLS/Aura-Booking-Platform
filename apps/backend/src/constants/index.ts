@@ -92,8 +92,18 @@ export const TRANSACTION_STATUS = {
   CAPTURED: 'CAPTURED' ,
   REFUNDED: 'REFUNDED'
 } as const;
+export const WITHDRAW_STATUS = {
+  PENDING:'PENDING',
+  PROCESSING:'PROCESSING',
+  SUCCESS:'SUCCESS',
+  FAILED:'FAILED'
+} as const;
+export const PAYOUT_CATEGORIES={
+  REFUND:'REFUND',
+  WITHDRAW:'WITHDRAW'
+}
 export const PAYMENT_METHODS  = {
-  CREDIT_CARD: 'BANK_TRANSFER',
+  BANK_TRANSFER: 'BANK_TRANSFER',
 } as const;
 
 // Type definitions derived from constants
@@ -110,3 +120,5 @@ export type NotificationType = typeof NOTIFICATION_TYPES[keyof typeof NOTIFICATI
 export type SlotType = typeof SLOT_TYPES[keyof typeof SLOT_TYPES];
 export type PaymentMethod = typeof PAYMENT_METHODS[keyof typeof PAYMENT_METHODS];
 export type TransactionStatus = typeof TRANSACTION_STATUS[keyof typeof TRANSACTION_STATUS];
+export type WithdrawStatus = typeof WITHDRAW_STATUS[keyof typeof WITHDRAW_STATUS];
+export type PayoutCategory = typeof PAYOUT_CATEGORIES[keyof typeof PAYOUT_CATEGORIES];

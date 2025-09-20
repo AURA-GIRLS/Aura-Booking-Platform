@@ -18,7 +18,7 @@ import Notification from "@/components/generalUI/Notification";
 import { BookingService } from "@/services/booking";
 
 // Imported hooks and components
-import { useNotification } from "./hooks/useNotification";
+import { useNotification } from "../../../hooks/useNotification";
 import { useCalendarEvents } from "./hooks/useCalendarEvents";
 import { useEventManagement } from "./hooks/useEventManagement";
 import { EventModal } from "./components/EventModal";
@@ -134,7 +134,9 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
         showSuccess('Booking accepted successfully!');
         // Refresh both pending bookings and calendar schedule
         await fetchPendingBookings();
-        await fetchSchedule();
+        const weekStart = getMondayOfWeek(response.data?.bookingDate);
+        await fetchSchedule(weekStart);
+        setCurrentDate(new Date(response.data?.bookingDate || new Date()));
       } else {
         showError(response.message || 'Failed to accept booking');
       }
@@ -220,6 +222,8 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
     };
 
     const makeEvent = (slot: any) => {
+      if(slot.type==="BOOKING" && slot.status ==="PENDING"){ return null;}
+      
       const start = moment(`${slot.day} ${slot.startTime}`, "YYYY-MM-DD HH:mm").toDate();
       const end = moment(`${slot.day} ${slot.endTime}`, "YYYY-MM-DD HH:mm").toDate();
       let title = '';
@@ -227,7 +231,7 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
       else if (slot.type === 'BLOCKED') title = 'Blocked Time';
   // title already defaults to '' so no need to reassign in else
       return {
-        id: slot.slotId || slot.day + slot.startTime,
+        id: slot.slotId + slot.startTime|| slot.day + slot.startTime,
         title,
         start,
         end,
@@ -238,7 +242,12 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
     };
 
     slotData.forEach(slot => {
+      // Skip pending bookings from the calendar
+      if (slot.type === 'BOOKING' && slot.status === 'PENDING') {
+        return;
+      }
       const evt = makeEvent(slot);
+      if (!evt) return; // avoid pushing null/undefined
       if (slot.type === 'ORIGINAL_WORKING' || slot.type === 'OVERRIDE' || slot.type === 'NEW_WORKING' || slot.type === 'NEW_OVERRIDE') {
         bgEvts.push(evt);
       } else {

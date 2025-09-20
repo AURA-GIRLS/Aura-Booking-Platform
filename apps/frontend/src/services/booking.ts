@@ -1,6 +1,6 @@
 import { api } from '@/config/api';
 import type { ApiResponseDTO } from '../types/common.dtos';
-import type { CreateBookingDTO, BookingResponseDTO, BookingSlot, PaginatedBookingsResponse, UpdateBookingDTO, IAvailableMuaServices } from '../types/booking.dtos';
+import type { CreateBookingDTO, BookingResponseDTO, BookingSlot, PaginatedBookingsResponse, UpdateBookingDTO, IAvailableMuaServices, PendingBookingResponseDTO } from '../types/booking.dtos';
 
 export const BookingService = {
 
@@ -61,6 +61,14 @@ export const BookingService = {
   async create(data: CreateBookingDTO): Promise<ApiResponseDTO<BookingResponseDTO>> {
     try {
       const res = await api.post<ApiResponseDTO<BookingResponseDTO>>('/booking/', data);
+      return res.data;
+    } catch (error: any) {
+      throw error.response?.data || error;
+    }
+  },
+   async createRedisPendingBooking( data: CreateBookingDTO): Promise<ApiResponseDTO<PendingBookingResponseDTO>> {
+    try {
+      const res = await api.post<ApiResponseDTO<PendingBookingResponseDTO>>(`/booking/pending`, data);
       return res.data;
     } catch (error: any) {
       throw error.response?.data || error;

@@ -18,6 +18,7 @@ import type {
 import { MUA } from '../models/muas.models';
 import { USER_ROLES } from '../constants';
 import { OAuth2Client } from 'google-auth-library';
+import { Wallet } from '@models/transactions.model';
 
 export class AuthService {
   private emailService: EmailService;
@@ -48,7 +49,10 @@ export class AuthService {
         emailVerificationExpires: verificationExpires
       });
       await user.save();
-
+ 
+      const muaWallet = new Wallet({userId: user._id});
+      await muaWallet.save();
+      
       // Create MUA profile
       const mua = new MUA({
         userId: user._id,

@@ -4,12 +4,15 @@ import { getFinalSlots } from "./schedule.service";
 import { fromUTC } from "utils/timeUtils";
 import { SLOT_TYPES, BOOKING_STATUS, BOOKING_TYPES } from "constants/index";
 import { Booking } from "models/bookings.models";
-import type { CreateBookingDTO, UpdateBookingDTO, BookingResponseDTO, IBookingSlot, IAvailableMuaServices } from "types/booking.dtos";
+import type { CreateBookingDTO, UpdateBookingDTO, BookingResponseDTO, IBookingSlot, IAvailableMuaServices, PendingBookingResponseDTO } from "types/booking.dtos";
 import dayjs from "dayjs";
 import type { MuaResponseDTO, ServiceResponseDTO } from "types";
 import { MUA } from "@models/muas.models";
 import { ServicePackage } from "@models/services.models";
 import mongoose from "mongoose";
+import { redisClient } from "config/redis";
+import { generateOrderCode } from "./transaction.service";
+import { invalidateWeeklyCache } from "./slot.service";
 
 // Helper function to check if two time slots overlap
 function slotsOverlap(slot1: ISlot, slot2: ISlot): boolean {
@@ -417,6 +420,13 @@ export async function createBooking(bookingData: CreateBookingDTO): Promise<Book
         });
 
         const savedBooking = await booking.save();
+
+        const customer = await mongoose.model('User').findById(bookingData.customerId).exec();
+        if (!customer) {
+            throw new Error("Customer not found");
+        }
+        customer.phoneNumber = bookingData.customerPhone;
+        await customer.save();
         
         // Populate để lấy thông tin customer và service
         const populatedBooking = await Booking.findById(savedBooking._id)
@@ -426,13 +436,62 @@ export async function createBooking(bookingData: CreateBookingDTO): Promise<Book
         if (!populatedBooking) {
             throw new Error("Failed to retrieve created booking");
         }
-
+        await invalidateWeeklyCache(bookingData.muaId, bookingData.bookingDate);
         return formatBookingResponse(populatedBooking);
     } catch (error) {
         throw new Error(`Failed to create booking: ${error}`);
     }
 }
+export async function createRedisPendingBooking(bookingData: CreateBookingDTO): Promise<null | PendingBookingResponseDTO> {
+    try {
+        // Check for booking conflicts before creating
+        const conflictCheck = await checkBookingConflict(
+            bookingData.muaId,
+            bookingData.bookingDate,
+            bookingData.duration
+        );
+        if (conflictCheck.hasConflict) {
+            throw new Error(
+                `Booking conflict detected. There is already a booking from ${conflictCheck.conflictingBooking?.startTime} to ${conflictCheck.conflictingBooking?.endTime} on ${conflictCheck.conflictingBooking?.date}`
+            );
+        }
+        const booking = new Booking({
+            ...bookingData,
+            status: BOOKING_STATUS.PENDING,
+            createdAt: new Date()
+        });
+        const orderCode = generateOrderCode();
+        const pendingBooking: PendingBookingResponseDTO = {
+            ...formatBookingResponse(booking),
+            customerPhone: bookingData.customerPhone,
+            orderCode,
+        };
 
+        const cacheKey = `booking:pending:${orderCode}`;
+        await redisClient.json.set(cacheKey, '.', JSON.parse(JSON.stringify(pendingBooking)));
+        await redisClient.expire(cacheKey, 1800);
+        return pendingBooking;
+    } catch (error) {
+        throw new Error(`Failed to create booking: ${error}`);
+    }
+}
+
+export async function getRedisPendingBooking(orderCode: number): Promise<PendingBookingResponseDTO | null> {
+    try {
+        const cacheKey = `booking:pending:${orderCode}`;
+        return await redisClient.json.get(cacheKey) as PendingBookingResponseDTO | null;
+    } catch (error) {
+        throw new Error(`Failed to get booking: ${error}`);
+    }
+}
+export async function deleteRedisPendingBooking(orderCode: number): Promise<void> {
+    try {
+        const cacheKey = `booking:pending:${orderCode}`;
+        await redisClient.del(cacheKey);
+    } catch (error) {
+        throw new Error(`Failed to delete pending booking: ${error}`);
+    }
+}
 // READ - Lấy booking theo ID
 export async function getBookingById(bookingId: string): Promise<BookingResponseDTO | null> {
     try {
@@ -650,7 +709,17 @@ export async function updateBookingStatus(
         if (!updatedBooking) {
             return null;
         }
-
+        // Invalidate weekly cache for the MUA and week of this booking whenever status changes
+        try {
+            const muaId = updatedBooking.muaId?.toString?.();
+            const bookingDate: Date | undefined = updatedBooking.bookingDate as any;
+            if (muaId && bookingDate) {
+                await invalidateWeeklyCache(muaId, bookingDate);
+            }
+        } catch (e) {
+            // eslint-disable-next-line no-console
+            console.warn('Failed to invalidate weekly cache after status update:', e);
+        }
         return formatBookingResponse(updatedBooking);
     } catch (error) {
         throw new Error(`Failed to update booking status: ${error}`);
@@ -704,6 +773,7 @@ function formatBookingResponse(booking: any): BookingResponseDTO {
         artistId: mua._id ? String(mua._id) : '',
         serviceId: service._id ? String(service._id) : '',
         customerName: customer.fullName || "",
+        customerPhone: booking.customerPhone || "",
         serviceName: service.name || "",
         servicePrice: service.price || 0,
         bookingDate: bookingDay.format("YYYY-MM-DD"),

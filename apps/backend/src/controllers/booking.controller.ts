@@ -13,10 +13,12 @@ import {
   deleteBooking,
   getAvailableSlotsOfService,
   getAvailableMonthlySlots,
-  getAvailableMuaServicesByDay
+  getAvailableMuaServicesByDay,
+  createRedisPendingBooking
 } from "../services/booking.service";
 import type { CreateBookingDTO, UpdateBookingDTO } from "../types/booking.dtos";
 import type { ApiResponseDTO } from "types";
+import { handleBalanceConfirmBooking } from "@services/transaction.service";
 
 export class BookingController {
 
@@ -154,7 +156,28 @@ export class BookingController {
       res.status(500).json(response);
     }
   }
+ async setRedisPendingBooking(req: Request, res: Response): Promise<void> {
+    try {
+      const bookingData: CreateBookingDTO = req.body;
+      const data = await createRedisPendingBooking(bookingData);
 
+      const response: ApiResponseDTO = {
+        status: 201,
+        success: true,
+        message: "Pending booking created successfully",
+        data
+      };
+
+      res.status(201).json(response);
+    } catch (error) {
+      const response: ApiResponseDTO = {
+        status: 500,
+        success: false,
+        message: error instanceof Error ? error.message : "Failed to create redis pending booking"
+      };
+      res.status(500).json(response);
+    }
+  }
   // READ - Lấy booking theo ID
   async getById(req: Request, res: Response): Promise<void> {
     try {
@@ -404,7 +427,7 @@ export class BookingController {
       const { id } = req.params;
       
       const data = await updateBookingStatus(id, 'CONFIRMED');
-
+      await handleBalanceConfirmBooking(id);
       if (!data) {
         const response: ApiResponseDTO = {
           status: 404,

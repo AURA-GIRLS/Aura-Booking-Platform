@@ -1,4 +1,4 @@
-import type { PaymentMethod, PayoutCategory, TransactionStatus } from "constants/index";
+import { PaymentMethod, PayoutCategory, TransactionStatus } from "../constants";
 
 export interface CreateTransactionDTO {
   bookingId: string;

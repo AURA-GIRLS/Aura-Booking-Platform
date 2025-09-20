@@ -5,7 +5,7 @@ import { redisClient } from "../config/redis"; // Assuming you have redis client
 import { getMondayOfWeek } from "utils/calendarUtils";
 
 // Helper function to invalidate cache for affected weeks
-async function invalidateWeeklyCache(muaId: string, date?: Date | string) {
+export async function invalidateWeeklyCache(muaId: string, date?: Date | string) {
   try {
     if (date) {
       // Invalidate specific week

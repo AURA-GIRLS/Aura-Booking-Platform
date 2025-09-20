@@ -237,7 +237,7 @@ async function getConfirmedBookingSlots(muaId: string, weekStart: string): Promi
   const weekEndDate = dayjs(weekStartDate).add(6, "day").endOf("day").toDate();
   const bookings = await Booking.find({
     muaId,
-    status: { $in: [BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.COMPLETED] },
+    status: { $in: [BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.COMPLETED, BOOKING_STATUS.PENDING] },
     bookingDate: { $gte: weekStartDate, $lte: weekEndDate }
   }).populate("customerId serviceId muaId");
 

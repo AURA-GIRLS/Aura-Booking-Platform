@@ -10,6 +10,7 @@ import { MuaResponseDTO } from "./user.dtos";
 // ===== BOOKING DTOs =====
 export interface CreateBookingDTO {
   customerId: string;
+  customerPhone?: string;
   serviceId: string;
   muaId: string;
   bookingDate: Date;
@@ -42,6 +43,29 @@ export interface BookingResponseDTO {
   customerId: string;
   artistId: string;
   serviceId: string;
+  customerName: string;
+  serviceName: string;
+  bookingDate: string;
+  servicePrice: number;
+  startTime: string;
+  endTime: string;
+  duration: number;
+  locationType: BookingType;
+  address: string;
+  status: BookingStatus;
+  transportFee?: number;
+  totalPrice: number;
+  note?: string;
+  payed?: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+export interface PendingBookingResponseDTO {
+  _id?: string;
+  customerId: string;
+  artistId: string;
+  serviceId: string;
+  orderCode?: number;
   customerName: string;
   serviceName: string;
   bookingDate: string;

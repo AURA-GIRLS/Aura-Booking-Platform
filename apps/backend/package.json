@@ -12,6 +12,7 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@payos/node": "^2.0.3",
     "@redis/entraid": "^5.8.2",
     "@types/nodemailer": "^7.0.1",
     "axios": "^1.7.2",

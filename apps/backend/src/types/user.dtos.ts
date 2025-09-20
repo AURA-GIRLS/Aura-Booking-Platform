@@ -8,7 +8,7 @@ export interface CreateMuaDTO extends Omit<CreateUserDTO, 'role'> {
 export interface MuaResponseDTO {
   _id: string;
   userId: string;
-  userName:string;
+  userName?:string;
   avatarUrl?: string;
   experienceYears?: number;
   bio?: string;

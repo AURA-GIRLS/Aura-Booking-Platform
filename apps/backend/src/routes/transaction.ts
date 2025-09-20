@@ -10,4 +10,7 @@ router.post("/payment-link", (req, res) => ctrl.createTransactionLink(req, res))
 // PayOS webhook endpoint
 router.post("/webhook", (req, res) => ctrl.webhookHandler(req, res));
 
+//Payout
+router.post("/refund/:bookingId", (req, res) => ctrl.makeRefund(req, res));
+
 export default router;

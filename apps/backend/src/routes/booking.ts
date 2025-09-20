@@ -7,6 +7,7 @@ const ctrl = new BookingController();
 
 // CREATE - Tạo booking mới
 router.post("/", authenticateToken, (req, res) => ctrl.create(req, res));
+router.post("/pending", authenticateToken, (req, res) => ctrl.setRedisPendingBooking(req, res));
 
 // READ - Lấy booking theo ID
 router.get("/by-id/:id", authenticateToken, (req, res) => ctrl.getById(req, res));
