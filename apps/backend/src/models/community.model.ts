@@ -1,0 +1,41 @@
+import { POST_STATUS, TARGET_TYPES } from "constants/index";
+import { model, Schema, Types } from "mongoose";
+
+const PostSchema = new Schema({
+  authorId: { type: Types.ObjectId, ref: "User", required: true },
+  content:  { type: String },
+  images:   [String],
+  tags:     [{ type: String, index: true }], // lưu slug hoặc name (multikey index)
+  likesCount:    { type: Number, default: 0 },
+  commentsCount: { type: Number, default: 0 },
+  status:  { type: String, enum: Object.values(POST_STATUS), default:POST_STATUS.PUBLISHED}
+}, { timestamps: true });
+
+const CommentSchema = new Schema({
+  postId:   { type: Types.ObjectId, ref: "Post", required: true },
+  authorId: { type: Types.ObjectId, ref: "User", required: true },
+  parentId: { type: Types.ObjectId, ref: "Comment", default: null }, // null = comment gốc
+  content:  { type: String, required: true },
+  likesCount: { type: Number, default: 0 },
+}, { timestamps: true });
+
+const ReactionSchema = new Schema({
+  userId:   { type: Types.ObjectId, ref: "User", required: true },
+  targetType: { type: String, enum: Object.values(TARGET_TYPES), required: true },
+  postId: { type: Types.ObjectId,ref:'Post', default: null },
+  commentId: { type: Types.ObjectId,ref:'Comment', default: null },
+}, { timestamps: true });
+
+ReactionSchema.index({ userId: 1, postId: 1,commentId: 1, targetType: 1 }, { unique: true });
+
+const TagSchema = new Schema({
+  name:  { type: String, required: true },          // tên hiển thị
+  slug:  { type: String, required: true, unique: true }, // normalized
+  description: { type: String },
+  postsCount: { type: Number, default: 0 },
+}, { timestamps: true });
+
+export const Tag = model("Tag", TagSchema);
+export const Reaction = model("Reaction", ReactionSchema);
+export const Comment = model("Comment", CommentSchema);
+export const Post = model("Post", PostSchema);

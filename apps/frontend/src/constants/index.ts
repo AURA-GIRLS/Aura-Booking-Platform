@@ -107,6 +107,16 @@ export const PAYMENT_METHODS  = {
   BANK_TRANSFER: 'BANK_TRANSFER',
 } as const;
 
+//COMUNITY
+export const POST_STATUS = {
+  PUBLISHED: 'PUBLISHED',
+  PRIVATE: 'PRIVATE'
+} as const;
+export const TARGET_TYPES = {
+  POST: 'POST',
+  COMMENT: 'COMMENT'
+} as const;
+
 // Type definitions derived from constants
 export type UserRole = typeof USER_ROLES[keyof typeof USER_ROLES];
 export type UserStatus = typeof USER_STATUS[keyof typeof USER_STATUS];
@@ -123,3 +133,5 @@ export type PaymentMethod = typeof PAYMENT_METHODS[keyof typeof PAYMENT_METHODS]
 export type TransactionStatus = typeof TRANSACTION_STATUS[keyof typeof TRANSACTION_STATUS];
 export type WithdrawStatus = typeof WITHDRAW_STATUS[keyof typeof WITHDRAW_STATUS];
 export type PayoutCategory = typeof PAYOUT_CATEGORIES[keyof typeof PAYOUT_CATEGORIES];
+export type PostStatus = typeof POST_STATUS[keyof typeof POST_STATUS];
+export type TargetType = typeof TARGET_TYPES[keyof typeof TARGET_TYPES];

@@ -161,7 +161,21 @@ export const mockConversations: Conversation[] = [
     },
     unreadCount: 1,
     isOnline: true
-  }
+  },
+   {
+    id: '4',
+    participants: [mockUser, mockUsers[0]],
+    lastMessage: {
+      id: '1',
+      senderId: '2',
+      receiverId: '1',
+      content: 'Hey! How\'s the game going?',
+      createdAt: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
+      isRead: false
+    },
+    unreadCount: 2,
+    isOnline: true
+  },
 ];
 
 export const mockEvents: Event[] = [

@@ -8,8 +8,11 @@ import routes from './routes/index';
 import health from './routes/health';
 import { errorHandler } from 'middleware/error.middleware';
 import { connectRedis } from 'config/redis';
+import http from "http";
+import { initSocket } from 'config/socket';
 
 const app = express();
+const server = http.createServer(app);
 
 // Middleware
 app.use(helmet());
@@ -31,8 +34,11 @@ async function start() {
     // Connect to MongoDB and Redis
     await connectDB();
     await connectRedis();
+    // Initialize Socket.IO
+    initSocket(server);
+    
     // Start server
-    app.listen(config.port, () => {
+    server.listen(config.port, () => {
       console.log(`🚀 Backend listening on http://localhost:${config.port}`);
       console.log(`📊 Health check: http://localhost:${config.port}/health`);
       console.log(`🔗 API endpoints: http://localhost:${config.port}/api`);

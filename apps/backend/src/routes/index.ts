@@ -4,6 +4,7 @@ import artistsRoutes from "./artists";
 import artistScheduleRoutes from "./artist-schedule";
 import transactionRoutes from "./transaction";
 import bookingRoutes from "./booking";
+import communityRoutes from "./community";
 const router = Router();
 
 // API routes
@@ -24,5 +25,5 @@ router.use("/artists", artistsRoutes);
 router.use("/artist-schedule", artistScheduleRoutes);
 router.use("/booking",bookingRoutes);
 router.use("/transaction", transactionRoutes);
-
+router.use("/community", communityRoutes);
 export default router;

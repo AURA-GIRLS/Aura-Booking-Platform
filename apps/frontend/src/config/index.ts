@@ -10,7 +10,7 @@ export const config = {
   // Server
   port: Number(process.env.NEXT_PUBLIC_PORT || 3000),
   publicAPI: process.env.NEXT_PUBLIC_API_URL || '',
-  
+  publicClient: process.env.NEXT_PUBLIC_CLIENT_URL || '',
   // Third-party services
   googleClientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '',
 

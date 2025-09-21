@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/lib/ui/dropdown-menu';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/lib/ui/avatar';
 import { NavbarProps } from '@/types/user.dtos';
@@ -25,7 +25,10 @@ export default function Navbar({ user, setUser }: Readonly<NavbarProps>)  {
         {/* <div className="flex items-center gap-3">
           <img alt="AURA" src="/images/LOGO_pink.png" onClick={()=>window.location.href="/"} className="h-10 w-full cursor-pointer"/>
         </div> */}
-        <img alt="AURA" src="/images/LOGO_black.png" onClick={()=>window.location.href="/"} className="h-12 w-24 cursor-pointer"/>
+        <button type="button" onClick={() => { window.location.href = "/"; }} className="h-12 w-24 focus:outline-none">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img alt="AURA" src="/images/LOGO_black.png" className="h-12 w-24" />
+        </button>
 
         {/* Center: Menu */}
         <ul className="hidden md:flex items-center gap-6 text-gray-700 font-medium">
@@ -78,7 +81,7 @@ export default function Navbar({ user, setUser }: Readonly<NavbarProps>)  {
           <li><Link href="/">Home</Link></li>
           <li><Link href="/user/artists/makeup-artist-list">Makeup Artist</Link></li>
           {/* <li><Link href="/booking">Booking</Link></li> */}
-          <li><Link href="/user/blog">Blog</Link></li>
+          <li><Link href={{ pathname: "/user/blog" }}>Blog</Link></li>
           <li><Link href="/user/about">About Us</Link></li>
           </ul>
           <div className="mt-3 flex items-center gap-3">
