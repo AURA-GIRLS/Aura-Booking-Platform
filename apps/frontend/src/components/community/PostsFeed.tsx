@@ -13,7 +13,7 @@ import DetailModal from './modals/DetailModal';
 import { Separator } from '../lib/ui/separator';
 
 
-export default function PostsFeed({ posts, setPosts, currentUser: _currentUser,fetchMinimalUser }: Readonly<{ posts: PostResponseDTO[]; setPosts: React.Dispatch<React.SetStateAction<PostResponseDTO[]>>; currentUser: UserWallResponseDTO; fetchMinimalUser: () => Promise<void> }>) {
+export default function PostsFeed({ posts, setPosts, currentUser: _currentUser, fetchMinimalUser, onOpenUserWall }: Readonly<{ posts: PostResponseDTO[]; setPosts: React.Dispatch<React.SetStateAction<PostResponseDTO[]>>; currentUser: UserWallResponseDTO; fetchMinimalUser: () => Promise<void>; onOpenUserWall?: (userId: string, userName?: string) => void }>) {
   type UIComment = CommentResponseDTO & { isLiked?: boolean; likeCount: number };
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
   const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
@@ -433,7 +433,7 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser,f
     <>
       <div className="space-y-6">
         {posts
-          .filter((p) => p.status !== POST_STATUS.PRIVATE)
+          
           .map((post) => {
             const imageUrls = Array.isArray((post as any).media)
               ? ((post as any).media as any[])
@@ -441,7 +441,7 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser,f
                   .map((m) => m.url as string)
               : [];
             return (
-            <div key={post._id} className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div id={`post-${post._id}`} key={post._id} className="bg-white rounded-xl shadow-sm overflow-hidden  hover:shadow-md">
               <div className="p-4">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center">
@@ -450,7 +450,13 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser,f
                     </div>
                     <div className="ml-3">
                       <h4 className="font-semibold text-gray-900 flex items-center">
-                        <span>{post.authorName}</span>
+                        <button
+                          type="button"
+                          onClick={() => onOpenUserWall?.(post.authorId, post.authorName)}
+                          className="text-gray-900 hover:underline"
+                        >
+                          {post.authorName}
+                        </button>
                         {post.authorRole && post.authorRole.toUpperCase() === USER_ROLES.ARTIST && (
                           <span className="relative group ml-1 cursor-pointer">
                             <TooltipProvider>

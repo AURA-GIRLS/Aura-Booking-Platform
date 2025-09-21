@@ -1,9 +1,11 @@
 'use client';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import LeftSidebar from './LeftSidebar';
 import StoriesSection from './StoriesSection';
 import PostCreator from './PostCreator';
 import PostsFeed from './PostsFeed';
+import SocialWall from './SocialWall';
 import RightSidebar from './RightSidebar';
 
 import type { Story, Conversation, Event } from './community.types';
@@ -11,6 +13,7 @@ import { mockUser, mockStories, mockConversations, mockEvents } from './data/moc
 import { CommunityService } from '@/services/community';
 import { PostResponseDTO, TagResponseDTO, UserWallResponseDTO } from '@/types/community.dtos';
 import type { UserResponseDTO } from '@/types/user.dtos';
+import { POST_STATUS } from '@/constants/index';
 
 
 // Reusable filter state (can extend for tag, search, etc.)
@@ -29,6 +32,14 @@ export default function MainContent() {
   const [trendingTags, setTrendingTags] = useState<TagResponseDTO[]>([]);
   const [currentUser, setCurrentUser] = useState<UserWallResponseDTO | null>(null);
   const [privacy, setPrivacy] = useState<'public' | 'friends' | 'private'>('public');
+  // In-place Social Wall view state
+  const [openWallUserId, setOpenWallUserId] = useState<string | null>(null);
+  const [openWallUserName, setOpenWallUserName] = useState<string | undefined>(undefined);
+
+  // Router + URL query helpers
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   // Active filter state (null = default feed, tag/search = filtered)
   const [activeFilter, setActiveFilter] = useState<FilterState>({ type: null });
@@ -39,6 +50,19 @@ export default function MainContent() {
     setConversations(mockConversations);
     setEvents(mockEvents);
   }, []);
+
+  // On mount and whenever URL query changes, sync `wall` (userId) and `wn` (optional name)
+  useEffect(() => {
+    if (!searchParams) return;
+    const wallParam = searchParams.get('wall');
+    const wnParam = searchParams.get('wn') || undefined;
+    setOpenWallUserId(wallParam);
+    setOpenWallUserName(wnParam);
+    // Clear any active filter when navigating directly to a wall
+    if (wallParam) {
+      setActiveFilter({ type: null });
+    }
+  }, [searchParams]);
 
   const fetchMinimalUser = useCallback(async () => {
     if (typeof window === 'undefined') return;
@@ -112,6 +136,102 @@ export default function MainContent() {
     fetchPosts();
   };
 
+  const handleOpenUserWall = useCallback((userId: string, userName?: string) => {
+    setOpenWallUserId(userId);
+    setOpenWallUserName(userName);
+    // Optionally clear filters when entering wall view
+    setActiveFilter({ type: null });
+    // Push wall params to URL so this view is deep-linkable and back/forward works
+    try {
+      const sp = new URLSearchParams(searchParams?.toString());
+      sp.set('wall', userId);
+      if (userName) sp.set('wn', userName);
+      else sp.delete('wn');
+      const qs = sp.toString();
+      router.push((qs ? `${pathname}?${qs}` : pathname) as any, { scroll: false });
+    } catch {
+      // ignore
+    }
+  }, [pathname, router, searchParams]);
+
+  const handleCloseUserWall = useCallback(() => {
+    setOpenWallUserId(null);
+    setOpenWallUserName(undefined);
+    // Remove wall params from URL but stay on the same page
+    try {
+      const sp = new URLSearchParams(searchParams?.toString());
+      sp.delete('wall');
+      sp.delete('wn');
+      const qs = sp.toString();
+      router.push((qs ? `${pathname}?${qs}` : pathname) as any, { scroll: false });
+    } catch {
+      // ignore
+    }
+  }, [pathname, router, searchParams]);
+
+  const renderCenter = () => {
+    // Render center content based on current view state
+    if (openWallUserId) {
+      return (
+        <>
+          {/* Breadcrumb */}
+          <div className="mb-4 text-sm text-gray-500">
+            <button type="button" className="hover:underline" onClick={handleCloseUserWall}>Community</button>
+            <span className="px-1">/</span>
+            <span className="text-gray-900 font-medium">{openWallUserName || 'User Wall'}</span>
+          </div>
+          <SocialWall userId={openWallUserId} />
+        </>
+      );
+    }
+
+    if (activeFilter.type) {
+      return (
+        <>
+          {/* 🟢 When a filter is active: show only feed + filter bar */}
+          <div className="mb-4 flex items-center gap-2">
+            <span className="text-sm text-gray-500">Filtering by:</span>
+            {activeFilter.type === 'tag' && (
+              <span className="px-2 py-1 rounded bg-rose-100 text-rose-700 text-sm">
+                #{activeFilter.value}
+              </span>
+            )}
+            {activeFilter.type === 'search' && (
+              <span className="px-2 py-1 rounded bg-blue-100 text-blue-700 text-sm">
+                “{activeFilter.value}”
+              </span>
+            )}
+            <button
+              onClick={clearFilter}
+              className="ml-auto text-sm text-rose-600 hover:underline"
+            >
+              Clear filter
+            </button>
+          </div>
+          <PostsFeed posts={posts.filter((p) => p.status !== POST_STATUS.PRIVATE )} setPosts={setPosts} currentUser={currentUserMinimal} fetchMinimalUser={fetchMinimalUser} onOpenUserWall={handleOpenUserWall} />
+        </>
+      );
+    }
+
+    // 🟢 Default mode: show stories, post creator, and feed
+    return (
+      <>
+        <StoriesSection stories={stories} currentUser={(currentUser as any) ?? (mockUser as any)} />
+        <PostCreator
+          postText={postText}
+          setPostText={setPostText}
+          privacy={privacy}
+          setPrivacy={setPrivacy}
+          posts={posts}
+          setPosts={setPosts}
+          currentUser={currentUserMinimal}
+          fetchMinimalUser={fetchMinimalUser}
+        />
+        <PostsFeed posts={posts.filter((p) => p.status !== POST_STATUS.PRIVATE )} setPosts={setPosts} currentUser={currentUserMinimal} fetchMinimalUser={fetchMinimalUser} onOpenUserWall={handleOpenUserWall} />
+      </>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto flex">
@@ -126,49 +246,7 @@ export default function MainContent() {
           setActiveFilter={setActiveFilter} // pass filter setter
         />
 
-        <div className="flex-1 max-w-2xl mx-auto p-6">
-          {activeFilter.type ? (
-            // 🟢 When a filter is active: show only feed + filter bar
-            <>
-              <div className="mb-4 flex items-center gap-2">
-                <span className="text-sm text-gray-500">Filtering by:</span>
-                {activeFilter.type === 'tag' && (
-                  <span className="px-2 py-1 rounded bg-rose-100 text-rose-700 text-sm">
-                    #{activeFilter.value}
-                  </span>
-                )}
-                {activeFilter.type === 'search' && (
-                  <span className="px-2 py-1 rounded bg-blue-100 text-blue-700 text-sm">
-                    “{activeFilter.value}”
-                  </span>
-                )}
-                <button
-                  onClick={clearFilter}
-                  className="ml-auto text-sm text-rose-600 hover:underline"
-                >
-                  Clear filter
-                </button>
-              </div>
-              <PostsFeed posts={posts} setPosts={setPosts} currentUser={currentUserMinimal} fetchMinimalUser={fetchMinimalUser}/>
-            </>
-          ) : (
-            // 🟢 Default mode: show stories, post creator, and feed
-            <>
-              <StoriesSection stories={stories} currentUser={(currentUser as any) ?? (mockUser as any)} />
-              <PostCreator
-                postText={postText}
-                setPostText={setPostText}
-                privacy={privacy}
-                setPrivacy={setPrivacy}
-                posts={posts}
-                setPosts={setPosts}
-                currentUser={currentUserMinimal}
-                fetchMinimalUser={fetchMinimalUser}
-              />
-              <PostsFeed posts={posts} setPosts={setPosts} currentUser={currentUserMinimal} fetchMinimalUser={fetchMinimalUser}/>
-            </>
-          )}
-        </div>
+        <div className="flex-1 max-w-2xl mx-auto my-4">{renderCenter()}</div>
 
         {/* Right sidebar */}
         <RightSidebar

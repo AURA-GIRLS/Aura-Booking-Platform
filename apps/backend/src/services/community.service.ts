@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { Comment, Follow, Post, Reaction, Tag } from "@models/community.model";
 import { User } from "@models/users.models";
-import { POST_STATUS, TARGET_TYPES } from "constants/index";
+import { POST_STATUS, TARGET_TYPES, USER_ROLES } from "constants/index";
 import type {
   CreatePostDTO,
   UpdatePostDTO,
@@ -14,6 +14,8 @@ import type {
 } from "types/community.dtos";
 import slugify from "slugify";
 import { getIO } from "config/socket";
+import { MUA } from "@models/muas.models";
+import { config } from "config";
 
 // Upsert and increment tags for provided tag names; returns array of slugs
 const handleTags = async (tags: string[]) => {
@@ -72,6 +74,7 @@ const mapPostToDTO = async (postDoc: any): Promise<PostResponseDTO> => {
     authorId: String(postDoc.authorId),
     authorName: author?.fullName ?? "",
     authorRole: author?.role ?? "USER",
+    authorAvatarUrl: author?.avatarUrl,
     content: postDoc.content ?? undefined,
     media: Array.isArray(postDoc.media) ? postDoc.media : [],   // ✅ đổi từ images → media
     likesCount: postDoc.likesCount ?? 0,
@@ -101,6 +104,7 @@ const mapCommentToDTO = async (commentDoc: any): Promise<CommentResponseDTO> => 
     authorId: String(commentDoc.authorId),
     authorName: author?.fullName ?? "",
     authorRole: author?.role ?? "USER",
+    authorAvatarUrl: author?.avatarUrl,
     content: commentDoc.content,
     likesCount: typeof commentDoc.likesCount === "number" ? commentDoc.likesCount : 0,
     createdAt: commentDoc.createdAt ?? new Date(),
@@ -440,6 +444,17 @@ async updateRealtimePost(postId: string, authorId: string, dto: UpdatePostDTO): 
     const postsCount = await Post.countDocuments({ authorId: toObjectId(userId) });
     const followersCount = await Follow.countDocuments({followingId:userId});
     const followingsCount = await Follow.countDocuments({followerId:userId});
+    let muaBio = "";
+    let muaPortfolioUrl = "";
+    let muaRatingAverage = 0;
+    let muaBookingsCount = 0;
+    if(user?.role === USER_ROLES.ARTIST){
+      const muaObject = await MUA.findOne({userId:toObjectId(userId)}).lean();
+      muaBio = muaObject?.bio || "";
+      muaPortfolioUrl = config.clientOrigin + "/user/artists/portfolio/" + muaObject?._id || "";
+      muaRatingAverage= muaObject?.ratingAverage || 0;
+      muaBookingsCount = muaObject?.bookingCount || 0;
+    }
     return {
      _id: user?._id || "",
       fullName: user?.fullName || "",
@@ -447,7 +462,11 @@ async updateRealtimePost(postId: string, authorId: string, dto: UpdatePostDTO): 
       role: user?.role || "",
       postsCount: postsCount || 0,
       followersCount:followersCount || 0,
-      followingsCount:followingsCount || 0
+      followingsCount:followingsCount || 0,
+      muaBio: muaBio,
+      muaPortfolioUrl: muaPortfolioUrl,
+      muaRatingAverage: muaRatingAverage,
+      muaBookingsCount: muaBookingsCount,
     }
   }
 

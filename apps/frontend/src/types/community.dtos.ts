@@ -21,6 +21,7 @@ export interface PostResponseDTO {
     authorId: string;
     authorName:string;
     authorRole:string;
+    authorAvatarUrl?:string;
     content?: string;
     media: {type: ResourceType; url: string}[];
     likesCount: number;
@@ -35,6 +36,7 @@ export interface CommentResponseDTO {
     authorId: string;
     authorName:string;
     authorRole:string;
+    authorAvatarUrl?:string;
     content: string;
     likesCount: number;
     createdAt: Date;
@@ -68,6 +70,10 @@ export interface UserWallResponseDTO{
   fullName: string;
   avatarUrl: string;
   role:string;
+  muaBio?:string;
+  muaPortfolioUrl?:string;
+  muaRatingAverage?: number;
+  muaBookingsCount?:number;
   postsCount: number;
   followersCount: number;
   followingsCount: number;
