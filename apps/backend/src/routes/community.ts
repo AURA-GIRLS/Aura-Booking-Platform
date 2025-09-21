@@ -13,11 +13,15 @@ router.get("/posts/:id/comments", (req, res) => controller.listCommentsByPost(re
 router.put("/posts/:id", authenticateToken, (req, res) => controller.updatePost(req, res));
 router.delete("/posts/:id", authenticateToken, (req, res) => controller.deletePost(req, res));
 
+// Tags
+router.get("/tags", (req, res) => controller.getAllTags(req, res));
+router.get("/tags/trending", (req, res) => controller.getTrendingTags(req, res));
+router.get("/tags/:tag/posts", (req, res) => controller.getPostsByTag(req, res));
+
 // Reactions
 router.post("/reactions/like", authenticateToken, (req, res) => controller.like(req, res));
 router.post("/reactions/unlike", authenticateToken, (req, res) => controller.unlike(req, res));
 router.get("/reactions/my-liked-posts", authenticateToken, (req, res) => controller.getMyLikedPosts(req, res));
-router.get("/reactions/my-liked-comments", authenticateToken, (req, res) => controller.getMyLikedComments(req, res));
 router.get("/reactions/my-liked-comments", authenticateToken, (req, res) => controller.getMyLikedComments(req, res));
 
 export default router;

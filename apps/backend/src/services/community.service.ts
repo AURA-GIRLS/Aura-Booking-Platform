@@ -9,6 +9,8 @@ import type {
   ReactionDTO,
   ReactionResponseDTO,
   CommentResponseDTO,
+  TagResponseDTO,
+  UserWallResponseDTO,
 } from "types/community.dtos";
 import slugify from "slugify";
 import { getIO } from "config/socket";
@@ -24,7 +26,7 @@ const handleTags = async (tags: string[]) => {
     if (existing) {
       await Tag.updateOne({ _id: existing._id }, { $inc: { postsCount: 1 } });
     } else {
-      await Tag.create({ name: tagName, slug, postsCount: 1 });
+      await Tag.create({ name: slug, slug, postsCount: 1 });
     }
   }
   return slugs;
@@ -64,28 +66,33 @@ const toObjectId = (id: string) => new mongoose.Types.ObjectId(id);
 
 const mapPostToDTO = async (postDoc: any): Promise<PostResponseDTO> => {
   const author = await User.findById(postDoc.authorId).select("fullName role");
-  const topComments = await Comment.find({ postId: postDoc._id })
-    .sort({ likesCount: -1, createdAt: -1 })
-    .limit(2)
-    .lean();
-  // Note: In a real app, consider caching author info to reduce DB calls
+
   return {
     _id: String(postDoc._id),
     authorId: String(postDoc.authorId),
     authorName: author?.fullName ?? "",
     authorRole: author?.role ?? "USER",
     content: postDoc.content ?? undefined,
-    topComments: await Promise.all(topComments.map((c) => mapCommentToDTO(c))),
-    images: Array.isArray(postDoc.images) ? postDoc.images : undefined,
-    likesCount: typeof postDoc.likesCount === "number" ? postDoc.likesCount : 0,
-    commentsCount:
-      typeof postDoc.commentsCount === "number" ? postDoc.commentsCount : 0,
+    media: Array.isArray(postDoc.media) ? postDoc.media : [],   // ✅ đổi từ images → media
+    likesCount: postDoc.likesCount ?? 0,
+    commentsCount: postDoc.commentsCount ?? 0,
     tags: Array.isArray(postDoc.tags) ? postDoc.tags : undefined,
     status: postDoc.status,
     createdAt: postDoc.createdAt ?? new Date(),
     updatedAt: postDoc.updatedAt ?? postDoc.createdAt ?? new Date(),
   };
 };
+  const mapReactionDTO = async (doc: any): Promise<ReactionResponseDTO> => {
+    return {
+      _id: String(doc._id),
+      userId: String(doc.userId),
+      targetType: doc.targetType,
+      postId: doc.postId ? String(doc.postId) : undefined,
+      commentId: doc.commentId ? String(doc.commentId) : undefined,
+      createdAt: doc.createdAt ?? new Date(),
+      updatedAt: doc.updatedAt ?? doc.createdAt ?? new Date(),
+    };
+  }
 const mapCommentToDTO = async (commentDoc: any): Promise<CommentResponseDTO> => {
   const author = await User.findById(commentDoc.authorId).select("fullName role");
   // Note: In a real app, consider caching author info to reduce DB calls
@@ -100,6 +107,14 @@ const mapCommentToDTO = async (commentDoc: any): Promise<CommentResponseDTO> => 
     updatedAt: commentDoc.updatedAt ?? commentDoc.createdAt ?? new Date(),
  };
 };
+const mapTagToDTO = (tagDoc: any): TagResponseDTO => {
+  return {
+    _id: String(tagDoc._id),
+    name: tagDoc.name,
+    slug: tagDoc.slug,
+    postsCount: tagDoc.postsCount,
+  };
+}
 // Emit socket event only if Socket.IO is initialized
 const safeEmit = (event: string, payload: any) => {
   try {
@@ -112,22 +127,23 @@ const safeEmit = (event: string, payload: any) => {
 
 export class CommunityService {
   // Create a new post
-  async createRealtimePost(authorId: string, dto: CreatePostDTO): Promise<PostResponseDTO> {
-    const tagsInput = dto.tags?.filter(Boolean) ?? [];
-    const slugs = tagsInput.length ? await handleTags(tagsInput) : [];
+async createRealtimePost(authorId: string, dto: CreatePostDTO): Promise<PostResponseDTO> {
+  const tagsInput = dto.tags?.filter(Boolean) ?? [];
+  const slugs = tagsInput.length ? await handleTags(tagsInput) : [];
 
-    const post = await Post.create({
-      authorId: toObjectId(authorId),
-      title: dto.title,
-      content: dto.content,
-      images: dto.images ?? [],
-      tags: slugs,
-      status: dto.status ?? POST_STATUS.PUBLISHED,
-    });
-    const postDTO = await mapPostToDTO(post);
-    safeEmit('newPost', postDTO); // Emit real-time event
-    return postDTO;
-  }
+  const post = await Post.create({
+    authorId: toObjectId(authorId),
+    content: dto.content,
+    media: dto.media ?? [],  // ✅ thay vì images
+    tags: slugs,
+    status: dto.status ?? POST_STATUS.PUBLISHED,
+  });
+
+  const postDTO = await mapPostToDTO(post);
+  safeEmit("newPost", postDTO);
+  return postDTO;
+}
+
 
   // List comments for a post (sorted by likes desc then createdAt desc)
   async listCommentsByPost(postId: string, query: { page?: number; limit?: number }): Promise<{ items: CommentResponseDTO[]; total: number; page: number; pages: number }> {
@@ -186,36 +202,26 @@ export class CommunityService {
   }
 
   // Update post (author only). If tags change, adjust Tag.postsCount
-  async updateRealtimePost(
-    postId: string,
-    authorId: string,
-    dto: UpdatePostDTO
-  ): Promise<PostResponseDTO> {
-    const post = await Post.findById(postId);
-    if (!post) {
-      throw new Error("Post not found");
-    }
-    if (!(post.authorId as mongoose.Types.ObjectId).equals(authorId)) {
-      throw new Error("Forbidden");
-    }
+async updateRealtimePost(postId: string, authorId: string, dto: UpdatePostDTO): Promise<PostResponseDTO> {
+  const post = await Post.findById(postId);
+  if (!post) throw new Error("Post not found");
+  if (!(post.authorId as mongoose.Types.ObjectId).equals(authorId)) throw new Error("Forbidden");
 
-    // Handle tags
-    let newSlugs: string[] | undefined = undefined;
-    if (dto.tags) {
-      const oldSlugs = Array.isArray(post.tags) ? (post.tags as string[]) : [];
-      newSlugs = await adjustTagCounts(oldSlugs, dto.tags);
-      post.tags = newSlugs;
-    }
-
-    if (dto.content !== undefined) post.content = dto.content;
-    if (dto.images !== undefined) post.images = dto.images;
-    if (dto.status !== undefined) post.status = dto.status;
-
-    await post.save();
-    const postDTO = await mapPostToDTO(post);
-    safeEmit("postUpdated", postDTO);
-    return postDTO;
+  if (dto.tags) {
+    const oldSlugs = Array.isArray(post.tags) ? (post.tags as string[]) : [];
+    post.tags = await adjustTagCounts(oldSlugs, dto.tags);
   }
+
+  if (dto.content !== undefined) post.content = dto.content;
+  if (dto.media !== undefined) post.set('media', dto.media);   // ✅ update media thay vì images
+  if (dto.status !== undefined) post.status = dto.status;
+
+  await post.save();
+  const postDTO = await mapPostToDTO(post);
+  safeEmit("postUpdated", postDTO);
+  return postDTO;
+}
+
   // Delete post (author only). Decrement tag counts and remove reactions
   async deleteRealtimePost(postId: string, authorId: string): Promise<void> {
     const post = await Post.findById(postId);
@@ -260,7 +266,7 @@ export class CommunityService {
         postId: payload.postId,
         commentId: null,
       });
-      if (exists) return this.mapReactionDTO(exists);
+      if (exists) return await mapReactionDTO(exists);
 
       const reaction = await Reaction.create({
         userId: payload.userId,
@@ -270,7 +276,7 @@ export class CommunityService {
       });
 
       await Post.updateOne({ _id: payload.postId }, { $inc: { likesCount: 1 } });
-  const reactionDTO = this.mapReactionDTO(reaction);
+  const reactionDTO =await mapReactionDTO(reaction);
   safeEmit("postLiked", { postId: reactionDTO.postId, userId: data.userId });
       return reactionDTO;
     } else {
@@ -284,7 +290,7 @@ export class CommunityService {
         commentId: payload.commentId,
         postId: null,
       });
-      if (exists) return this.mapReactionDTO(exists);
+      if (exists) return await mapReactionDTO(exists);
 
       const reaction = await Reaction.create({
         userId: payload.userId,
@@ -297,7 +303,7 @@ export class CommunityService {
         { _id: payload.commentId },
         { $inc: { likesCount: 1 } }
       );
-  const reactionDTO = this.mapReactionDTO(reaction);
+  const reactionDTO = await mapReactionDTO(reaction);
   safeEmit("commentLiked", { commentId: reactionDTO.commentId, userId: data.userId });
       return reactionDTO;
     }
@@ -374,17 +380,45 @@ export class CommunityService {
     const docs = await Reaction.find(filter).select('commentId').lean();
     return docs.map((d: any) => String(d.commentId));
   }
-
-  private mapReactionDTO(doc: any): ReactionResponseDTO {
-    return {
-      _id: String(doc._id),
-      userId: String(doc.userId),
-      targetType: doc.targetType,
-      postId: doc.postId ? String(doc.postId) : undefined,
-      commentId: doc.commentId ? String(doc.commentId) : undefined,
-      createdAt: doc.createdAt ?? new Date(),
-      updatedAt: doc.updatedAt ?? doc.createdAt ?? new Date(),
-    };
+  async getPostsByTag(tag: string, query: { page?: number; limit?: number }): Promise<{ items: PostResponseDTO[]; total: number; page: number; pages: number }> {
+    const page = Math.max(1, Number(query.page) || 1);
+    const limit = Math.min(50, Math.max(1, Number(query.limit) || 10));
+    const skip = (page - 1) * limit;
+    const filter: any = { tags: tag };
+    const [docs, total] = await Promise.all([
+      Post.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+      Post.countDocuments(filter),
+    ]);
+    const items = await Promise.all(docs.map((d: any) => mapPostToDTO(d)));
+    return { items, total, page, pages: Math.ceil(total / limit) };
   }
+  async getTrendingTags(limit: number = 10): Promise<TagResponseDTO[]> {
+    const docs = await Tag.find().sort({ postsCount: -1 }).limit(limit).lean();
+    return docs.map((d: any) =>  mapTagToDTO(d));
+  }
+  async getAllTags(): Promise<TagResponseDTO[]> {
+    const docs = await Tag.find().sort({ name: 1 }).lean();
+    return docs.map((d: any) => mapTagToDTO(d));
+  }
+  
+
+
+  //user wall
+  async getUserWall(userId:string):Promise<UserWallResponseDTO>{
+    const user = await User.findById(userId).lean();
+    const postsCount = await Post.countDocuments({userId:userId});
+    const followersCount = 0;
+    const followingCount = 0;
+    return {
+     _id: user?._id || "",
+      fullName: user?.fullName || "",
+      avatarUrl: user?.avatarUrl || "",
+      role: user?.role || "",
+      postsCount,
+      followersCount,
+      followingCount
+    }
+  }
+
 }
 

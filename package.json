@@ -17,7 +17,9 @@
     "lint": "npm -ws run lint",
     "format": "npm -ws run format",
     "install:all": "npm install --workspaces"
+  },
+  "dependencies": {
+    "@types/multer": "^2.0.0",
+    "multer": "^2.0.2"
   }
 }
-
-

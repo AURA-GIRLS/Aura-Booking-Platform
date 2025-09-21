@@ -7,6 +7,7 @@ import type {
     ReactionDTO,
     ReactionResponseDTO,
     CommentResponseDTO,
+    TagResponseDTO,
 } from '../types/community.dtos';
 
 export const CommunityService = {
@@ -112,6 +113,35 @@ export const CommunityService = {
     async listCommentsByPost(postId: string, params?: { page?: number; limit?: number }): Promise<ApiResponseDTO<{ items: CommentResponseDTO[]; total: number; page: number; pages: number }>> {
         try {
             const res = await api.get<ApiResponseDTO<{ items: CommentResponseDTO[]; total: number; page: number; pages: number }>>(`/community/posts/${postId}/comments`, { params });
+            return res.data;
+        } catch (error: any) {
+            throw error?.response?.data || error;
+        }
+    },
+
+    // Tags
+    async getTrendingTags(limit?: number): Promise<ApiResponseDTO<TagResponseDTO[]>> {
+        try {
+            const params = typeof limit === 'number' ? { limit } : undefined;
+            const res = await api.get<ApiResponseDTO<TagResponseDTO[]>>('/community/tags/trending', { params });
+            return res.data;
+        } catch (error: any) {
+            throw error?.response?.data || error;
+        }
+    },
+
+    async getAllTags(): Promise<ApiResponseDTO<TagResponseDTO[]>> {
+        try {
+            const res = await api.get<ApiResponseDTO<TagResponseDTO[]>>('/community/tags');
+            return res.data;
+        } catch (error: any) {
+            throw error?.response?.data || error;
+        }
+    },
+
+    async getPostsByTag(tag: string, params?: { page?: number; limit?: number }): Promise<ApiResponseDTO<{ items: PostResponseDTO[]; total: number; page: number; pages: number }>> {
+        try {
+            const res = await api.get<ApiResponseDTO<{ items: PostResponseDTO[]; total: number; page: number; pages: number }>>(`/community/tags/${encodeURIComponent(tag)}/posts`, { params });
             return res.data;
         } catch (error: any) {
             throw error?.response?.data || error;

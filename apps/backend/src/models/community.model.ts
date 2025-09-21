@@ -1,10 +1,15 @@
-import { POST_STATUS, TARGET_TYPES } from "constants/index";
+import { RESOURCE_TYPES, POST_STATUS, TARGET_TYPES } from "constants/index";
 import { model, Schema, Types } from "mongoose";
 
 const PostSchema = new Schema({
   authorId: { type: Types.ObjectId, ref: "User", required: true },
   content:  { type: String },
-  images:   [String],
+  media: [
+    {
+      type: {type: String,enum:Object.values(RESOURCE_TYPES), required: true,},
+      url: { type: String, required: true },
+    },
+  ],
   tags:     [{ type: String, index: true }], // lưu slug hoặc name (multikey index)
   likesCount:    { type: Number, default: 0 },
   commentsCount: { type: Number, default: 0 },

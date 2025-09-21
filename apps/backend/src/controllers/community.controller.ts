@@ -102,6 +102,34 @@ export class CommunityController {
         }
     }
 
+    // GET /api/community/tags/:tag/posts
+    async getPostsByTag(req: Request, res: Response): Promise<void> {
+        try {
+            const { page, limit } = req.query as any;
+            const tag = req.params.tag;
+            const data = await this.service.getPostsByTag(tag, {
+                page: page ? Number(page) : undefined,
+                limit: limit ? Number(limit) : undefined,
+            });
+            const response: ApiResponseDTO = {
+                success: true,
+                data: {
+                    items: data.items,
+                    total: data.total,
+                    page: data.page,
+                    pages: data.pages,
+                },
+            };
+            res.status(200).json(response);
+        } catch (err) {
+            const response: ApiResponseDTO = {
+                success: false,
+                message: err instanceof Error ? err.message : "Failed to get posts by tag",
+            };
+            res.status(500).json(response);
+        }
+    }
+
     // PATCH /api/community/posts/:id
     async updatePost(req: Request, res: Response): Promise<void> {
         try {
@@ -226,4 +254,33 @@ export class CommunityController {
             res.status(500).json(response);
         }
     }
+        async getTrendingTags(req: Request, res: Response): Promise<void> {
+            try {
+                const limit = req.query.limit ? Number(req.query.limit) : undefined;
+                const data = await this.service.getTrendingTags(limit);
+                const response: ApiResponseDTO = { success: true, data };
+                res.status(200).json(response);
+            } catch (err) {
+                const response: ApiResponseDTO = {
+                    success: false,
+                    message: err instanceof Error ? err.message : "Failed to get trending tags",
+                };
+                res.status(400).json(response);
+            }
+        }
+
+        // GET /api/community/tags
+        async getAllTags(req: Request, res: Response): Promise<void> {
+            try {
+                const data = await this.service.getAllTags();
+                const response: ApiResponseDTO = { success: true, data };
+                res.status(200).json(response);
+            } catch (err) {
+                const response: ApiResponseDTO = {
+                    success: false,
+                    message: err instanceof Error ? err.message : "Failed to get tags",
+                };
+                res.status(400).json(response);
+            }
+        }
 }

@@ -1,10 +1,28 @@
-import { Image, Hash, AtSign } from 'lucide-react';
-import React, { useEffect } from 'react';
+import { Image, Hash, X, Check, Plus } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { CommunityService } from '@/services/community';
-import type { CreatePostDTO, PostResponseDTO } from '@/types/community.dtos';
+import type { CreatePostDTO, PostResponseDTO, TagResponseDTO } from '@/types/community.dtos';
 import { POST_STATUS } from '../../constants';
 import { socket } from '@/config/socket';
 import { MinimalUser } from './MainContent';
+import { UploadService, type ResourceType } from '@/services/upload';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/lib/ui/select";
+import {
+  CommandDialog,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandSeparator,
+} from "@/components/lib/ui/command";
+import { Badge } from "@/components/lib/ui/badge";
 
 type Privacy = 'public' | 'friends' | 'private';
 
@@ -25,28 +43,88 @@ export default function PostCreator({
   setPosts: React.Dispatch<React.SetStateAction<PostResponseDTO[]>>;
   currentUser: MinimalUser;
 }>) {
+  const [files, setFiles] = useState<File[]>([]);
+  const previews = useMemo(() => files.map((f) => URL.createObjectURL(f)), [files]);
+  // Tags state
+  const [tagDialogOpen, setTagDialogOpen] = useState(false);
+  const [allTags, setAllTags] = useState<TagResponseDTO[]>([]);
+  const [tagsLoading, setTagsLoading] = useState(false);
+  const [tagQuery, setTagQuery] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const prependIfMissing = useCallback((list: PostResponseDTO[], item: PostResponseDTO) => (list.some(p => p._id === item._id) ? list : [item, ...list]), []);
+  const prependPost = useCallback((post: PostResponseDTO) => {
+    setPosts(prev => prependIfMissing(prev, post));
+  }, [setPosts, prependIfMissing]);
+  const handleRemovePreview = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const idx = Number((e.currentTarget as HTMLButtonElement).value);
+    if (Number.isNaN(idx)) return;
+    setFiles((prev) => prev.filter((_, j) => j !== idx));
+  }, []);
+
   useEffect(() => {
-    const onNewPost = (post: PostResponseDTO) => {
-      setPosts(prev => (prev.some(p => p._id === post._id) ? prev : [post, ...prev]));
-    };
+    const onNewPost = (post: PostResponseDTO) => { prependPost(post); };
     socket.on('newPost', onNewPost);
     return () => {
       socket.off('newPost', onNewPost);
     };
-  }, [setPosts]);
+  }, [prependPost]);
+
+  // Fetch tags when dialog opens the first time
+  useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        setTagsLoading(true);
+        const res = await CommunityService.getAllTags();
+        if (res?.success && Array.isArray(res.data)) setAllTags(res.data);
+      } catch (e) {
+        console.error('Failed to fetch tags', e);
+      } finally {
+        setTagsLoading(false);
+      }
+    };
+    if (tagDialogOpen && allTags.length === 0 && !tagsLoading) {
+      fetchTags();
+    }
+  }, [tagDialogOpen, allTags.length, tagsLoading]);
+
+  const sanitizeTag = (raw: string) => raw.replace(/^#+/, '').trim();
+  const isSelected = useCallback((name: string) => {
+    const n = name.toLowerCase();
+    return selectedTags.some(t => t.toLowerCase() === n);
+  }, [selectedTags]);
+  const toggleTag = useCallback((name: string) => {
+    const cleaned = sanitizeTag(name);
+    if (!cleaned) return;
+    setSelectedTags(prev => {
+      const exists = prev.some(t => t.toLowerCase() === cleaned.toLowerCase());
+      return exists ? prev.filter(t => t.toLowerCase() !== cleaned.toLowerCase()) : [...prev, cleaned];
+    });
+  }, []);
+  const removeTag = useCallback((name: string) => {
+    setSelectedTags(prev => prev.filter(t => t.toLowerCase() !== name.toLowerCase()));
+  }, []);
 
   const mapPrivacyToStatus = (p: Privacy) => (p === 'private' ? POST_STATUS.PRIVATE : POST_STATUS.PUBLISHED);
-  const deriveTitle = (text: string) => text.trim().slice(0, 80) || 'Post';
+  // no-op
 
   const handleCreatePost = async () => {
     const content = postText.trim();
     if (!content) return;
-    const payload: CreatePostDTO = {
-      title: deriveTitle(content),
-      content,
-      images: [],
-      status: mapPrivacyToStatus(privacy),
-    };
+    // Upload selected files first, then map to media
+    let media: { type: ResourceType; url: string }[] = [];
+    if (files.length > 0) {
+      const uploadOne = async (file: File) => {
+        let guessedType: ResourceType = 'raw';
+        if (file.type.startsWith('video/')) guessedType = 'video';
+        else if (file.type.startsWith('image/')) guessedType = 'image';
+        const res = await UploadService.uploadFile(file, { resourceType: guessedType, folder: 'community/posts' });
+        if (res.success && res.data) return { type: res.data.resourceType, url: res.data.url };
+        return null;
+      };
+      const results = await Promise.all(files.map(uploadOne));
+      media = results.filter((x): x is { type: ResourceType; url: string } => !!x);
+    }
+    const payload: CreatePostDTO = { content, media, tags: selectedTags, status: mapPrivacyToStatus(privacy) };
     try {
       const res = await CommunityService.createPost(payload);
       if (res?.success && res.data) {
@@ -54,9 +132,11 @@ export default function PostCreator({
         // Optimistic: prepend locally; socket 'newPost' listener will guard against duplicates
         setPosts(prev => (prev.some(p => p._id === res.data!._id) ? prev : [res.data!, ...prev]));
         setPostText('');
+        setFiles([]);
+        setSelectedTags([]);
       }
     } catch (e) {
-      // Optional: show toast
+      console.error('Create post failed', e);
     }
   };
 
@@ -76,24 +156,78 @@ export default function PostCreator({
             className="w-full border-none resize-none text-gray-700 placeholder-gray-400 focus:outline-none"
             rows={3}
           />
+          {/* Selected tags */}
+          {selectedTags.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {selectedTags.map((t) => (
+                <Badge key={t} variant="secondary" className="flex items-center gap-1">
+                  #{t}
+                  <button
+                    type="button"
+                    aria-label={`Remove tag ${t}`}
+                    onClick={() => removeTag(t)}
+                    className="ml-1 hover:text-foreground/80"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
+          )}
+          {/* Previews */}
+          {previews.length > 0 && (
+            <div className="mt-3 grid grid-cols-2 md:grid-cols-3 gap-2">
+              {previews.map((src, i) => (
+                <div key={src} className="relative group rounded-lg overflow-hidden border">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={src} alt={`preview-${i}`} className="w-full h-32 object-cover" />
+                  <button
+                    type="button"
+                    aria-label="Remove file"
+                    value={`${i}`}
+                    onClick={handleRemovePreview}
+                    className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="flex items-center justify-between mt-4">
             <div className="flex space-x-4">
-              <button className="flex items-center text-gray-500 hover:text-rose-600">
-                <Image className="w-5 h-5 mr-1" /> Image/Video
-              </button>
-              <button className="flex items-center text-gray-500 hover:text-rose-600">
+              <label className="flex items-center text-gray-500 hover:text-rose-600 cursor-pointer">
+                <Image className="w-5 h-5 mr-1" />
+                <span>Image/Video</span>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*,video/*"
+                  onChange={(e) => {
+                    const sel = Array.from(e.target.files || []);
+                    if (sel.length) setFiles((prev) => [...prev, ...sel]);
+                  }}
+                  className="hidden"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() => setTagDialogOpen(true)}
+                className="flex items-center text-gray-500 hover:text-rose-600"
+              >
                 <Hash className="w-5 h-5 mr-1" /> Hashtag
-              </button>
-              <button className="flex items-center text-gray-500 hover:text-rose-600">
-                <AtSign className="w-5 h-5 mr-1" /> Mention
               </button>
             </div>
             <div className="flex items-center space-x-3">
-              <select value={privacy} onChange={(e) => setPrivacy(e.target.value as Privacy)} className="text-sm text-gray-500 border-none focus:outline-none">
-                <option value="public">Public</option>
-                <option value="friends">Friends</option>
-                <option value="private">Only Me</option>
-              </select>
+              <Select value={privacy} onValueChange={(v) => setPrivacy(v as Privacy)}>
+                <SelectTrigger className="w-[180px] text-sm text-gray-500 border-none focus:outline-none">
+                  <SelectValue placeholder="Select privacy" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="public">Public</SelectItem>
+                  <SelectItem value="private">Only Me</SelectItem>
+                </SelectContent>
+              </Select>
               <button 
                 onClick={handleCreatePost}
                 disabled={!postText.trim()}
@@ -105,6 +239,62 @@ export default function PostCreator({
           </div>
         </div>
       </div>
+      {/* Tag Command Dialog */}
+  <CommandDialog
+  className="bg-white text-foreground"
+  open={tagDialogOpen} onOpenChange={(o) => { setTagDialogOpen(o); setTagQuery(""); }}>
+        <CommandInput
+          placeholder="Search or create tag..."
+          value={tagQuery}
+          onValueChange={setTagQuery}
+        />
+        <CommandList>
+          <CommandEmpty>
+            {sanitizeTag(tagQuery)
+              ? (
+                <div className="px-3 py-2 text-sm text-muted-foreground">No tags found. Press Enter to create “{sanitizeTag(tagQuery)}”.</div>
+              )
+              : 'No tags found.'}
+          </CommandEmpty>
+          {allTags.length > 0 && (
+            <CommandGroup heading="All tags">
+              {allTags.map((t) => {
+                const name = t.name || t.slug;
+                const active = isSelected(name);
+                return (
+                  <CommandItem
+                  className="hover:bg-gray-100 focus:bg-gray-100 flex items-center cursor-pointer"
+                    key={t._id}
+                    value={name}
+                    onSelect={(val) => toggleTag(val)}
+                  >
+                    <span className="mr-2">#</span>
+                    <span className="truncate">{name}</span>
+                    {active && <Check className="ml-auto h-4 w-4" />}
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          )}
+          <CommandSeparator />
+          {sanitizeTag(tagQuery) && !isSelected(sanitizeTag(tagQuery)) &&
+            !allTags.some(t => (t.name || t.slug).toLowerCase() === sanitizeTag(tagQuery).toLowerCase()) && (
+            <CommandGroup heading="Create">
+              <CommandItem
+                className="hover:bg-gray-100 focus:bg-gray-100"
+                value={sanitizeTag(tagQuery)}
+                onSelect={(val) => {
+                  toggleTag(val);
+                  setTagQuery("");
+                }}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Create “{sanitizeTag(tagQuery)}”
+              </CommandItem>
+            </CommandGroup>
+          )}
+        </CommandList>
+      </CommandDialog>
     </div>
   );
 }

@@ -57,9 +57,10 @@ export const SERVICE_ADDONS = {
 } as const;
 
 //Media types
-export const MEDIA_TYPES = {
-  IMAGE: 'IMAGE',
-  VIDEO: 'VIDEO',
+export const RESOURCE_TYPES = {
+  image: 'image',
+  video: 'video',
+  raw: 'raw'
 } as const;
 
 // Payment Status
@@ -122,7 +123,7 @@ export type UserRole = typeof USER_ROLES[keyof typeof USER_ROLES];
 export type UserStatus = typeof USER_STATUS[keyof typeof USER_STATUS];
 export type BookingStatus = typeof BOOKING_STATUS[keyof typeof BOOKING_STATUS];
 export type BookingType = typeof BOOKING_TYPES[keyof typeof BOOKING_TYPES];
-export type MediaType = typeof MEDIA_TYPES[keyof typeof MEDIA_TYPES];
+export type ResourceType = typeof RESOURCE_TYPES[keyof typeof RESOURCE_TYPES];
 export type PortfolioCategory = typeof PORTFOLIO_CATEGORIES[keyof typeof PORTFOLIO_CATEGORIES];
 export type ServiceCategory = typeof SERVICE_CATEGORIES[keyof typeof SERVICE_CATEGORIES];
 export type ServiceAddon = typeof SERVICE_ADDONS[keyof typeof SERVICE_ADDONS];

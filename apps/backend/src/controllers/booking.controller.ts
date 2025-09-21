@@ -19,7 +19,7 @@ import {
 import type { CreateBookingDTO, UpdateBookingDTO } from "../types/booking.dtos";
 import type { ApiResponseDTO } from "types";
 import { handleBalanceConfirmBooking } from "@services/transaction.service";
-import { BOOKING_STATUS } from "constants";
+import { BOOKING_STATUS } from "constants/index";
 
 export class BookingController {
 

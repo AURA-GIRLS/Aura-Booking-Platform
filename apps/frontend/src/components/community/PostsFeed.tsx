@@ -2,13 +2,14 @@ import { Heart, MessageCircle, Share, MoreHorizontal, Check } from 'lucide-react
 import React, { useEffect, useState, useCallback } from 'react';
 import type { CommentResponseDTO, PostResponseDTO } from '@/types/community.dtos';
 import { CommunityService } from '@/services/community';
-import { TARGET_TYPES, USER_ROLES, POST_STATUS } from '../../constants';
+import { TARGET_TYPES, USER_ROLES, POST_STATUS, RESOURCE_TYPES } from '../../constants';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/lib/ui/dropdown-menu';
 import { MinimalUser } from './MainContent';
 import EditPostModal from './modals/EditPostModal';
 import ImageLightbox from './modals/ImageLightbox';
 import { socket } from '@/config/socket';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../lib/ui/tooltip';
+import { Badge } from '@/components/lib/ui/badge';
 import DetailModal from './modals/DetailModal';
 
 
@@ -19,9 +20,6 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser }
   const [commentsByPost, setCommentsByPost] = useState<Record<string, UIComment[]>>({});
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<(PostResponseDTO & { _isLiked?: boolean }) | null>(null);
-  const [editContent, setEditContent] = useState<string>('');
-  const [editImagesText, setEditImagesText] = useState<string>('');
-  const [editStatus, setEditStatus] = useState<string>(POST_STATUS.PUBLISHED);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -144,42 +142,15 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser }
 
   const openEditModal = (post: PostResponseDTO & { _isLiked?: boolean }) => {
     setEditingPost(post);
-    setEditContent(post.content || '');
-    setEditImagesText((post.images || []).join('\n'));
-    setEditStatus(post.status || POST_STATUS.PUBLISHED);
     setIsEditOpen(true);
   };
 
   const closeEditModal = () => {
     setIsEditOpen(false);
     setEditingPost(null);
-    setEditContent('');
-    setEditImagesText('');
-    setEditStatus(POST_STATUS.PUBLISHED);
   };
 
-  const handleSaveEdit = async () => {
-    if (!editingPost) return;
-    const images = editImagesText
-      .split(/[\n,]/)
-      .map((s) => s.trim())
-      .filter(Boolean);
-    try {
-      const res = await CommunityService.updatePost(editingPost._id, {
-        content: editContent,
-        images,
-        status: editStatus,
-      } as any);
-      if (res.success && res.data) {
-        const updated = res.data;
-        setPosts((prev) => prev.map((p) => (p._id === updated._id ? ({ ...(updated as any), _isLiked: (p as any)._isLiked }) : p)));
-        // Close modal; realtime will also update other clients via 'postUpdated'
-        closeEditModal();
-      }
-    } catch (e) {
-      console.error('Failed to update post', e);
-    }
-  };
+  // Save handled inside EditPostModal now
   const handleLikeComment = async (postId: string, commentId: string) => {
     const list = commentsByPost[postId] || [];
     const idx = list.findIndex(c => c._id === commentId);
@@ -217,7 +188,7 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser }
     setLightboxOpen(true);
   }, []);
 
-  const renderImages = (images: string[], postId: string) => {
+  function renderImages(images: string[], postId: string) {
     const count = images.length;
     if (count === 0) return null;
     if (count === 1) {
@@ -297,7 +268,7 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser }
         })}
       </div>
     );
-  };
+  }
   const loadComments = async (postId: string) => {
     // Nếu đã load trước đó thì skip
     if (commentsByPost[postId]) return;
@@ -347,7 +318,13 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser }
       <div className="space-y-6">
         {posts
           .filter((p) => p.status !== POST_STATUS.PRIVATE)
-          .map((post) => (
+          .map((post) => {
+            const imageUrls = Array.isArray((post as any).media)
+              ? ((post as any).media as any[])
+                  .filter((m) => m && m.type === RESOURCE_TYPES.image && typeof m.url === 'string' && m.url)
+                  .map((m) => m.url as string)
+              : [];
+            return (
             <div key={post._id} className="bg-white rounded-xl shadow-sm overflow-hidden">
               <div className="p-4">
                 <div className="flex items-center justify-between mb-4">
@@ -421,11 +398,19 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser }
                   </DropdownMenu>
                 </div>
 
-                <div className="mb-4">
+                <div className="mb-2">
                   <p className="text-gray-800 leading-relaxed">{post.content}</p>
                 </div>
-
-                {post.images && post.images.length > 0 && renderImages(post.images, post._id)}
+                {Array.isArray((post as any).tags) && (post as any).tags.length > 0 && (
+                  <div className="mb-3 flex flex-wrap gap-2">
+                    {(post as any).tags.map((t: string) => (
+                      <Badge key={`${post._id}-${t}`} variant="secondary" className="flex items-center gap-1 bg-gray-100 text-gray-700 hover:bg-gray-200 cursor-default">
+                        #{t}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+                {imageUrls.length ? renderImages(imageUrls, post._id) : null}
 
                 <div className="flex items-center space-x-6 text-gray-500">
                   <button onClick={() => handleLikePost(post._id)} className={`flex items-center space-x-2 ${(post as any)._isLiked ? 'text-rose-600' : 'hover:text-rose-600'}`}>
@@ -451,19 +436,16 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser }
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
       </div>
       <EditPostModal
         isOpen={isEditOpen}
         post={editingPost}
-        content={editContent}
-        onContentChange={setEditContent}
-        imagesText={editImagesText}
-        onImagesTextChange={setEditImagesText}
-        status={editStatus}
-        onStatusChange={setEditStatus}
         onClose={closeEditModal}
-        onSave={handleSaveEdit}
+        onUpdated={(updated) => {
+          setPosts((prev) => prev.map((p) => (p._id === updated._id ? ({ ...(updated as any), _isLiked: (p as any)._isLiked }) : p)));
+        }}
       />
       <ImageLightbox
         isOpen={lightboxOpen}

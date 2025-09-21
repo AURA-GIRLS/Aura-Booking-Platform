@@ -42,12 +42,11 @@ export const config = {
   
   // Third-party services
   googleClientId: process.env.GOOGLE_CLIENT_ID || '',
-  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-  sepayApiKey: process.env.SEPAY_API_KEY || '',
-  cloudinaryApiKey: process.env.CLOUDINARY_API_KEY || '',
-  resendApiKey: process.env.RESEND_API_KEY || '',
-  twilioApiKey: process.env.TWILIO_API_KEY || '',
-  upstashRedisUrl: process.env.UPSTASH_REDIS_URL || '',
+  // googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+  // sepayApiKey: process.env.SEPAY_API_KEY || '',
+  // resendApiKey: process.env.RESEND_API_KEY || '',
+  // twilioApiKey: process.env.TWILIO_API_KEY || '',
+  // upstashRedisUrl: process.env.UPSTASH_REDIS_URL || '',
 
   //Payos
   payosClientId: process.env.PAYOS_CLIENT_ID || '',
@@ -55,6 +54,11 @@ export const config = {
   payosChecksumKey: process.env.PAYOS_CHECKSUM_KEY || '',
   payosApiUrl: process.env.PAYOS_API_URL || '',
   
+  //Cloudinary
+  cloudinaryApiKey: process.env.CLOUDINARY_API_KEY || '',
+  cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET || '',
+  cloudinaryCloudName: process.env.CLOUDINARY_NAME || '',
+
   // Environment
   nodeEnv: process.env.NODE_ENV || 'development',
   isDevelopment: process.env.NODE_ENV !== 'production',

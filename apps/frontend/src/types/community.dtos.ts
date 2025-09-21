@@ -1,21 +1,20 @@
-import { PostStatus, TargetType } from "../constants";
+import { PostStatus, ResourceType, TargetType } from "../constants";
 
 
 export interface CreatePostDTO {
-  title: string;
   content?: string;
-  images?: string[];
-  tags?: string[]; // tên thẻ, sẽ tự động tạo thẻ mới nếu chưa có
-  status?: PostStatus; // default PUBLISHED
+  media?: { type: ResourceType; url: string }[];
+  tags?: string[];
+  status?: PostStatus;
 }
 
 export interface UpdatePostDTO {
-  title?: string;
   content?: string;
-  images?: string[];
-  tags?: string[]; // tên thẻ, sẽ tự động tạo thẻ mới nếu chưa có
-  status?: PostStatus; // default PUBLISHED
+  media?: { type: ResourceType; url: string }[];
+  tags?: string[];
+  status?: PostStatus;
 }
+
 
 export interface PostResponseDTO {
     _id: string;
@@ -23,10 +22,9 @@ export interface PostResponseDTO {
     authorName:string;
     authorRole:string;
     content?: string;
-    images?: string[];
+    media: {type: ResourceType; url: string}[];
     likesCount: number;
     commentsCount: number;
-    topComments?: CommentResponseDTO[];
     tags?: string[];
     status?: PostStatus; // default PUBLISHED
     createdAt: Date;
@@ -58,4 +56,19 @@ export interface ReactionResponseDTO {
     commentId?: string;
     createdAt: Date;
     updatedAt: Date;
+}
+export interface TagResponseDTO {
+  _id: string;
+  name: string;
+  slug: string;
+  postsCount: number;
+}
+export interface UserWallResponseDTO{
+  _id: string;
+  fullName: string;
+  avatarUrl: string;
+  role:string;
+  postsCount: number;
+  followersCount: number;
+  followingCount: number;
 }

@@ -25,18 +25,17 @@ export interface Config {
   
   // Third-party services
   googleClientId: string;
-  googleClientSecret: string;
-  sepayApiKey: string;
-  cloudinaryApiKey: string;
-  resendApiKey: string;
-  twilioApiKey: string;
-  upstashRedisUrl: string;
 
   //Payos
   payosClientId: string;
   payosApiKey: string;
   payosChecksumKey: string;
   payosApiUrl: string;
+
+  //Cloudinary
+  cloudinaryApiKey: string;
+  cloudinaryApiSecret: string;
+  cloudinaryCloudName: string;
   
   // Environment
   nodeEnv: string;
