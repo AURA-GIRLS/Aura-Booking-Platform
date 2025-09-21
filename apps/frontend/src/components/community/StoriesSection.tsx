@@ -13,7 +13,7 @@ export default function StoriesSection({ stories, currentUser }: { stories: Stor
               <Plus className="w-6 h-6 text-gray-400" />
             </div>
           </div>
-          <p className="text-xs mt-1 text-gray-600">Your Story</p>
+          <p className="text-xs mt-1 text-gray-600">Top Artist Wall</p>
         </div>
         {stories.map((story) => (
           <div key={story.id} className="flex-shrink-0 text-center cursor-pointer">
@@ -22,7 +22,7 @@ export default function StoriesSection({ stories, currentUser }: { stories: Stor
                 <span className="text-white font-semibold text-sm">{getInitials(story.user.fullName)}</span>
               </div>
             </div>
-            <p className="text-xs mt-1 text-gray-600">{story.user.fullName.split(' ')[0]}</p>
+            <p className="text-xs mt-1 text-gray-600">{story.user.fullName.split(' ')[0]}'s Wall</p>
           </div>
         ))}
       </div>
