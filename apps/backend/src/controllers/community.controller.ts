@@ -159,8 +159,8 @@ export class CommunityController {
                 res.status(401).json({ success: false, message: "Unauthorized" } as ApiResponseDTO);
                 return;
             }
-            await this.service.deleteRealtimePost(req.params.id, userId);
-            const response: ApiResponseDTO = { success: true };
+           const data = await this.service.deleteRealtimePost(req.params.id, userId);
+            const response: ApiResponseDTO = { success: true,data };
             res.status(200).json(response);
         } catch (err) {
             const message = err instanceof Error ? err.message : "Failed to delete post";
@@ -279,6 +279,114 @@ export class CommunityController {
                 const response: ApiResponseDTO = {
                     success: false,
                     message: err instanceof Error ? err.message : "Failed to get tags",
+                };
+                res.status(400).json(response);
+            }
+        }
+
+        // POST /api/community/users/:id/follow
+        async followUser(req: Request, res: Response): Promise<void> {
+            try {
+                const followerId = (req as any).user?.userId as string;
+                if (!followerId) {
+                    const response: ApiResponseDTO = { success: false, message: "Unauthorized" };
+                    res.status(401).json(response);
+                    return;
+                }
+                const followingId = req.params.id || (req.body && (req.body as { followingId?: string }).followingId);
+                if (!followingId) {
+                    const response: ApiResponseDTO = { success: false, message: "Missing followingId" };
+                    res.status(400).json(response);
+                    return;
+                }
+                await this.service.followUser(followerId, followingId);
+                const response: ApiResponseDTO = { success: true };
+                res.status(200).json(response);
+            } catch (err) {
+                const response: ApiResponseDTO = {
+                    success: false,
+                    message: err instanceof Error ? err.message : "Failed to follow user",
+                };
+                res.status(400).json(response);
+            }
+        }
+
+        // POST /api/community/users/:id/unfollow
+        async unfollowUser(req: Request, res: Response): Promise<void> {
+            try {
+                const followerId = (req as any).user?.userId as string;
+                if (!followerId) {
+                    const response: ApiResponseDTO = { success: false, message: "Unauthorized" };
+                    res.status(401).json(response);
+                    return;
+                }
+                const followingId = req.params.id || (req.body && (req.body as { followingId?: string }).followingId);
+                if (!followingId) {
+                    const response: ApiResponseDTO = { success: false, message: "Missing followingId" };
+                    res.status(400).json(response);
+                    return;
+                }
+                await this.service.unfollowUser(followerId, followingId);
+                const response: ApiResponseDTO = { success: true };
+                res.status(200).json(response);
+            } catch (err) {
+                const response: ApiResponseDTO = {
+                    success: false,
+                    message: err instanceof Error ? err.message : "Failed to unfollow user",
+                };
+                res.status(400).json(response);
+            }
+        }
+
+        // GET /api/community/users/:id/wall
+        async getUserWall(req: Request, res: Response): Promise<void> {
+            try {
+                const userId = req.params.id;
+                const data = await this.service.getUserWall(userId);
+                const response: ApiResponseDTO = { success: true, data };
+                res.status(200).json(response);
+            } catch (err) {
+                const response: ApiResponseDTO = {
+                    success: false,
+                    message: err instanceof Error ? err.message : "Failed to get user wall",
+                };
+                res.status(400).json(response);
+            }
+        }
+
+        // GET /api/community/users/:id/following
+        async getFollowing(req: Request, res: Response): Promise<void> {
+            try {
+                const userId = req.params.id;
+                const data = await this.service.getFollowing(userId);
+                const response: ApiResponseDTO = { success: true, data };
+                res.status(200).json(response);
+            } catch (err) {
+                const response: ApiResponseDTO = {
+                    success: false,
+                    message: err instanceof Error ? err.message : "Failed to get following",
+                };
+                res.status(400).json(response);
+            }
+        }
+
+        // GET /api/community/users/:id/is-following
+        async isFollowing(req: Request, res: Response): Promise<void> {
+            try {
+                const followerId = (req as any).user?.userId as string;
+                if (!followerId) {
+                    const response: ApiResponseDTO = { success: false, message: "Unauthorized" };
+                    res.status(401).json(response);
+                    return;
+                }
+                const targetId = req.params.id;
+                const data = await this.service.isFollowing(followerId, targetId);
+                const response: ApiResponseDTO = { success: true, data };
+                res.status(200).json(response);
+            } catch (err) {
+                const response: ApiResponseDTO = {
+                    success: false,
+                    message: err instanceof Error ? err.message : "Failed to check following",
                 };
                 res.status(400).json(response);
             }

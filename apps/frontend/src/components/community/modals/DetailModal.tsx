@@ -4,11 +4,9 @@ import * as React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/lib/ui/dialog";
 import { Send, MoreHorizontal, Check } from "lucide-react";
 import { USER_ROLES } from "@/constants/index";
-import type { CommentResponseDTO, PostResponseDTO } from "@/types/community.dtos";
-import { Button } from "@/components/lib/ui/button";
+import type { CommentResponseDTO, PostResponseDTO, UserWallResponseDTO } from "@/types/community.dtos";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/lib/ui/tooltip";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/lib/ui/dropdown-menu";
-import { MinimalUser } from "../MainContent";
 
 type UIComment = CommentResponseDTO & { isLiked?: boolean; likeCount: number };
 
@@ -25,7 +23,7 @@ export default function DetailModal({
     formatTimeAgo,
     isSelfUser,
     _currentUser,
-}: {
+}: Readonly<{
     open: boolean;
     onOpenChange: (val: boolean) => void;
     post: PostResponseDTO | null;
@@ -37,8 +35,8 @@ export default function DetailModal({
     getInitials: (name: string) => string;
     formatTimeAgo: (date: Date | string) => string;
     isSelfUser: (id?: string) => boolean;
-    _currentUser: MinimalUser;
-}) {
+    _currentUser: UserWallResponseDTO;
+}>) {
     if (!post) return null;
 
     return (

@@ -24,4 +24,11 @@ router.post("/reactions/unlike", authenticateToken, (req, res) => controller.unl
 router.get("/reactions/my-liked-posts", authenticateToken, (req, res) => controller.getMyLikedPosts(req, res));
 router.get("/reactions/my-liked-comments", authenticateToken, (req, res) => controller.getMyLikedComments(req, res));
 
+// Social: follow/unfollow and user wall
+router.post("/users/:id/follow", authenticateToken, (req, res) => controller.followUser(req, res));
+router.post("/users/:id/unfollow", authenticateToken, (req, res) => controller.unfollowUser(req, res));
+router.get("/users/:id/wall", (req, res) => controller.getUserWall(req, res));
+router.get("/users/:id/following", (req, res) => controller.getFollowing(req, res));
+router.get("/users/:id/is-following", authenticateToken, (req, res) => controller.isFollowing(req, res));
+
 export default router;

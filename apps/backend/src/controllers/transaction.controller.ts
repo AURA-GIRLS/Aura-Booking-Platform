@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import type { ApiResponseDTO, CreateBookingDTO } from "types";
+import type { ApiResponseDTO } from "types";
 import { createPayOSPaymentLink, getMUAWallet, getTransactionsByMuaId, handlePayOSWebhook, makeRefund } from "../services/transaction.service";
 import type { PaymentWebhookResponse, PayOSCreateLinkInput } from "types/transaction.dto";
 import type { TransactionStatus } from "constants/index";

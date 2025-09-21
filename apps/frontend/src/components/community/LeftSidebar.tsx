@@ -1,6 +1,5 @@
 import { Users } from "lucide-react";
-import type { User } from "./community.types";
-import { PostResponseDTO, TagResponseDTO } from "@/types/community.dtos";
+import { PostResponseDTO, TagResponseDTO, UserWallResponseDTO } from "@/types/community.dtos";
 import { useCallback } from "react";
 import { CommunityService } from "@/services/community";
 import { FilterState } from "./MainContent";
@@ -8,7 +7,7 @@ import { FilterState } from "./MainContent";
 interface LeftSidebarProps {
   posts: PostResponseDTO[];
   setPosts: React.Dispatch<React.SetStateAction<PostResponseDTO[]>>;
-  currentUser: User;
+  currentUser: UserWallResponseDTO;  // 🆕 từ MainContent truyền vào
   trendingTags: TagResponseDTO[];
   fetchPosts: () => Promise<void>;
   activeFilter: FilterState;                          // 🆕 dùng từ parent
@@ -41,7 +40,22 @@ export default function LeftSidebar({
             limit: 10,
           });
           if (res.success && res.data) {
-            setPosts(res.data.items);
+           let items = res.data.items;
+           
+                 // Mark posts liked by current user
+                 try {
+                   if (currentUser && items.length) {
+                     const likedRes = await CommunityService.getMyLikedPosts(items.map((p) => p._id));
+                     if (likedRes.success && likedRes.data) {
+                       const likedSet = new Set(likedRes.data);
+                       items = items.map((p) => ({ ...(p as any), _isLiked: likedSet.has(p._id) }));
+                     }
+                   }
+                 } catch {
+                   // ignore errors (unauthenticated or request failed)
+                 }
+           
+                 setPosts(items);
             setActiveFilter({ type: "tag", value: tag }); // update parent
           }
         } catch {
@@ -63,22 +77,22 @@ export default function LeftSidebar({
         </div>
         <div className="ml-3">
           <h3 className="font-semibold text-gray-900">{currentUser.fullName}</h3>
-          <p className="text-sm text-gray-500">@{currentUser.username}</p>
+          <p className="text-sm text-gray-500">@{currentUser.fullName}</p>
         </div>
       </div>
 
       {/* Stats */}
       <div className="flex justify-between mb-6 text-center">
         <div>
-          <div className="font-semibold text-gray-900">{currentUser.followerCount}</div>
+          <div className="font-semibold text-gray-900">{currentUser.followersCount}</div>
           <div className="text-xs text-gray-500">Follower</div>
         </div>
         <div>
-          <div className="font-semibold text-gray-900">{currentUser.followingCount}</div>
+          <div className="font-semibold text-gray-900">{currentUser.followingsCount}</div>
           <div className="text-xs text-gray-500">Following</div>
         </div>
         <div>
-          <div className="font-semibold text-gray-900">{currentUser.postCount}</div>
+          <div className="font-semibold text-gray-900">{currentUser.postsCount}</div>
           <div className="text-xs text-gray-500">Post</div>
         </div>
       </div>

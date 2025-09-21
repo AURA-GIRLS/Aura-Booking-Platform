@@ -7,7 +7,7 @@ import { UploadService, type ResourceType } from "@/services/upload";
 import { CommunityService } from "@/services/community";
 import { Badge } from "@/components/lib/ui/badge";
 import { Button } from "@/components/lib/ui/button";
-import { Input } from "@/components/lib/ui/input";
+import { socket } from "@/config/socket";
 import {
     Dialog,
     DialogContent,
@@ -190,23 +190,46 @@ export default function EditPostModal({
             url,
         }));
         try {
-            const res = await CommunityService.updatePost(post._id, {
+            // Fire-and-forget: rely on realtime 'postUpdated' to reflect changes
+            await CommunityService.updatePost(post._id, {
                 content,
                 media,
                 tags: selectedTags,
                 status:
                     status === "PUBLISHED" ? POST_STATUS.PUBLISHED : POST_STATUS.PRIVATE,
             });
-            if (res.success && res.data) {
-                onUpdated?.(res.data);
-                onClose();
-            }
         } catch (e) {
             console.error("Failed to update post", e);
         } finally {
             setSaving(false);
         }
     };
+
+    // Close modal on realtime events affecting this post
+    useEffect(() => {
+        if (!isOpen || !post) return;
+        const onPostUpdated = (payload: any) => {
+            try {
+                if (payload && payload._id === post._id) {
+                    onUpdated?.(payload as PostResponseDTO); // optional: allow parent to react if desired
+                    onClose();
+                }
+            } catch {/* ignore */}
+        };
+        const onPostDeleted = (payload: any) => {
+            try {
+                if (payload && payload.postId === post._id) {
+                    onClose();
+                }
+            } catch {/* ignore */}
+        };
+        socket.on('postUpdated', onPostUpdated as any);
+        socket.on('postDeleted', onPostDeleted as any);
+        return () => {
+            socket.off('postUpdated', onPostUpdated as any);
+            socket.off('postDeleted', onPostDeleted as any);
+        };
+    }, [isOpen, post, onClose, onUpdated]);
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -219,8 +242,9 @@ export default function EditPostModal({
                 {/* Content */}
                 <div className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium mb-1">Content</label>
+                        <label htmlFor="edit-post-content" className="block text-sm font-medium mb-1">Content</label>
                         <textarea
+                            id="edit-post-content"
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
                             rows={4}
@@ -305,7 +329,9 @@ export default function EditPostModal({
                                                 className="w-full h-24 object-cover bg-black"
                                                 controls
                                                 preload="metadata"
-                                            />
+                                            >
+                                                <track kind="captions" />
+                                            </video>
                                         ) : (
                                             <img
                                                 src={u}

@@ -14,7 +14,8 @@
     "inlineSources": true,
     "allowSyntheticDefaultImports": true,
     "verbatimModuleSyntax": true,
-    "baseUrl": "src",        
+  "baseUrl": "src",        
+  "forceConsistentCasingInFileNames": true,
     "paths": {
       "@models/*": ["models/*"],
       "@types/*": ["shared/types/*"],

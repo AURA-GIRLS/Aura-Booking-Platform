@@ -40,6 +40,16 @@ const TagSchema = new Schema({
   postsCount: { type: Number, default: 0 },
 }, { timestamps: true });
 
+const FollowSchema = new Schema(
+  {
+    followerId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    followingId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  },
+  { timestamps: { createdAt: true, updatedAt: false } } // chỉ cần createdAt
+);
+FollowSchema.index({ followerId: 1, followingId: 1 }, { unique: true });
+
+export const Follow = model("Follow", FollowSchema);
 export const Tag = model("Tag", TagSchema);
 export const Reaction = model("Reaction", ReactionSchema);
 export const Comment = model("Comment", CommentSchema);

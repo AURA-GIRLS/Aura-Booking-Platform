@@ -70,5 +70,5 @@ export interface UserWallResponseDTO{
   role:string;
   postsCount: number;
   followersCount: number;
-  followingCount: number;
+  followingsCount: number;
 }

@@ -8,6 +8,7 @@ import type {
     ReactionResponseDTO,
     CommentResponseDTO,
     TagResponseDTO,
+    UserWallResponseDTO,
 } from '../types/community.dtos';
 
 export const CommunityService = {
@@ -142,6 +143,52 @@ export const CommunityService = {
     async getPostsByTag(tag: string, params?: { page?: number; limit?: number }): Promise<ApiResponseDTO<{ items: PostResponseDTO[]; total: number; page: number; pages: number }>> {
         try {
             const res = await api.get<ApiResponseDTO<{ items: PostResponseDTO[]; total: number; page: number; pages: number }>>(`/community/tags/${encodeURIComponent(tag)}/posts`, { params });
+            return res.data;
+        } catch (error: any) {
+            throw error?.response?.data || error;
+        }
+    },
+
+    // Social
+    async followUser(userId: string): Promise<ApiResponseDTO> {
+        try {
+            const res = await api.post<ApiResponseDTO>(`/community/users/${encodeURIComponent(userId)}/follow`, {});
+            return res.data;
+        } catch (error: any) {
+            throw error?.response?.data || error;
+        }
+    },
+
+    async unfollowUser(userId: string): Promise<ApiResponseDTO> {
+        try {
+            const res = await api.post<ApiResponseDTO>(`/community/users/${encodeURIComponent(userId)}/unfollow`, {});
+            return res.data;
+        } catch (error: any) {
+            throw error?.response?.data || error;
+        }
+    },
+
+    async getUserWall(userId: string): Promise<ApiResponseDTO<UserWallResponseDTO>> {
+        try {
+            const res = await api.get<ApiResponseDTO<UserWallResponseDTO>>(`/community/users/${encodeURIComponent(userId)}/wall`);
+            return res.data;
+        } catch (error: any) {
+            throw error?.response?.data || error;
+        }
+    },
+
+    async getFollowing(userId: string): Promise<ApiResponseDTO<string[]>> {
+        try {
+            const res = await api.get<ApiResponseDTO<string[]>>(`/community/users/${encodeURIComponent(userId)}/following`);
+            return res.data;
+        } catch (error: any) {
+            throw error?.response?.data || error;
+        }
+    },
+
+    async isFollowing(targetUserId: string): Promise<ApiResponseDTO<boolean>> {
+        try {
+            const res = await api.get<ApiResponseDTO<boolean>>(`/community/users/${encodeURIComponent(targetUserId)}/is-following`);
             return res.data;
         } catch (error: any) {
             throw error?.response?.data || error;

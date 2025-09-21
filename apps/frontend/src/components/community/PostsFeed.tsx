@@ -1,19 +1,19 @@
 import { Heart, MessageCircle, Share, MoreHorizontal, Check } from 'lucide-react';
 import React, { useEffect, useState, useCallback } from 'react';
-import type { CommentResponseDTO, PostResponseDTO } from '@/types/community.dtos';
+import type { CommentResponseDTO, PostResponseDTO, UserWallResponseDTO } from '@/types/community.dtos';
 import { CommunityService } from '@/services/community';
 import { TARGET_TYPES, USER_ROLES, POST_STATUS, RESOURCE_TYPES } from '../../constants';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/lib/ui/dropdown-menu';
-import { MinimalUser } from './MainContent';
 import EditPostModal from './modals/EditPostModal';
 import ImageLightbox from './modals/ImageLightbox';
 import { socket } from '@/config/socket';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../lib/ui/tooltip';
 import { Badge } from '@/components/lib/ui/badge';
 import DetailModal from './modals/DetailModal';
+import { Separator } from '../lib/ui/separator';
 
 
-export default function PostsFeed({ posts, setPosts, currentUser: _currentUser }: Readonly<{ posts: PostResponseDTO[]; setPosts: React.Dispatch<React.SetStateAction<PostResponseDTO[]>>; currentUser: MinimalUser }>) {
+export default function PostsFeed({ posts, setPosts, currentUser: _currentUser,fetchMinimalUser }: Readonly<{ posts: PostResponseDTO[]; setPosts: React.Dispatch<React.SetStateAction<PostResponseDTO[]>>; currentUser: UserWallResponseDTO; fetchMinimalUser: () => Promise<void> }>) {
   type UIComment = CommentResponseDTO & { isLiked?: boolean; likeCount: number };
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
   const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
@@ -25,6 +25,8 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser }
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [activePost, setActivePost] = useState<PostResponseDTO | null>(null);
+  const [following, setFollowing] = useState<Record<string, boolean>>({});
+  const [followLoading, setFollowLoading] = useState<Record<string, boolean>>({});
 
   const formatTimeAgo = (date: string | Date) => {
     const d = new Date(date);
@@ -37,17 +39,15 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser }
   };
 
   const handleLikePost = async (postId: string) => {
-    // naive toggle with backend request
+    // Only call API; socket events will update UI
     const post = posts.find(p => p._id === postId);
     if (!post) return;
     const isLikedLocally = (post as any)._isLiked === true;
     try {
       if (isLikedLocally) {
         await CommunityService.unlike({ targetType: TARGET_TYPES.POST, postId });
-        setPosts((prev) => prev.map((p) => (p._id === postId ? ({ ...p, likesCount: Math.max(0, (p.likesCount || 0) - 1), _isLiked: false } as PostResponseDTO & { _isLiked?: boolean }) : p)));
       } else {
         await CommunityService.like({ targetType: TARGET_TYPES.POST, postId });
-        setPosts((prev) => prev.map((p) => (p._id === postId ? ({ ...p, likesCount: (p.likesCount || 0) + 1, _isLiked: true } as PostResponseDTO & { _isLiked?: boolean }) : p)));
       }
     } catch {
       // optional: toast error
@@ -67,6 +67,22 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser }
     const me = ((_currentUser as any)?._id) ?? undefined;
     return !!(id && me && id === me);
   }, [_currentUser]);
+
+  const toggleFollow = useCallback(async (authorId: string) => {
+    const me = (_currentUser as any)?._id as string | undefined;
+    if (!authorId || (me && authorId === me)) return;
+    setFollowLoading((prev) => ({ ...prev, [authorId]: true }));
+    try {
+      const isFollowing = !!following[authorId];
+      if (isFollowing) await CommunityService.unfollowUser(authorId);
+      else await CommunityService.followUser(authorId);
+    } catch (e) {
+      // optional: toast error; revert optimistic state if needed
+      console.error('Failed to toggle follow', e);
+    } finally {
+      setFollowLoading((prev) => ({ ...prev, [authorId]: false }));
+    }
+  }, [_currentUser, following]);
 
   // Helpers to update posts list with minimal nesting
   const updateOnePost = useCallback((list: (PostResponseDTO & { _isLiked?: boolean })[], id: string, builder: (p: PostResponseDTO & { _isLiked?: boolean }) => PostResponseDTO & { _isLiked?: boolean }) => {
@@ -104,41 +120,154 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser }
     return { ...state, [foundPostId]: nextList };
   }, []);
 
+  // Socket event handlers (extracted to reduce nesting depth)
+  const handleSocketPostLiked = useCallback((payload: { postId: string; userId: string }) => {
+    const isSelf = isSelfUser(payload.userId);
+    console.log('Received postLiked for', payload.postId, 'by user', payload.userId, 'isSelf:', isSelf);
+    setPosts((prev) => applyLikeIncrement(prev as any, payload.postId, isSelf) as any);
+  }, [isSelfUser, setPosts, applyLikeIncrement]);
+
+  const handleSocketPostUnliked = useCallback((payload: { postId: string; userId: string }) => {
+    const isSelf = isSelfUser(payload.userId);
+    setPosts((prev) => applyLikeDecrement(prev as any, payload.postId, isSelf) as any);
+  }, [isSelfUser, setPosts, applyLikeDecrement]);
+
+  const handleSocketPostUpdated = useCallback((payload: PostResponseDTO) => {
+    setPosts((prev) => applyPostUpdated(prev as any, payload) as any);
+  }, [setPosts, applyPostUpdated]);
+
+  const removePostFromList = useCallback((postId: string) => {
+    setPosts((prev) => prev.filter((p) => p._id !== postId));
+  }, [setPosts]);
+
+  const clearCommentsStateForPost = useCallback((postId: string) => {
+    setCommentsByPost((prev) => {
+      const next = { ...prev };
+      delete next[postId];
+      return next;
+    });
+  }, []);
+
+  const clearExpandedForPost = useCallback((postId: string) => {
+    setExpandedComments((prev) => {
+      const next = { ...prev } as any;
+      if (postId in next) delete next[postId];
+      return next;
+    });
+  }, []);
+
+  const clearInputForPost = useCallback((postId: string) => {
+    setCommentInputs((prev) => {
+      const next = { ...prev } as any;
+      if (postId in next) delete next[postId];
+      return next;
+    });
+  }, []);
+
+  const closeActiveIfMatches = useCallback((postId: string) => {
+    setActivePost((curr) => (curr && curr._id === postId ? null : curr));
+    setCommentsOpen((open) => (activePost && activePost._id === postId ? false : open));
+  }, [activePost]);
+
+  const handleSocketPostDeleted = useCallback(async (payload: { postId: string }) => {
+    console.log('Received postDeleted for', payload.postId);
+    const meId = (_currentUser as any)?._id as string | undefined;
+    const wasMine = !!(meId && posts.some((p) => p._id === payload.postId && p.authorId === meId));
+    removePostFromList(payload.postId);
+    clearCommentsStateForPost(payload.postId);
+    clearExpandedForPost(payload.postId);
+    clearInputForPost(payload.postId);
+    closeActiveIfMatches(payload.postId);
+    if (isEditOpen && editingPost && editingPost._id === payload.postId) {
+      setIsEditOpen(false);
+      setEditingPost(null);
+    }
+    if (wasMine) {
+      await fetchMinimalUser?.();
+    }
+  }, [removePostFromList, clearCommentsStateForPost, clearExpandedForPost, clearInputForPost, closeActiveIfMatches, isEditOpen, editingPost, posts, _currentUser, fetchMinimalUser]);
+
+  const handleSocketCommentLiked = useCallback((payload: { commentId: string; userId: string }) => {
+    const isSelf = isSelfUser(payload.userId);
+    setCommentsByPost((prev) => applyCommentLikeDelta(prev, payload.commentId, 1, isSelf));
+  }, [isSelfUser, setCommentsByPost, applyCommentLikeDelta]);
+
+  const handleSocketCommentUnliked = useCallback((payload: { commentId: string; userId: string }) => {
+    const isSelf = isSelfUser(payload.userId);
+    setCommentsByPost((prev) => applyCommentLikeDelta(prev, payload.commentId, -1, isSelf));
+  }, [isSelfUser, setCommentsByPost, applyCommentLikeDelta]);
+
+  const handleSocketUserFollowed = useCallback(async (payload: { followerId: string; followingId: string }) => {
+    const meId = (_currentUser as any)?._id as string | undefined;
+    const iAmFollower = !!(meId && payload.followerId === meId);
+    const iAmFollowed = !!(meId && payload.followingId === meId);
+    if (iAmFollower) {
+      setFollowing((prev) => ({ ...prev, [payload.followingId]: true }));
+    }
+    if (iAmFollower || iAmFollowed) {
+      await fetchMinimalUser?.();
+    }
+  }, [setFollowing, _currentUser, fetchMinimalUser]);
+
+  const handleSocketUserUnfollowed = useCallback(async (payload: { followerId: string; followingId: string }) => {
+    const meId = (_currentUser as any)?._id as string | undefined;
+    const iAmFollower = !!(meId && payload.followerId === meId);
+    const iAmFollowed = !!(meId && payload.followingId === meId);
+    if (iAmFollower) {
+      setFollowing((prev) => ({ ...prev, [payload.followingId]: false }));
+    }
+    if (iAmFollower || iAmFollowed) {
+      await fetchMinimalUser?.();
+    }
+  }, [setFollowing, _currentUser, fetchMinimalUser]);
+
   useEffect(() => {
-    const onPostLiked = (payload: { postId: string; userId: string }) => {
-      const isSelf = isSelfUser(payload.userId);
-      setPosts(prev => applyLikeIncrement(prev as any, payload.postId, isSelf) as any);
-    };
-    const onPostUnliked = (payload: { postId: string; userId: string }) => {
-      const isSelf = isSelfUser(payload.userId);
-      setPosts(prev => applyLikeDecrement(prev as any, payload.postId, isSelf) as any);
-    };
-    const onPostUpdated = (payload: PostResponseDTO) => {
-      setPosts(prev => applyPostUpdated(prev as any, payload) as any);
-    };
+    // hydrate following for current user
+    const me = (_currentUser as any)?._id as string | undefined;
+    if (me) {
+      void (async () => {
+        try {
+          const res = await CommunityService.getFollowing(me);
+          if ((res as any)?.success && Array.isArray(res.data)) {
+            const map: Record<string, boolean> = {};
+            for (const uid of res.data) map[uid] = true;
+            setFollowing(map);
+          }
+        } catch {
+          // ignore
+        }
+      })();
+    }
 
-    const onCommentLiked = (payload: { commentId: string; userId: string }) => {
-      const isSelf = isSelfUser(payload.userId);
-      setCommentsByPost((prev) => applyCommentLikeDelta(prev, payload.commentId, 1, isSelf));
-    };
-    const onCommentUnliked = (payload: { commentId: string; userId: string }) => {
-      const isSelf = isSelfUser(payload.userId);
-      setCommentsByPost((prev) => applyCommentLikeDelta(prev, payload.commentId, -1, isSelf));
-    };
-
-    socket.on('postLiked', onPostLiked as any);
-    socket.on('postUnliked', onPostUnliked as any);
-    socket.on('postUpdated', onPostUpdated as any);
-    socket.on('commentLiked', onCommentLiked as any);
-    socket.on('commentUnliked', onCommentUnliked as any);
+    socket.on('postLiked', handleSocketPostLiked as any);
+    socket.on('postUnliked', handleSocketPostUnliked as any);
+    socket.on('postUpdated', handleSocketPostUpdated as any);
+    socket.on('postDeleted', handleSocketPostDeleted as any);
+    socket.on('commentLiked', handleSocketCommentLiked as any);
+    socket.on('commentUnliked', handleSocketCommentUnliked as any);
+    socket.on('userFollowed', handleSocketUserFollowed as any);
+    socket.on('userUnfollowed', handleSocketUserUnfollowed as any);
     return () => {
-      socket.off('postLiked', onPostLiked as any);
-      socket.off('postUnliked', onPostUnliked as any);
-      socket.off('postUpdated', onPostUpdated as any);
-      socket.off('commentLiked', onCommentLiked as any);
-      socket.off('commentUnliked', onCommentUnliked as any);
+      socket.off('postLiked', handleSocketPostLiked as any);
+      socket.off('postUnliked', handleSocketPostUnliked as any);
+      socket.off('postUpdated', handleSocketPostUpdated as any);
+      socket.off('postDeleted', handleSocketPostDeleted as any);
+      socket.off('commentLiked', handleSocketCommentLiked as any);
+      socket.off('commentUnliked', handleSocketCommentUnliked as any);
+      socket.off('userFollowed', handleSocketUserFollowed as any);
+      socket.off('userUnfollowed', handleSocketUserUnfollowed as any);
     };
-  }, [setPosts, _currentUser]);
+  }, [
+    _currentUser,
+    handleSocketPostLiked,
+    handleSocketPostUnliked,
+    handleSocketPostUpdated,
+    handleSocketPostDeleted,
+    handleSocketCommentLiked,
+    handleSocketCommentUnliked,
+    handleSocketUserFollowed,
+    handleSocketUserUnfollowed,
+  ]);
 
   const openEditModal = (post: PostResponseDTO & { _isLiked?: boolean }) => {
     setEditingPost(post);
@@ -151,30 +280,17 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser }
   };
 
   // Save handled inside EditPostModal now
-  const handleLikeComment = async (postId: string, commentId: string) => {
-    const list = commentsByPost[postId] || [];
+  const handleLikeComment = async (_postId: string, commentId: string) => {
+    // Only call API; socket events will update UI
+    const list = commentsByPost[_postId] || [];
     const idx = list.findIndex(c => c._id === commentId);
     if (idx === -1) return;
     const isLiked = !!list[idx].isLiked;
     try {
       if (isLiked) {
         await CommunityService.unlike({ targetType: TARGET_TYPES.COMMENT, commentId });
-        setCommentsByPost(prev => {
-          const l = prev[postId] || [];
-          const n = l.slice();
-          const c = n[idx];
-          n[idx] = { ...c, likeCount: Math.max(0, (c.likeCount || 0) - 1), isLiked: false };
-          return { ...prev, [postId]: n };
-        });
       } else {
         await CommunityService.like({ targetType: TARGET_TYPES.COMMENT, commentId });
-        setCommentsByPost(prev => {
-          const l = prev[postId] || [];
-          const n = l.slice();
-          const c = n[idx];
-          n[idx] = { ...c, likeCount: (c.likeCount || 0) + 1, isLiked: true };
-          return { ...prev, [postId]: n };
-        });
       }
     } catch {
       // optionally toast error
@@ -355,6 +471,23 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser }
 
                           </span>
                         )}
+                        {post.authorId !== (_currentUser as any)._id && (
+                          <button
+                            type="button"
+                            onClick={() => toggleFollow(post.authorId)}
+                            disabled={!!followLoading[post.authorId]}
+                            className={
+                              `ml-2 text-xs px-2 py-[1px] my-0 shadow-xs rounded-md border cursor-pointer ` +
+                              (following[post.authorId]
+                                ? `border-rose-200 text-white bg-rose-600 hover:bg-rose-700`
+                                : `border-gray-300`)
+                            }
+                          >
+                             {following[post.authorId]
+                                ? `Following`
+                                : `Follow`}
+                          </button>
+                        )}
                       </h4>
                       <p className="text-sm text-gray-500">{formatTimeAgo(post.createdAt as any)}</p>
                     </div>
@@ -371,22 +504,44 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser }
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-44 bg-white rounded-xl shadow-lg py-2 z-50 border border-pink-100">
                       <DropdownMenuItem
-                        className='cursor-pointer focus:bg-rose-100 data-[highlighted]:bg-rose-100'
-                        onClick={() => { alert('Feature coming soon: view details'); }}>
+                        className="cursor-pointer focus:bg-rose-100 data-[highlighted]:bg-rose-100"
+                        onClick={() => {
+                          setActivePost(post);
+                          setCommentsOpen(true);
+                          void loadComments(post._id);
+                        }}
+                      >
                         View details
                       </DropdownMenuItem>
-                      {(post.authorId === (_currentUser as any)._id) && (
-                        <DropdownMenuItem
-                          className='cursor-pointer focus:bg-rose-100 data-[highlighted]:bg-rose-100'
-                          onClick={() => openEditModal(post as any)}>
-                          Edit post
-                        </DropdownMenuItem>
+                      {post.authorId === (_currentUser as any)._id && (
+                        <>
+                          <DropdownMenuItem
+                            className="cursor-pointer focus:bg-rose-100 data-[highlighted]:bg-rose-100"
+                            onClick={() => openEditModal(post as any)}
+                          >
+                            Edit post
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-rose-600 cursor-pointer focus:bg-rose-100 focus:text-rose-700 data-[highlighted]:bg-rose-100"
+                            onClick={async () => {
+                              try {
+                                await CommunityService.deletePost(post._id);
+                                // The list will be updated by realtime 'postDeleted' event
+                              } catch (e) {
+                                console.error('Failed to delete post', e);
+                              }
+                            }}
+                          >
+                            Delete post
+                          </DropdownMenuItem>
+                          <Separator className="h-[1px] bg-gray-200 dark:bg-gray-300 opacity-100" />
+                        </>
                       )}
                       <DropdownMenuItem
-                        className='cursor-pointer focus:bg-rose-100 data-[highlighted]:bg-rose-100'
+                        className="cursor-pointer focus:bg-rose-100 data-[highlighted]:bg-rose-100"
                         onClick={() => {
                           const url = `${window.location.origin}/user/community?post=${post._id}`;
-                          void navigator.clipboard?.writeText(url).catch(() => { });
+                          void navigator.clipboard?.writeText(url).catch(() => {});
                         }}
                       >
                         Copy link

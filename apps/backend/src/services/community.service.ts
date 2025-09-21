@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { Comment, Post, Reaction, Tag } from "@models/community.model";
+import { Comment, Follow, Post, Reaction, Tag } from "@models/community.model";
 import { User } from "@models/users.models";
 import { POST_STATUS, TARGET_TYPES } from "constants/index";
 import type {
@@ -223,7 +223,7 @@ async updateRealtimePost(postId: string, authorId: string, dto: UpdatePostDTO): 
 }
 
   // Delete post (author only). Decrement tag counts and remove reactions
-  async deleteRealtimePost(postId: string, authorId: string): Promise<void> {
+  async deleteRealtimePost(postId: string, authorId: string): Promise<any> {
     const post = await Post.findById(postId);
     if (!post) {
       throw new Error("Post not found");
@@ -240,7 +240,9 @@ async updateRealtimePost(postId: string, authorId: string, dto: UpdatePostDTO): 
     await Reaction.deleteMany({ postId: post._id });
     // Note: comments cleanup can be added if required
     await Post.deleteOne({ _id: post._id });
-    safeEmit("postDeleted", { postId: post._id.toString() });
+    safeEmit("postDeleted", { postId: postId });
+    console.log(`Post ${postId} deleted`);
+    return { postId };
   }
 
   // Like a post or comment
@@ -354,7 +356,7 @@ async updateRealtimePost(postId: string, authorId: string, dto: UpdatePostDTO): 
       userId: toObjectId(userId),
       targetType: TARGET_TYPES.POST,
     };
-    if (postIds && postIds.length) {
+    if (postIds?.length) {
       filter.postId = { $in: postIds.map((id) => toObjectId(id)) };
     } else {
       filter.postId = { $ne: null };
@@ -401,23 +403,63 @@ async updateRealtimePost(postId: string, authorId: string, dto: UpdatePostDTO): 
     return docs.map((d: any) => mapTagToDTO(d));
   }
   
+//follow, unfollow
+ async  followUser(followerId: string, followingId: string) {
+  if (followerId === followingId) throw new Error("Cannot follow yourself");
 
+  const follow = await Follow.create({ followerId, followingId });
+
+  // tăng cache
+  await User.findByIdAndUpdate(followerId, { $inc: { followingCount: 1 } });
+  await User.findByIdAndUpdate(followingId, { $inc: { followerCount: 1 } });
+
+  // realtime event
+  safeEmit("userFollowed", { followerId, followingId });
+
+  return follow;
+}
+
+// Unfollow a user
+ async  unfollowUser(followerId: string, followingId: string) {
+  const res = await Follow.findOneAndDelete({ followerId, followingId });
+
+  if (res) {
+    // giảm cache
+    await User.findByIdAndUpdate(followerId, { $inc: { followingCount: -1 } });
+    await User.findByIdAndUpdate(followingId, { $inc: { followerCount: -1 } });
+    // realtime event
+    safeEmit("userUnfollowed", { followerId, followingId });
+  }
+
+  return res;
+}
 
   //user wall
   async getUserWall(userId:string):Promise<UserWallResponseDTO>{
     const user = await User.findById(userId).lean();
-    const postsCount = await Post.countDocuments({userId:userId});
-    const followersCount = 0;
-    const followingCount = 0;
+    const postsCount = await Post.countDocuments({ authorId: toObjectId(userId) });
+    const followersCount = await Follow.countDocuments({followingId:userId});
+    const followingsCount = await Follow.countDocuments({followerId:userId});
     return {
      _id: user?._id || "",
       fullName: user?.fullName || "",
       avatarUrl: user?.avatarUrl || "",
       role: user?.role || "",
-      postsCount,
-      followersCount,
-      followingCount
+      postsCount: postsCount || 0,
+      followersCount:followersCount || 0,
+      followingsCount:followingsCount || 0
     }
+  }
+
+  // Following helpers
+  async getFollowing(userId: string): Promise<string[]> {
+    const docs = await Follow.find({ followerId: toObjectId(userId) }).select('followingId').lean();
+    return docs.map((d: any) => String(d.followingId));
+  }
+
+  async isFollowing(followerId: string, targetId: string): Promise<boolean> {
+    const doc = await Follow.findOne({ followerId: toObjectId(followerId), followingId: toObjectId(targetId) }).lean();
+    return !!doc;
   }
 
 }

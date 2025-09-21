@@ -1,10 +1,9 @@
 import { Image, Hash, X, Check, Plus } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { CommunityService } from '@/services/community';
-import type { CreatePostDTO, PostResponseDTO, TagResponseDTO } from '@/types/community.dtos';
+import type { CreatePostDTO, PostResponseDTO, TagResponseDTO, UserWallResponseDTO } from '@/types/community.dtos';
 import { POST_STATUS } from '../../constants';
 import { socket } from '@/config/socket';
-import { MinimalUser } from './MainContent';
 import { UploadService, type ResourceType } from '@/services/upload';
 import {
   Select,
@@ -34,6 +33,7 @@ export default function PostCreator({
   posts,
   setPosts,
   currentUser,
+  fetchMinimalUser
 }: Readonly<{
   postText: string;
   setPostText: (text: string) => void;
@@ -41,7 +41,8 @@ export default function PostCreator({
   setPrivacy: (p: Privacy) => void;
   posts: PostResponseDTO[];
   setPosts: React.Dispatch<React.SetStateAction<PostResponseDTO[]>>;
-  currentUser: MinimalUser;
+  currentUser: UserWallResponseDTO;
+  fetchMinimalUser: () => Promise<void>;
 }>) {
   const [files, setFiles] = useState<File[]>([]);
   const previews = useMemo(() => files.map((f) => URL.createObjectURL(f)), [files]);
@@ -62,12 +63,18 @@ export default function PostCreator({
   }, []);
 
   useEffect(() => {
-    const onNewPost = (post: PostResponseDTO) => { prependPost(post); };
+    const onNewPost = (post: PostResponseDTO) => {
+      prependPost(post);
+      // If this post belongs to the current user, refresh minimal user (postsCount, etc.)
+      if (post?.authorId && currentUser?._id && post.authorId === (currentUser as any)._id) {
+        void fetchMinimalUser?.();
+      }
+    };
     socket.on('newPost', onNewPost);
     return () => {
       socket.off('newPost', onNewPost);
     };
-  }, [prependPost]);
+  }, [prependPost, currentUser, fetchMinimalUser]);
 
   // Fetch tags when dialog opens the first time
   useEffect(() => {
@@ -126,15 +133,12 @@ export default function PostCreator({
     }
     const payload: CreatePostDTO = { content, media, tags: selectedTags, status: mapPrivacyToStatus(privacy) };
     try {
-      const res = await CommunityService.createPost(payload);
-      if (res?.success && res.data) {
-        console.log('Created post:', res.data);
-        // Optimistic: prepend locally; socket 'newPost' listener will guard against duplicates
-        setPosts(prev => (prev.some(p => p._id === res.data!._id) ? prev : [res.data!, ...prev]));
-        setPostText('');
-        setFiles([]);
-        setSelectedTags([]);
-      }
+      // Trigger creation; rely on realtime 'newPost' event to update the feed
+      await CommunityService.createPost(payload);
+      // Clear local inputs on success
+      setPostText('');
+      setFiles([]);
+      setSelectedTags([]);
     } catch (e) {
       console.error('Create post failed', e);
     }

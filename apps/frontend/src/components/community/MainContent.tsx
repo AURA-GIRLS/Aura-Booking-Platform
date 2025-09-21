@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import LeftSidebar from './LeftSidebar';
 import StoriesSection from './StoriesSection';
 import PostCreator from './PostCreator';
@@ -9,10 +9,9 @@ import RightSidebar from './RightSidebar';
 import type { Story, Conversation, Event } from './community.types';
 import { mockUser, mockStories, mockConversations, mockEvents } from './data/mockCommunityData';
 import { CommunityService } from '@/services/community';
-import { PostResponseDTO, TagResponseDTO } from '@/types/community.dtos';
+import { PostResponseDTO, TagResponseDTO, UserWallResponseDTO } from '@/types/community.dtos';
 import type { UserResponseDTO } from '@/types/user.dtos';
 
-export type MinimalUser = { fullName: string; _id?: string };
 
 // Reusable filter state (can extend for tag, search, etc.)
 export type FilterState =
@@ -28,7 +27,7 @@ export default function MainContent() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [trendingTags, setTrendingTags] = useState<TagResponseDTO[]>([]);
-  const [currentUser, setCurrentUser] = useState<UserResponseDTO | null>(null);
+  const [currentUser, setCurrentUser] = useState<UserWallResponseDTO | null>(null);
   const [privacy, setPrivacy] = useState<'public' | 'friends' | 'private'>('public');
 
   // Active filter state (null = default feed, tag/search = filtered)
@@ -36,41 +35,59 @@ export default function MainContent() {
 
   // Hydrate user and mock side data
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const raw = localStorage.getItem('currentUser');
-        setCurrentUser(raw ? (JSON.parse(raw) as UserResponseDTO) : null);
-      } catch {
-        setCurrentUser(null);
-      }
-    }
     setStories(mockStories);
     setConversations(mockConversations);
     setEvents(mockEvents);
   }, []);
 
+  const fetchMinimalUser = useCallback(async () => {
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = localStorage.getItem('currentUser');
+      const localUser = raw ? (JSON.parse(raw) as UserResponseDTO) : null;
+      if (!localUser?._id) { setCurrentUser(null); return; }
+      const res = await CommunityService.getUserWall(localUser._id);
+      if (res.success && res.data) {
+        const minimalUser = res.data;
+        // Avoid setting state if nothing changed (prevents re-renders and loops)
+        setCurrentUser((prev) => {
+          if (!prev) return minimalUser;
+          const same = prev._id === minimalUser._id
+            && prev.followersCount === minimalUser.followersCount
+            && prev.followingsCount === minimalUser.followingsCount
+            && prev.postsCount === minimalUser.postsCount
+            && prev.fullName === minimalUser.fullName;
+          return same ? prev : minimalUser;
+        });
+      }
+    } catch {
+      setCurrentUser(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchMinimalUser();
+  }, [fetchMinimalUser]);
+
   // Fetch posts with pagination
   const fetchPosts = useCallback(async () => {
     const res = await CommunityService.listPosts({ page: 1, limit: 10 });
-    if (res.success && res.data) {
-      let items = res.data.items;
-
-      // Mark posts liked by current user
-      try {
-        if (currentUser && items.length) {
-          const likedRes = await CommunityService.getMyLikedPosts(items.map((p) => p._id));
-          if (likedRes.success && likedRes.data) {
-            const likedSet = new Set(likedRes.data);
-            items = items.map((p) => ({ ...(p as any), _isLiked: likedSet.has(p._id) }));
-          }
+    if (!res.success || !res.data) return;
+    let items = res.data.items;
+    // Mark posts liked by current user (if available)
+    try {
+      if (currentUser?._id && items.length) {
+        const likedRes = await CommunityService.getMyLikedPosts(items.map((p) => p._id));
+        if (likedRes.success && likedRes.data) {
+          const likedSet = new Set(likedRes.data);
+          items = items.map((p) => ({ ...(p as any), _isLiked: likedSet.has(p._id) }));
         }
-      } catch {
-        // ignore errors (unauthenticated or request failed)
       }
-
-      setPosts(items);
+    } catch {
+      // ignore errors
     }
-  }, [currentUser]);
+    setPosts(items);
+  }, [currentUser?._id]);
 
   // Fetch trending tags
   const fetchTrendingTags = useCallback(async () => {
@@ -85,9 +102,9 @@ export default function MainContent() {
     fetchTrendingTags();
   }, [fetchPosts, fetchTrendingTags]);
 
-  const minimalUser = currentUser
-    ? ({ fullName: currentUser.fullName, _id: currentUser._id } as any)
-    : ({ fullName: '' } as any);
+  const currentUserMinimal = useMemo(() => (
+    currentUser ? ({ fullName: currentUser.fullName, _id: currentUser._id } as any) : ({ fullName: '' } as any)
+  ), [currentUser?._id, currentUser?.fullName]);
 
   // Clear current filter and reset to default feed
   const clearFilter = () => {
@@ -132,15 +149,12 @@ export default function MainContent() {
                   Clear filter
                 </button>
               </div>
-              <PostsFeed posts={posts} setPosts={setPosts} currentUser={minimalUser} />
+              <PostsFeed posts={posts} setPosts={setPosts} currentUser={currentUserMinimal} fetchMinimalUser={fetchMinimalUser}/>
             </>
           ) : (
             // 🟢 Default mode: show stories, post creator, and feed
             <>
-              <StoriesSection
-                stories={stories}
-                currentUser={(currentUser as any) ?? (mockUser as any)}
-              />
+              <StoriesSection stories={stories} currentUser={(currentUser as any) ?? (mockUser as any)} />
               <PostCreator
                 postText={postText}
                 setPostText={setPostText}
@@ -148,9 +162,10 @@ export default function MainContent() {
                 setPrivacy={setPrivacy}
                 posts={posts}
                 setPosts={setPosts}
-                currentUser={minimalUser}
+                currentUser={currentUserMinimal}
+                fetchMinimalUser={fetchMinimalUser}
               />
-              <PostsFeed posts={posts} setPosts={setPosts} currentUser={minimalUser} />
+              <PostsFeed posts={posts} setPosts={setPosts} currentUser={currentUserMinimal} fetchMinimalUser={fetchMinimalUser}/>
             </>
           )}
         </div>

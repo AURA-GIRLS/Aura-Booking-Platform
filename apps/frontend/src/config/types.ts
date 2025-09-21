@@ -3,7 +3,7 @@ export interface Config {
   port: number;
 
   publicAPI: string;
-  publicClient: string;
+  originalAPI: string;
 
   googleClientId: string;
   
