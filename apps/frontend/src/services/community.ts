@@ -28,6 +28,7 @@ export const CommunityService = {
         tag?: string;
         status?: string;
         q?: string;
+        sort?: 'newest' | 'popular' | string;
     }): Promise<
         ApiResponseDTO<{
             items: PostResponseDTO[];
@@ -189,6 +190,41 @@ export const CommunityService = {
     async isFollowing(targetUserId: string): Promise<ApiResponseDTO<boolean>> {
         try {
             const res = await api.get<ApiResponseDTO<boolean>>(`/community/users/${encodeURIComponent(targetUserId)}/is-following`);
+            return res.data;
+        } catch (error: any) {
+            throw error?.response?.data || error;
+        }
+    },
+
+    // MUAs and social discovery
+    async getTopActiveMuas(limit?: number): Promise<ApiResponseDTO<UserWallResponseDTO[]>> {
+        try {
+            const params = typeof limit === 'number' ? { limit } : undefined;
+            const res = await api.get<ApiResponseDTO<UserWallResponseDTO[]>>('/community/muas/top-active', { params });
+            return res.data;
+        } catch (error: any) {
+            throw error?.response?.data || error;
+        }
+    },
+
+    // Following of current user (auth required on backend)
+    async getFollowingUsers(limit?: number): Promise<ApiResponseDTO<UserWallResponseDTO[] | null>> {
+        try {
+            const params = typeof limit === 'number' ? { limit } : undefined;
+            const res = await api.get<ApiResponseDTO<UserWallResponseDTO[] | null>>('/community/users/following-user', { params });
+            return res.data;
+        } catch (error: any) {
+            throw error?.response?.data || error;
+        }
+    },
+
+    // Posts by users the current user is following (paginated)
+    async getPostsByFollowingUsers(params?: { page?: number; limit?: number }): Promise<
+        ApiResponseDTO<{ items: PostResponseDTO[]; total: number; page: number; pages: number }>
+    > {
+        try {
+            const res = await api.get<ApiResponseDTO<{ items: PostResponseDTO[]; total: number; page: number; pages: number }>
+            >('/community/feed/following-users', { params });
             return res.data;
         } catch (error: any) {
             throw error?.response?.data || error;

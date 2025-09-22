@@ -31,4 +31,7 @@ router.get("/users/:id/wall", (req, res) => controller.getUserWall(req, res));
 router.get("/users/:id/following", (req, res) => controller.getFollowing(req, res));
 router.get("/users/:id/is-following", authenticateToken, (req, res) => controller.isFollowing(req, res));
 
+router.get("/muas/top-active", (req, res) => controller.getTopActiveMuas(req, res));
+router.get("/users/following-user", authenticateToken, (req, res) => controller.getFollowingUsers(req, res));
+router.get("/feed/following-users", authenticateToken, (req, res) => controller.getPostsByFollowingUsers(req, res));
 export default router;

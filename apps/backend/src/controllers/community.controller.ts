@@ -33,7 +33,7 @@ export class CommunityController {
     // GET /api/community/posts
     async listPosts(req: Request, res: Response): Promise<void> {
         try {
-            const { page, limit, authorId, tag, status, q } = req.query as any;
+            const { page, limit, authorId, tag, status, q, sort } = req.query as any;
             const data = await this.service.listPosts({
                 page: page ? Number(page) : undefined,
                 limit: limit ? Number(limit) : undefined,
@@ -41,6 +41,7 @@ export class CommunityController {
                 tag: tag as string,
                 status: status as string,
                 q: q as string,
+                sort: sort as string,
             });
             const response: ApiResponseDTO = {
                 success: true,
@@ -391,4 +392,59 @@ export class CommunityController {
                 res.status(400).json(response);
             }
         }
-}
+        async getTopActiveMuas(req: Request, res: Response): Promise<void> {
+            try {
+            const limit = req.query.limit ? Number(req.query.limit) : 10;
+            const docs = await this.service.getTopActiveMuas(limit);
+            const response: ApiResponseDTO = { success: true, data: docs };
+            res.status(200).json(response);
+            } catch (err) {
+                const response: ApiResponseDTO = {
+                    success: false,
+                    message: err instanceof Error ? err.message : "Failed to get top active users",
+                };
+                res.status(400).json(response);
+            }
+        }
+        async getFollowingUsers(req: Request, res: Response): Promise<void> {
+            try {
+                const userId = (req as any).user?.userId as string;
+                if (!userId) {
+                    const response: ApiResponseDTO = { success: false, message: "Unauthorized" };
+                    res.status(401).json(response);
+                    return;
+                }
+                const limit = req.query.limit ? Number(req.query.limit) : 10;
+                const docs = await this.service.getFollowingUsers(userId, limit);
+                const response: ApiResponseDTO<any> = { success: true, data: docs };
+                 res.status(200).json(response);
+            } catch (err) {
+                const response: ApiResponseDTO = {
+                    success: false,
+                    message: err instanceof Error ? err.message : "Failed to get following users",
+                };
+                res.status(400).json(response);
+            }
+        }
+        async getPostsByFollowingUsers(req: Request, res: Response): Promise<void> {
+            try {
+                const userId = (req as any).user?.userId as string;
+                if (!userId) {
+                    const response: ApiResponseDTO = { success: false, message: "Unauthorized" };
+                    res.status(401).json(response);
+                    return;
+                }
+                const page = req.query.page ? Number(req.query.page) : 1;
+                const limit = req.query.limit ? Number(req.query.limit) : 10;
+                const docs = await this.service.getPostsByFollowingUsers(userId,{page,limit} );
+                const response: ApiResponseDTO<any> = { success: true, data: docs };
+                res.status(200).json(response);
+            } catch (err) {
+                const response: ApiResponseDTO = {
+                    success: false,
+                    message: err instanceof Error ? err.message : "Failed to get posts by following users",
+                };
+                res.status(400).json(response);
+            }
+        }
+    }

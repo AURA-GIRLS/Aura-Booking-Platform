@@ -166,7 +166,7 @@ async createRealtimePost(authorId: string, dto: CreatePostDTO): Promise<PostResp
     return { items, total, page, pages };
   }
 
-  // List posts with optional filters and pagination
+  // List posts with optional filters, pagination, and sorting
   async listPosts(query: {
     page?: number;
     limit?: number;
@@ -174,6 +174,7 @@ async createRealtimePost(authorId: string, dto: CreatePostDTO): Promise<PostResp
     tag?: string;
     status?: string;
     q?: string;
+    sort?: 'newest' | 'popular' | string;
   }): Promise<{ items: PostResponseDTO[]; total: number; page: number; pages: number }> {
     const page = Math.max(1, Number(query.page) || 1);
     const limit = Math.min(50, Math.max(1, Number(query.limit) || 10));
@@ -188,8 +189,14 @@ async createRealtimePost(authorId: string, dto: CreatePostDTO): Promise<PostResp
       filter.$or = [{ title: regex }, { content: regex }];
     }
 
+    // Sorting
+    let sort: Record<string, 1 | -1> = { createdAt: -1 };
+    if (typeof query.sort === 'string' && query.sort.toLowerCase() === 'popular') {
+      sort = { likesCount: -1, createdAt: -1 };
+    }
+
     const [docs, total] = await Promise.all([
-      Post.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+      Post.find(filter).sort(sort).skip(skip).limit(limit),
       Post.countDocuments(filter),
     ]);
 
@@ -392,7 +399,8 @@ async updateRealtimePost(postId: string, authorId: string, dto: UpdatePostDTO): 
     const skip = (page - 1) * limit;
     const filter: any = { tags: tag };
     const [docs, total] = await Promise.all([
-      Post.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+      // Sort by popularity first (likesCount desc), then newest
+      Post.find(filter).sort({ likesCount: -1, createdAt: -1 }).skip(skip).limit(limit),
       Post.countDocuments(filter),
     ]);
     const items = await Promise.all(docs.map((d: any) => mapPostToDTO(d)));
@@ -481,5 +489,80 @@ async updateRealtimePost(postId: string, authorId: string, dto: UpdatePostDTO): 
     return !!doc;
   }
 
+  async getTopActiveMuas(limit:number): Promise<UserWallResponseDTO[]> {
+    const docs = await MUA.aggregate([
+      {
+        $lookup: {
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "user",
+        },
+      },
+      { $unwind: "$user" },
+      {
+        $project: {
+          _id: "$user._id", // userId
+          ratingAverage: "$ratingAverage",
+        },
+      },
+      // Sort by followerCount desc, then ratingAverage desc
+      { $sort: { followerCount: -1, ratingAverage: -1 } },
+      { $limit: limit },
+    ]);
+
+    // Hydrate each user using existing getUserWall to ensure consistent DTO
+    const results = await Promise.all(
+      docs.map((d: any) => this.getUserWall(String(d._id)))
+    );
+    return results;
+  }
+  async getFollowingUsers(userId:string, limit:number): Promise<UserWallResponseDTO[]> {
+  const docs = await Follow.aggregate([
+  { $match: { followerId: toObjectId(userId) } },   // match trước
+  {
+    $lookup: {
+      from: "users",
+      localField: "followingId",
+      foreignField: "_id",
+      as: "user",
+    },
+  },
+  { $unwind: "$user" },
+  {
+    $project: {
+      _id: "$user._id",
+    },
+  },
+  { $limit: limit },
+]);
+
+
+    // Hydrate each user using existing getUserWall to ensure consistent DTO
+    const results = await Promise.all(
+      docs.map((d: any) => this.getUserWall(String(d._id)))
+    );
+    return results;
+  }
+  async getPostsByFollowingUsers(userId:string, query: { page?: number; limit?: number }): Promise<{ items: PostResponseDTO[]; total: number; page: number; pages: number }> {
+    const followingIds = await this.getFollowing(userId);
+    if(!followingIds.length) return {items:[], total:0, page:1, pages:1};
+    const page = Math.max(1, Number(query.page) || 1);
+    const limit = Math.min(50, Math.max(1, Number(query.limit) || 10));
+    const skip = (page - 1) * limit;
+    const total = await Post.countDocuments({ authorId: { $in: followingIds } });
+    const posts = await Post.find({ authorId: { $in: followingIds } })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+    return {
+      items: await Promise.all(posts.map((p) => mapPostToDTO(p))),
+      total,
+      page,
+      pages: Math.ceil(total / limit) || 1,
+    }
+  }
 }
+
 

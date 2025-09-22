@@ -1,4 +1,4 @@
-import { Heart, MessageCircle, Share, MoreHorizontal, Check } from 'lucide-react';
+import { Heart, MessageCircle, Share, MoreHorizontal, Check, Globe, Lock, Earth } from 'lucide-react';
 import React, { useEffect, useState, useCallback } from 'react';
 import type { CommentResponseDTO, PostResponseDTO, UserWallResponseDTO } from '@/types/community.dtos';
 import { CommunityService } from '@/services/community';
@@ -495,7 +495,15 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser, 
                           </button>
                         )}
                       </h4>
-                      <p className="text-sm text-gray-500">{formatTimeAgo(post.createdAt as any)}</p>
+                      <div className="text-sm text-gray-500 flex items-center gap-2">
+                        <span>{formatTimeAgo(post.createdAt as any)}</span>
+                        <span aria-hidden="true" className="inline-block w-1 h-1 rounded-full bg-gray-400" />
+                        {post.status === POST_STATUS.PRIVATE ? (
+                          <Lock className="w-3 h-3 text-gray-600" aria-label="Private" />
+                        ) : (
+                          <Earth className="w-3 h-3 text-gray-600" aria-label="Public" />
+                        )}
+                      </div>
                     </div>
                   </div>
                   <DropdownMenu>

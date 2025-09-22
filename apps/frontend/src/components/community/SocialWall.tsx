@@ -301,7 +301,7 @@ export default function SocialWall({ userId }: Readonly<Props>) {
                   </span>
                 )}
                 {isSelf && (
-                  <span className="ml-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-medium">
+                  <span className="ml-1 px-2 py-0.5 rounded-full text-rose-700 bg-rose-100 text-[11px] font-medium">
                     My Personal Wall
                   </span>
                 )}

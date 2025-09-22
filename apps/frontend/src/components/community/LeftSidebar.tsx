@@ -1,33 +1,52 @@
 "use client";
 import { Users } from "lucide-react";
 import { PostResponseDTO, TagResponseDTO, UserWallResponseDTO } from "@/types/community.dtos";
-import { useCallback } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { CommunityService } from "@/services/community";
 import { FilterState } from "./MainContent";
 
 interface LeftSidebarProps {
+  userWalls: UserWallResponseDTO[]; // 🆕 danh sách user walls để hiển thị ở StoriesSectio
+  setUserWalls: React.Dispatch<React.SetStateAction<UserWallResponseDTO[]>>;
   posts: PostResponseDTO[];
   setPosts: React.Dispatch<React.SetStateAction<PostResponseDTO[]>>;
   currentUser: UserWallResponseDTO;  // 🆕 từ MainContent truyền vào
   trendingTags: TagResponseDTO[];
   fetchPosts: () => Promise<void>;
+  fetchActiveMuas: () => Promise<void>;
   activeFilter: FilterState;                          // 🆕 dùng từ parent
   setActiveFilter: React.Dispatch<React.SetStateAction<FilterState>>;
 }
 
 export default function LeftSidebar({
+  userWalls,
+  setUserWalls,
   posts,
   setPosts,
   currentUser,
   trendingTags,
   fetchPosts,
+  fetchActiveMuas,
   activeFilter,
   setActiveFilter,
 }: Readonly<LeftSidebarProps>) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  // Track which nav is active locally: 'feed' | 'following' | 'none'
+  const [navActive, setNavActive] = useState<"feed" | "following" | "none">("feed");
+
+  // Derive if we are on any SocialWall (own or others) and specifically on my wall
+  const { isOnAnyWall, isOnMyWall } = useMemo(() => {
+    const wallId = searchParams?.get("wall");
+    const myId = String(currentUser?._id || "");
+    return {
+      isOnAnyWall: Boolean(wallId),
+      isOnMyWall: wallId === myId && !!myId,
+    };
+  }, [currentUser?._id, searchParams]);
 
   const getInitials = (name: string) =>
     name.split(" ").map((n) => n[0]).join("").toUpperCase();
@@ -82,7 +101,6 @@ export default function LeftSidebar({
       await fetchPosts();
       return;
     }
-
     const items = await fetchPostsByTag(tag);
     if (!items) return;
     const hydrated = await hydrateLiked(items);
@@ -98,6 +116,8 @@ export default function LeftSidebar({
       else sp.delete("wn");
       const qs = sp.toString();
       router.push((qs ? `${pathname}?${qs}` : pathname) as any, { scroll: false });
+      // When opening my wall, release nav highlights immediately
+      setNavActive("none");
     } catch {
       // ignore
     }
@@ -115,14 +135,48 @@ export default function LeftSidebar({
       // ignore
     }
     setActiveFilter({ type: null });
+    setNavActive("feed");
+    await fetchActiveMuas();
     await fetchPosts();
-  }, [fetchPosts, pathname, router, searchParams, setActiveFilter]);
+  }, [fetchActiveMuas, fetchPosts, pathname, router, searchParams, setActiveFilter]);
+
+ const fetchFollowingUsers = useCallback(async () => {
+    const res = await CommunityService.getFollowingUsers(10);
+    if (res.success && res.data) {
+      setUserWalls(res.data || []);
+    }
+  }, [setUserWalls]);
+  const fetchPostOfFollowingUser = useCallback(async ()=>{
+    const res = await CommunityService.getPostsByFollowingUsers({page:1, limit:10});
+    if (res.success && res.data) {
+      const hydrated = await hydrateLiked(res.data.items);
+      setPosts(hydrated);
+    }
+  }, [hydrateLiked, setPosts]);
+
+ const handleGoFollowingFeed = useCallback(async () => {
+    // Clear SocialWall params and reset filter to default feed
+    try {
+      // Ensure SocialWall is closed so feed is visible
+      clearWallParams();
+      await fetchFollowingUsers();
+      await fetchPostOfFollowingUser();
+      } catch {
+      // ignore
+    }
+    setActiveFilter({ type: null });
+    setNavActive("following");
+  }, [clearWallParams, fetchFollowingUsers, fetchPostOfFollowingUser, setActiveFilter]);
 
   return (
     <div className="w-64 bg-white h-screen sticky top-0 border-r border-gray-200 p-4">
       {/* Profile */}
       <div className="flex items-center mb-6">
-        <button type="button" onClick={handleOpenMyWall} className="w-10 h-10 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-rose-300 focus:ring-offset-2 focus:ring-offset-white">
+        <button
+          type="button"
+          onClick={handleOpenMyWall}
+          className={`w-10 h-10 rounded-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-rose-300 focus:ring-offset-2 focus:ring-offset-white bg-gradient-to-br from-rose-500 to-rose-700 ${isOnMyWall ? "ring-2 ring-rose-400" : ""}`}
+        >
           <span className="text-white font-semibold">
             {getInitials(currentUser.fullName)}
           </span>
@@ -132,6 +186,11 @@ export default function LeftSidebar({
             {currentUser.fullName}
           </button>
           <p className="text-sm text-gray-500">@{currentUser.fullName}</p>
+          {isOnMyWall && (
+            <span className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-rose-700 bg-rose-100 px-2 py-0.5 rounded-full">
+              My Personal Wall
+            </span>
+          )}
         </div>
       </div>
 
@@ -153,14 +212,19 @@ export default function LeftSidebar({
 
       {/* Navigation */}
       <nav className="space-y-2">
-        <button type="button" onClick={handleGoFeed} className="flex items-center w-full text-left px-3 py-2 text-white bg-rose-600 rounded-lg">
+        <button
+          type="button"
+          onClick={handleGoFeed}
+          className={`flex items-center w-full text-left px-3 py-2 rounded-lg ${!isOnAnyWall && navActive === "feed" ? "text-white bg-rose-600" : "text-gray-800 hover:bg-gray-100"}`}
+        >
           <Users className="w-5 h-5 mr-3" /> Feed
         </button>
-        <button type="button" className="flex items-center w-full px-3 py-2 text-gray-800 hover:bg-gray-100 rounded-lg">
+        <button
+          type="button"
+          onClick={handleGoFollowingFeed}
+          className={`flex items-center w-full px-3 py-2 rounded-lg ${!isOnAnyWall && navActive === "following" ? "text-white bg-rose-600" : "text-gray-800 hover:bg-gray-100"}`}
+        >
           <Users className="w-5 h-5 mr-3" /> Following Users
-        </button>
-        <button type="button" className="flex items-center w-full px-3 py-2 text-gray-800 hover:bg-gray-100 rounded-lg">
-          <Users className="w-5 h-5 mr-3" /> Following Artists
         </button>
       </nav>
 
