@@ -84,7 +84,7 @@ export default function ArtistNavbar({ mua, setMua }:  Readonly<ArtistNavbarProp
                   <Link href={`/manage-artist/${id}/wallet`}>My Wallet</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href={`/user/artists/portfolio/${id}`}>My Public Portfolio</Link>
+                    <Link href={`/manage-artist/${id}/public-portfolio`}>My Public Portfolio</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleLogout} className="px-2 py-2 text-red-500 cursor-pointer">Logout</DropdownMenuItem>
               </DropdownMenuContent>
