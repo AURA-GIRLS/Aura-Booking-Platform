@@ -45,7 +45,7 @@ export default function ArtistNavbar({ mua, setMua }:  Readonly<ArtistNavbarProp
         { /* Helper to build dynamic artist paths safely */ }
         {id && (
           <ul className="hidden md:flex items-center gap-6 text-[#111] font-medium hover:*:text-[#EC5A86] *:transition-colors">
-            <li><a href={`/manage-artist/${id}/dashboard`}>Dashboard</a></li>
+            <li><a href={`/dashboard/mua/${id}/dashboard`}>Dashboard</a></li>
             <li><a href={`/manage-artist/${id}/portfolio`}>My Portfolio</a></li>
             <li><a href={`/manage-artist/${id}/calendar`}>My Calendar</a></li>
             <li><a href={`/manage-artist/${id}/feedback`}>My Feedback</a></li>
@@ -94,7 +94,7 @@ export default function ArtistNavbar({ mua, setMua }:  Readonly<ArtistNavbarProp
         <div className="md:hidden px-8 pb-4 bg-white border-t border-[#EC5A86]/30">
           {id && (
             <ul className="flex flex-col gap-2 text-[#111] font-medium hover:*:text-[#EC5A86] *:transition-colors">
-              <li><a href={`/manage-artist/${id}/dashboard`}>Dashboard</a></li>
+              <li><a href={`/dashboard/mua/${id}/summary`}>Dashboard</a></li>
               <li><a href={`/manage-artist/${id}/portfolio`}>My Portfolio</a></li>
               <li><a href={`/manage-artist/${id}/calendar`}>My Calendar</a></li>
               <li><a href={`/manage-artist/${id}/feedback`}>My Feedback</a></li>

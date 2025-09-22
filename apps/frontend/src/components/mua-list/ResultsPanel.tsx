@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Pagination from "../ui/Pagination";
 import Link from "next/link";
 import { SERVICE_CATEGORY_LABELS, ServiceCategory } from "../../constants/constants";
 import type { IAvailableMuaServices } from "@/types/booking.dtos";
@@ -9,11 +10,11 @@ import { MapPin, Star } from "lucide-react";
 import { Artist, SortKey } from "@/types/artist.dto";
 import { Button } from "../lib/ui/button";
 
-interface ResultsPanelProps {
+export interface ResultsPanelProps {
   occasion: ServiceCategory;
-  onOccasionChange: (occasion: ServiceCategory) => void;
+  onOccasionChange: (v: ServiceCategory) => void;
   sort: SortKey;
-  onSortChange: (sort: SortKey) => void;
+  onSortChange: (v: SortKey) => void;
   artists: Artist[];
   availableMuas: IAvailableMuaServices[];
   isDateFiltered: boolean;
@@ -25,6 +26,9 @@ interface ResultsPanelProps {
   onLoadMore: () => void;
   onViewProfile: (artistId: string, tab?: string) => void;
   onBookService: (artistId: string, serviceId: string) => void;
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (p: number) => void;
 }
 
 export default function ResultsPanel({
@@ -43,6 +47,9 @@ export default function ResultsPanel({
   onLoadMore,
   onViewProfile,
   onBookService,
+  currentPage,
+  totalPages,
+  onPageChange,
 }: ResultsPanelProps) {
   const occasionTabs = Object.entries(SERVICE_CATEGORY_LABELS);
   const sortOptions: { value: SortKey; label: string }[] = [
@@ -322,15 +329,15 @@ export default function ResultsPanel({
         </div>
       )}
 
-      {/* Load More Button */}
-      {canLoadMore && !loading && (
-        <div className="text-center pt-6 animate-slide-up">
-          <button
-            onClick={onLoadMore}
-            className="px-8 py-3 bg-white border-2 border-rose-300 text-rose-700 rounded-xl hover:bg-gradient-to-r hover:from-rose-50 hover:to-pink-50 hover:border-rose-400 hover:scale-105 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-rose-300 focus:ring-offset-2 transition-all duration-300 font-medium transform active:scale-95"
-          >
-            Load More Makeup Artists
-          </button>
+
+      {/* Pagination UI (only khi không lọc theo ngày và có nhiều trang) */}
+      {!isDateFiltered && totalPages > 1 && (
+        <div className="flex justify-center mt-8">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={onPageChange}
+          />
         </div>
       )}
     </div>

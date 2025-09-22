@@ -6,6 +6,8 @@ import transactionRoutes from "./transaction";
 import bookingRoutes from "./booking";
 import communityRoutes from "./community";
 import uploadRoutes from "./upload";
+import dashboardRoutes from "./dashboard";
+import profileRoutes from "./profile";
 const router = Router();
 
 // API routes
@@ -28,4 +30,6 @@ router.use("/booking",bookingRoutes);
 router.use("/transaction", transactionRoutes);
 router.use("/community", communityRoutes);
 router.use('/upload', uploadRoutes);
+router.use('/dashboard', dashboardRoutes);
+router.use('/profile', profileRoutes);
 export default router;

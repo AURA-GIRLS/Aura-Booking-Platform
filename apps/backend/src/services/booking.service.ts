@@ -774,7 +774,7 @@ export async function deleteBooking(bookingId: string): Promise<boolean> {
 }
 
 // UTILITY - Format booking response
-function formatBookingResponse(booking: any): BookingResponseDTO {
+export function formatBookingResponse(booking: any): BookingResponseDTO {
     const rawDate = booking.bookingDate;
     const bookingDay = rawDate ? fromUTC(rawDate) : dayjs();
     const durationVal: number = typeof booking.duration === 'number' ? booking.duration : 0;
