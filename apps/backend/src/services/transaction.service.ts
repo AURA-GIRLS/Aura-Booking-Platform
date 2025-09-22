@@ -8,20 +8,26 @@ import { PAYMENT_METHODS,PAYOUT_CATEGORIES,TRANSACTION_STATUS, type TransactionS
 import type { BookingResponseDTO } from "types";
 import type { CreateBookingDTO, PendingBookingResponseDTO } from "types/booking.dtos";
 import mongoose from "mongoose";
+import { ServicePackage } from "@models/services.models";
+import { User } from "@models/users.models";
+import { fromUTC } from "utils/timeUtils";
 
 // UTIL - map mongoose doc to DTO
-function formatTransactionResponse(tx: any): TransactionResponseDTO {
+async function formatTransactionResponse(tx: any): Promise<TransactionResponseDTO> {
   // Attempt to extract friendly names from joined docs when available
   const booking = tx.booking || tx._booking; // support potential aliases
-  const service = tx.service || tx._service;
-  const serviceName = service?.name || service?.serviceName || booking?.serviceName || "";
-  const customerName = booking?.customerName || tx.customerName || "";
-  // Derive bookingTime from bookingDate + duration (minutes) => "HH:mm - HH:mm"
+  const serviceId = booking.serviceId;
+  const service = await ServicePackage.findById(serviceId).exec();
+  const serviceName = service?.name;
+  const customer = await User.findById(tx.customerId).select("fullName");
+  const customerName = customer?.fullName;
+  //
   const startDate: Date | null = booking?.bookingDate ? new Date(booking.bookingDate) : null;
   const durationMinutes: number = typeof booking?.duration === 'number' ? booking.duration : 0;
   const endDate: Date | null = startDate ? new Date(startDate.getTime() + durationMinutes * 60000) : null;
   const fmtTime = (d: Date) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
   const bookingTime = startDate && endDate ? `${fmtTime(startDate)} - ${fmtTime(endDate)}` : "";
+  const bookingDate = fromUTC(startDate!).format("YYYY-MM-DD"); // DD/MM/YYYY
   return {
     _id: String(tx._id),
     bookingId: tx.bookingId ? String(tx.bookingId) : "",
@@ -30,9 +36,7 @@ function formatTransactionResponse(tx: any): TransactionResponseDTO {
     currency: tx.currency || "",
     status: tx.status || 'HOLD',
     paymentMethod: tx.paymentMethod,
-    paymentReference: tx.paymentReference || "",
-    createdAt: tx.createdAt || new Date(),
-    updatedAt: tx.updatedAt || tx.createdAt || new Date(),
+   bookingDate,
     // extra friendly fields expected by DTO
     serviceName,
     customerName,
@@ -265,7 +269,7 @@ export async function getTransactions(
     ]);
 
     return {
-      transactions: docs.map(formatTransactionResponse),
+      transactions: await Promise.all(docs.map(formatTransactionResponse)),
       total,
       page,
       totalPages: Math.ceil(total / pageSize),
@@ -330,7 +334,7 @@ export async function getTransactionsByMuaId(
     const total = facet.count[0]?.total || 0;
     // Note: formatTransactionResponse maps only transaction fields.
     // If you need booking/service fields in the response, extend the DTO and mapper accordingly.
-    const transactions = (facet.docs || []).map(formatTransactionResponse);
+    const transactions = await Promise.all((facet.docs || []).map(formatTransactionResponse));
     return { transactions, total, page, totalPages: Math.ceil(total / pageSize) };
   } catch (error) {
     throw new Error(`Failed to get transactions by muaId: ${error}`);

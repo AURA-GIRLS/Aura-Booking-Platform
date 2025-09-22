@@ -23,13 +23,11 @@ export interface TransactionResponseDTO {
     customerName:string;
     serviceName:string;
     bookingTime:string;
+    bookingDate?: string; 
     amount: number;
     currency: string;
     status: TransactionStatus;
     paymentMethod: PaymentMethod;
-    paymentReference: string;
-    createdAt: Date;
-    updatedAt: Date;
 }
 
 export interface WalletResponseDTO {
