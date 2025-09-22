@@ -6,6 +6,8 @@ import type {
   CreatePostDTO,
   UpdatePostDTO,
   PostResponseDTO,
+  CreateCommentDTO,
+  UpdateCommentDTO,
   ReactionDTO,
   ReactionResponseDTO,
   CommentResponseDTO,
@@ -101,12 +103,15 @@ const mapCommentToDTO = async (commentDoc: any): Promise<CommentResponseDTO> => 
   // Note: In a real app, consider caching author info to reduce DB calls
   return {
     _id: String(commentDoc._id),
+    postId: String(commentDoc.postId),
+    parentId: commentDoc.parentId ? String(commentDoc.parentId) : undefined,
     authorId: String(commentDoc.authorId),
     authorName: author?.fullName ?? "",
     authorRole: author?.role ?? "USER",
     authorAvatarUrl: author?.avatarUrl,
     content: commentDoc.content,
     likesCount: typeof commentDoc.likesCount === "number" ? commentDoc.likesCount : 0,
+    repliesCount: typeof commentDoc.repliesCount === "number" ? commentDoc.repliesCount : 0,
     createdAt: commentDoc.createdAt ?? new Date(),
     updatedAt: commentDoc.updatedAt ?? commentDoc.createdAt ?? new Date(),
  };
@@ -149,6 +154,122 @@ async createRealtimePost(authorId: string, dto: CreatePostDTO): Promise<PostResp
 }
 
 
+  // Create a new comment
+  async createComment(authorId: string, dto: CreateCommentDTO): Promise<CommentResponseDTO> {
+    // Verify that the post exists
+    const post = await Post.findById(dto.postId);
+    if (!post) throw new Error("Post not found");
+
+    // If parentId is provided, verify the parent comment exists and belongs to the same post
+    if (dto.parentId) {
+      const parentComment = await Comment.findById(dto.parentId);
+      if (!parentComment) throw new Error("Parent comment not found");
+      if (String(parentComment.postId) !== dto.postId) throw new Error("Parent comment doesn't belong to this post");
+    }
+
+    const comment = await Comment.create({
+      postId: toObjectId(dto.postId),
+      parentId: dto.parentId ? toObjectId(dto.parentId) : null,
+      authorId: toObjectId(authorId),
+      content: dto.content,
+      likesCount: 0,
+      repliesCount: 0,
+    });
+
+    // Increment comments count on the post
+    await Post.updateOne({ _id: dto.postId }, { $inc: { commentsCount: 1 } });
+
+    // If this is a reply, increment replies count on parent comment
+    if (dto.parentId) {
+      await Comment.updateOne({ _id: dto.parentId }, { $inc: { repliesCount: 1 } });
+    }
+
+    const commentDTO = await mapCommentToDTO(comment);
+    
+    // Emit socket event for realtime updates to specific post room
+    const io = getIO();
+    const roomName = `post:${dto.postId}`;
+    
+    if (dto.parentId) {
+      // This is a reply
+      io.to(roomName).emit("comment:reply", {
+        postId: dto.postId,
+        parentCommentId: dto.parentId,
+        reply: commentDTO,
+      });
+    } else {
+      // This is a top-level comment
+      io.to(roomName).emit("comment:new", {
+        postId: dto.postId,
+        comment: commentDTO,
+      });
+    }
+    
+    return commentDTO;
+  }
+
+  // Get comment by id
+  async getCommentById(commentId: string): Promise<CommentResponseDTO> {
+    const comment = await Comment.findById(commentId);
+    if (!comment) throw new Error("Comment not found");
+    return mapCommentToDTO(comment);
+  }
+
+  // Update comment (author only)
+  async updateComment(commentId: string, authorId: string, dto: UpdateCommentDTO): Promise<CommentResponseDTO> {
+    const comment = await Comment.findById(commentId);
+    if (!comment) throw new Error("Comment not found");
+    if (!(comment.authorId as mongoose.Types.ObjectId).equals(authorId)) throw new Error("Forbidden");
+
+    comment.content = dto.content;
+    await comment.save();
+
+    const commentDTO = await mapCommentToDTO(comment);
+    safeEmit("commentUpdated", commentDTO);
+    return commentDTO;
+  }
+
+  // Delete comment (author only)
+  async deleteComment(commentId: string, authorId: string): Promise<any> {
+    const comment = await Comment.findById(commentId);
+    if (!comment) throw new Error("Comment not found");
+    if (!(comment.authorId as mongoose.Types.ObjectId).equals(authorId)) throw new Error("Forbidden");
+
+    // Remove all reactions on this comment
+    await Reaction.deleteMany({ commentId: comment._id });
+
+    // If this comment has replies, we could either:
+    // 1. Delete all replies (cascade delete)
+    // 2. Keep replies but mark parent as deleted
+    // For now, let's do cascade delete for simplicity
+    const replies = await Comment.find({ parentId: comment._id });
+    for (const reply of replies) {
+      await Reaction.deleteMany({ commentId: reply._id });
+    }
+    await Comment.deleteMany({ parentId: comment._id });
+
+    // Decrement comments count on the post
+    await Post.updateOne({ _id: comment.postId }, { $inc: { commentsCount: -1 } });
+
+    // If this was a reply, decrement replies count on parent
+    if (comment.parentId) {
+      await Comment.updateOne({ _id: comment.parentId }, { $inc: { repliesCount: -1 } });
+    }
+
+    await Comment.deleteOne({ _id: comment._id });
+    
+    // Emit socket event for realtime updates to specific post room
+    const io = getIO();
+    const roomName = `post:${comment.postId}`;
+    io.to(roomName).emit("comment:delete", {
+      commentId: commentId,
+      isReply: !!comment.parentId,
+      parentCommentId: comment.parentId?.toString(),
+    });
+    
+    return { commentId };
+  }
+
   // List comments for a post (sorted by likes desc then createdAt desc)
   async listCommentsByPost(postId: string, query: { page?: number; limit?: number }): Promise<{ items: CommentResponseDTO[]; total: number; page: number; pages: number }> {
     const page = Math.max(1, Number(query.page) || 1);
@@ -158,6 +279,40 @@ async createRealtimePost(authorId: string, dto: CreatePostDTO): Promise<PostResp
     const filter: any = { postId: toObjectId(postId), parentId: null };
     const [docs, total] = await Promise.all([
       Comment.find(filter).sort({ likesCount: -1, createdAt: -1 }).skip(skip).limit(limit).lean(),
+      Comment.countDocuments(filter),
+    ]);
+
+    const items = await Promise.all(docs.map((d) => mapCommentToDTO(d)));
+    const pages = Math.ceil(total / limit) || 1;
+    return { items, total, page, pages };
+  }
+
+  // List replies for a comment
+  async listRepliesByComment(commentId: string, query: { page?: number; limit?: number }): Promise<{ items: CommentResponseDTO[]; total: number; page: number; pages: number }> {
+    const page = Math.max(1, Number(query.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(query.limit) || 20));
+    const skip = (page - 1) * limit;
+
+    const filter: any = { parentId: toObjectId(commentId) };
+    const [docs, total] = await Promise.all([
+      Comment.find(filter).sort({ createdAt: 1 }).skip(skip).limit(limit).lean(), // replies sorted by oldest first
+      Comment.countDocuments(filter),
+    ]);
+
+    const items = await Promise.all(docs.map((d) => mapCommentToDTO(d)));
+    const pages = Math.ceil(total / limit) || 1;
+    return { items, total, page, pages };
+  }
+
+  // List comments by user
+  async listCommentsByUser(userId: string, query: { page?: number; limit?: number }): Promise<{ items: CommentResponseDTO[]; total: number; page: number; pages: number }> {
+    const page = Math.max(1, Number(query.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(query.limit) || 20));
+    const skip = (page - 1) * limit;
+
+    const filter: any = { authorId: toObjectId(userId) };
+    const [docs, total] = await Promise.all([
+      Comment.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
       Comment.countDocuments(filter),
     ]);
 
@@ -316,8 +471,23 @@ async updateRealtimePost(postId: string, authorId: string, dto: UpdatePostDTO): 
         { _id: payload.commentId },
         { $inc: { likesCount: 1 } }
       );
-  const reactionDTO = await mapReactionDTO(reaction);
-  safeEmit("commentLiked", { commentId: reactionDTO.commentId, userId: data.userId });
+      
+      // Get updated comment to get the new like count
+      const updatedComment = await Comment.findById(payload.commentId);
+      const reactionDTO = await mapReactionDTO(reaction);
+      
+      // Emit socket event with updated like count to specific post room
+      const io = getIO();
+      const comment = await Comment.findById(payload.commentId).populate('postId');
+      if (comment) {
+        const roomName = `post:${comment.postId}`;
+        io.to(roomName).emit("comment:like", {
+          commentId: reactionDTO.commentId,
+          isLiked: true,
+          likeCount: updatedComment?.likesCount || 0,
+        });
+      }
+      
       return reactionDTO;
     }
   }
@@ -356,7 +526,21 @@ async updateRealtimePost(postId: string, authorId: string, dto: UpdatePostDTO): 
           { _id: query.commentId },
           { $inc: { likesCount: -1 } }
         );
-        safeEmit("commentUnliked", { commentId: query.commentId, userId: data.userId });
+        
+        // Get updated comment to get the new like count
+        const updatedComment = await Comment.findById(query.commentId);
+        
+        // Emit socket event with updated like count to specific post room
+        const io = getIO();
+        const comment = await Comment.findById(query.commentId);
+        if (comment) {
+          const roomName = `post:${comment.postId}`;
+          io.to(roomName).emit("comment:like", {
+            commentId: query.commentId.toString(),
+            isLiked: false,
+            likeCount: updatedComment?.likesCount || 0,
+          });
+        }
       }
     }
   }

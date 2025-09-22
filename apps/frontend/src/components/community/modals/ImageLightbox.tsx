@@ -36,7 +36,7 @@ export default function ImageLightbox({ isOpen, images, index, onIndexChange, on
   if (!isOpen || total === 0) return null;
 
   return (
-    <div className="fixed inset-0 z-[70]">
+    <div className="fixed inset-0 z-[100]">
       <button aria-label="Close gallery" className="absolute inset-0 bg-black/80" onClick={onClose} />
 
       <div className="relative z-[71] h-full w-full flex items-center justify-center p-4">

@@ -54,13 +54,6 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser, 
     }
   };
 
-  const handleAddComment = (postId: string) => {
-    const text = (commentInputs[postId] || '').trim();
-    if (!text) return;
-    setPosts(prev => prev.map(p => p._id === postId ? { ...p, commentsCount: (p.commentsCount || 0) + 1 } : p));
-    setCommentInputs(prev => ({ ...prev, [postId]: '' }));
-    setExpandedComments(prev => ({ ...prev, [postId]: true }));
-  };
 
   const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
   const isSelfUser = useCallback((id?: string) => {
@@ -637,15 +630,6 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser, 
         open={commentsOpen}
         onOpenChange={setCommentsOpen}
         post={activePost}
-        comments={activePost ? (commentsByPost[activePost._id] || []) : []}
-        commentInput={activePost ? (commentInputs[activePost._id] || "") : ""}
-        onCommentInputChange={(val) =>
-          activePost && setCommentInputs((prev) => ({ ...prev, [activePost._id]: val }))
-        }
-        onAddComment={() => activePost && handleAddComment(activePost._id)}
-        onLikeComment={(commentId) =>
-          activePost && handleLikeComment(activePost._id, commentId)
-        }
         getInitials={getInitials}
         formatTimeAgo={formatTimeAgo}
         isSelfUser={isSelfUser}

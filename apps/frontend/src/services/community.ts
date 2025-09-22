@@ -4,6 +4,8 @@ import type {
     CreatePostDTO,
     UpdatePostDTO,
     PostResponseDTO,
+    CreateCommentDTO,
+    UpdateCommentDTO,
     ReactionDTO,
     ReactionResponseDTO,
     CommentResponseDTO,
@@ -115,6 +117,61 @@ export const CommunityService = {
     async listCommentsByPost(postId: string, params?: { page?: number; limit?: number }): Promise<ApiResponseDTO<{ items: CommentResponseDTO[]; total: number; page: number; pages: number }>> {
         try {
             const res = await api.get<ApiResponseDTO<{ items: CommentResponseDTO[]; total: number; page: number; pages: number }>>(`/community/posts/${postId}/comments`, { params });
+            return res.data;
+        } catch (error: any) {
+            throw error?.response?.data || error;
+        }
+    },
+
+    // Comments CRUD
+    async createComment(data: CreateCommentDTO): Promise<ApiResponseDTO<CommentResponseDTO>> {
+        try {
+            const res = await api.post<ApiResponseDTO<CommentResponseDTO>>('/community/comments', data);
+            return res.data;
+        } catch (error: any) {
+            throw error?.response?.data || error;
+        }
+    },
+
+    async getCommentById(commentId: string): Promise<ApiResponseDTO<CommentResponseDTO>> {
+        try {
+            const res = await api.get<ApiResponseDTO<CommentResponseDTO>>(`/community/comments/${commentId}`);
+            return res.data;
+        } catch (error: any) {
+            throw error?.response?.data || error;
+        }
+    },
+
+    async updateComment(commentId: string, data: UpdateCommentDTO): Promise<ApiResponseDTO<CommentResponseDTO>> {
+        try {
+            const res = await api.patch<ApiResponseDTO<CommentResponseDTO>>(`/community/comments/${commentId}`, data);
+            return res.data;
+        } catch (error: any) {
+            throw error?.response?.data || error;
+        }
+    },
+
+    async deleteComment(commentId: string): Promise<ApiResponseDTO> {
+        try {
+            const res = await api.delete<ApiResponseDTO>(`/community/comments/${commentId}`);
+            return res.data;
+        } catch (error: any) {
+            throw error?.response?.data || error;
+        }
+    },
+
+    async listRepliesByComment(commentId: string, params?: { page?: number; limit?: number }): Promise<ApiResponseDTO<{ items: CommentResponseDTO[]; total: number; page: number; pages: number }>> {
+        try {
+            const res = await api.get<ApiResponseDTO<{ items: CommentResponseDTO[]; total: number; page: number; pages: number }>>(`/community/comments/${commentId}/replies`, { params });
+            return res.data;
+        } catch (error: any) {
+            throw error?.response?.data || error;
+        }
+    },
+
+    async listCommentsByUser(userId: string, params?: { page?: number; limit?: number }): Promise<ApiResponseDTO<{ items: CommentResponseDTO[]; total: number; page: number; pages: number }>> {
+        try {
+            const res = await api.get<ApiResponseDTO<{ items: CommentResponseDTO[]; total: number; page: number; pages: number }>>(`/community/users/${userId}/comments`, { params });
             return res.data;
         } catch (error: any) {
             throw error?.response?.data || error;
