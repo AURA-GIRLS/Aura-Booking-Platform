@@ -1,4 +1,4 @@
-import { User, Story, Post, Conversation, Event, Page } from '../../../types/community.types';
+import { Conversation, Page, Post, Story, User } from "../community.types";
 
 export const mockUser: User = {
   id: '1',
@@ -178,35 +178,6 @@ export const mockConversations: Conversation[] = [
   },
 ];
 
-export const mockEvents: Event[] = [
-  {
-    id: '1',
-    title: 'Design System Collaboration',
-    description: 'Workshop on building scalable design systems',
-    location: 'Harpoon Mall, YK',
-    date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
-    attendeeCount: 45,
-    isAttending: true
-  },
-  {
-    id: '2',
-    title: 'Web Dev 2.0 Meetup',
-    description: 'Latest trends in web development',
-    location: 'Yoshkar-Ola, Russia',
-    date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
-    attendeeCount: 120,
-    isAttending: false
-  },
-  {
-    id: '3',
-    title: 'Prada\'s Invitation Birthday',
-    description: 'Birthday celebration party',
-    location: 'Private Venue',
-    date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
-    attendeeCount: 25,
-    isAttending: true
-  }
-];
 
 export const mockPages: Page[] = [
   {

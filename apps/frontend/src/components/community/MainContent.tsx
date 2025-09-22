@@ -10,7 +10,7 @@ import SocialWall from './SocialWall'
 import RightSidebar from './RightSidebar'
 
 import type { Conversation, Event } from './community.types'
-import { mockUser, mockConversations, mockEvents } from './data/mockCommunityData'
+import { mockUser, mockConversations } from './data/mockCommunityData'
 import { CommunityService } from '@/services/community'
 import { PostResponseDTO, TagResponseDTO, UserWallResponseDTO } from '@/types/community.dtos'
 import type { UserResponseDTO } from '@/types/user.dtos'
@@ -48,7 +48,6 @@ export default function MainContent() {
   // Hydrate mock data
   useEffect(() => {
     setConversations(mockConversations)
-    setEvents(mockEvents)
   }, [])
 
   // Sync URL params (wall, wn)

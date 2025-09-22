@@ -2,7 +2,7 @@
 import { Badge } from "@/components/lib/ui/badge";
 import { Button } from "@/components/lib/ui/button";
 import { Icon } from "@iconify/react";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/lib/ui/card";
+import { Card, CardHeader, CardContent, CardFooter } from "@/components/lib/ui/card";
 import { Separator } from "@/components/lib/ui/separator";
 import { useCallback, useEffect, useMemo, useState, useRef, useLayoutEffect } from "react";
 import dayjs from 'dayjs';

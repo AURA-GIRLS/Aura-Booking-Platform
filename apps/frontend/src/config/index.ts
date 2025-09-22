@@ -4,7 +4,7 @@ import type { Config } from './types';
 // Load environment variables
 const envFile = process.env.NEXT_PUBLIC_NODE_ENV === "production" ? ".env.production" : ".env.development";
 dotenv.config({ path: envFile });
-console.log(`Using environment file: ${envFile}`);
+// console.log(`Using environment file: ${envFile}`);
 
 export const config = {
   // Server

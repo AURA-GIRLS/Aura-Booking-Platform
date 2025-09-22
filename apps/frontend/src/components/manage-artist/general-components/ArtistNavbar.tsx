@@ -100,7 +100,7 @@ export default function ArtistNavbar({ mua, setMua }:  Readonly<ArtistNavbarProp
               <li><a href={`/manage-artist/${id}/portfolio`}>My Portfolio</a></li>
               <li><a href={`/manage-artist/${id}/calendar`}>My Calendar</a></li>
               <li><a href={`/manage-artist/${id}/feedback`}>My Feedback</a></li>
-              <li><a href={`/manage-artist/${id}/community?wall=${id}&wn=${toPlusSeparated(mua?.fullName || user?.fullName)}`}>My Blog</a></li>
+              <li><a href={`/manage-artist/${id}/community?wall=${id}&wn=${toPlusSeparated( user?.fullName)}`}>My Blog</a></li>
               <li><a href="/about">About Us</a></li>
             </ul>
           )}
