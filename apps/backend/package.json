@@ -5,12 +5,13 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "npm install && tsc",
+    "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "lint": "eslint . --ext .ts",
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@types/node": "^20.19.17",
     "@payos/node": "^2.0.3",
     "@redis/entraid": "^5.8.2",
     "@types/nodemailer": "^7.0.1",
