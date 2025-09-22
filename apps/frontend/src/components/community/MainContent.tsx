@@ -82,7 +82,7 @@ export default function MainContent() {
             prev.fullName === minimalUser.fullName
           return same ? prev : minimalUser
         })
-      }
+      } 
     } catch {
       setCurrentUser(null)
     }

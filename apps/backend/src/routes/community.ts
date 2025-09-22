@@ -6,7 +6,7 @@ const router = Router();
 const controller = new CommunityController();
 
 // Posts
-router.post("/posts", authenticateToken, (req, res) => controller.createPost(req, res));
+router.post("/posts",authenticateToken, (req, res) => controller.createPost(req, res));
 router.get("/posts", (req, res) => controller.listPosts(req, res));
 router.get("/posts/:id", (req, res) => controller.getPostById(req, res));
 router.get("/posts/:id/comments", (req, res) => controller.listCommentsByPost(req, res));
