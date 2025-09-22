@@ -1,0 +1,18 @@
+.calendarRoot { /* local class to anchor global overrides for purity */
+	position: relative; /* harmless anchor property */
+}
+.calendarRoot :global(.calendar-shell :where(.rbc-time-slot)){min-height:28px;}
+.calendarRoot :global(.calendar-shell :where(.rbc-time-header)){background:linear-gradient(to right,#ffffff,#fff6f9 45%,#ffffff);}
+.calendarRoot :global(.calendar-shell :where(.rbc-time-header-cell)){color:#111;font-weight:600;letter-spacing:.5px;}
+.calendarRoot :global(.calendar-shell :where(.rbc-time-view)){background:#ffffff;}
+.calendarRoot :global(.calendar-shell :where(.rbc-day-bg)){transition:background .15s ease;}
+.calendarRoot :global(.calendar-shell :where(.rbc-day-bg.rbc-today)){background:#fff1f6 !important;box-shadow:inset 0 0 0 1px #fecdd3;}
+.calendarRoot :global(.calendar-shell :where(.rbc-time-content)){border-top:1px solid #f4f4f5;}
+.calendarRoot :global(.calendar-shell :where(.rbc-time-gutter)){background:#fff;color:#6b6b6b;font-size:11px;}
+.calendarRoot :global(.calendar-shell :where(.rbc-time-gutter .rbc-timeslot-group)){border-color:#f1f5f9;}
+.calendarRoot :global(.calendar-shell :where(.rbc-timeslot-group)){border-color:#f1f5f9;}
+.calendarRoot :global(.calendar-shell :where(.rbc-time-header-content)){border-left:1px solid #f1f5f9;}
+.calendarRoot :global(.calendar-shell :where(.rbc-time-content > * + * > * )){border-left:1px solid #f1f5f9;}
+.calendarRoot :global(.calendar-shell :where(.rbc-current-time-indicator)){background:#ec5a86;height:2px;}
+.calendarRoot :global(.calendar-shell :where(.rbc-slot-selection)){background:rgba(236,90,134,0.15);border:1px solid #ec5a86;}
+.calendarRoot :global(.calendar-shell :where(.rbc-selected)){background:rgba(236,90,134,0.08);}

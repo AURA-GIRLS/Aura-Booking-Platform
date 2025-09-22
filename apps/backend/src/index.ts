@@ -1,35 +1,54 @@
-import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import mongoose from 'mongoose';
+import { config } from './config';
+import { connectDB } from './config/database';
 import routes from './routes/index';
 import health from './routes/health';
+import { errorHandler } from 'middleware/error.middleware';
+import { connectRedis } from 'config/redis';
+import http from "http";
+import { initSocket } from 'config/socket';
 
 const app = express();
-const PORT = process.env.PORT || 4000;
-const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:3000';
+const server = http.createServer(app);
 
+// Middleware
 app.use(helmet());
-app.use(cors({ origin: CLIENT_ORIGIN, credentials: true }));
+app.use(cors({ origin: config.clientOrigin, credentials: true }));
 app.use(express.json());
 app.use(morgan('dev'));
 
+// Routes
 app.use('/health', health);
 app.use('/api', routes);
+app.use(errorHandler);
+// Root route
+app.get('/', (req, res) => {
+  res.send("AURA Server is running");
+});
 
 async function start() {
-  const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/aura';
-  await mongoose.connect(mongoUri);
-  app.listen(PORT, () => {
-    console.log(`Backend listening on http://localhost:${PORT}`);
-  });
+  try {
+    // Connect to MongoDB and Redis
+    await connectDB();
+    await connectRedis();
+    // Initialize Socket.IO
+    initSocket(server);
+    
+    // Start server
+    server.listen(config.port, () => {
+      console.log(`🚀 Backend listening on http://localhost:${config.port}`);
+      console.log(`📊 Health check: http://localhost:${config.port}/health`);
+      console.log(`🔗 API endpoints: http://localhost:${config.port}/api`);
+    });
+  } catch (err) {
+    console.error('Failed to start server', err);
+    process.exit(1);
+  }
 }
 
-start().catch((err) => {
-  console.error('Failed to start server', err);
-  process.exit(1);
-});
+start();
 
 
