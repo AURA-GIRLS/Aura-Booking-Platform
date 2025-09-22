@@ -2,7 +2,6 @@
   "name": "backend",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
@@ -12,6 +11,7 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@types/node": "^20.19.17",
     "@payos/node": "^2.0.3",
     "@redis/entraid": "^5.8.2",
     "@types/nodemailer": "^7.0.1",
@@ -47,7 +47,6 @@
     "@types/mongoose": "^5.11.96",
     "@types/morgan": "^1.9.9",
     "@types/multer": "^2.0.0",
-    "@types/node": "^20.12.12",
     "eslint": "^9.5.0",
     "prettier": "^3.3.3",
     "ts-node": "^10.9.2",
