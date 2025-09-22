@@ -21,7 +21,7 @@ export default function ArtistLayout({ children }: { children: React.ReactNode }
       }}
     >
       <ArtistNavbar mua={mua} setMua={setMua} />
-      <div className="flex-1 px-10 py-8">{children}</div>
+      <div className="flex-1 px-10">{children}</div>
       <Footer />
     </main>
   );

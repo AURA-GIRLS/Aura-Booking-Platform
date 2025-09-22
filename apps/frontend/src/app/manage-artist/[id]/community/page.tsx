@@ -1,7 +1,7 @@
-import CommunityPage from "src/app/user/community/page";
+import MainContent from "@/components/community/MainContent";
 
 export default function ArtistCommunityPage({ params }: { readonly params: { id: string } }) {
     return (
-           <CommunityPage/>
-    );
+      <MainContent/>
+     );
 }

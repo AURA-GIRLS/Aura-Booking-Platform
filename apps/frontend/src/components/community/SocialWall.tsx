@@ -7,6 +7,7 @@ import PostsFeed from "./PostsFeed";
 import PostCreator from "./PostCreator";
 import { ExternalLink, MessageCircle, UserPlus, UserCheck, Heart, Check } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../lib/ui/tooltip";
+import { Skeleton } from "../lib/ui/skeleton";
 
 type Props = {
   userId?: string; // Profile user ID to view; if omitted, fallback to current logged-in user
@@ -231,9 +232,61 @@ export default function SocialWall({ userId }: Readonly<Props>) {
     }
   };
 
-  if (loading) {
+   if (loading) {
     return (
-      <div className="w-full flex items-center justify-center py-16 text-gray-500">Loading wall...</div>
+      <div className="w-full">
+        {/* Header gradient */}
+        <div className="w-full h-32 bg-gradient-to-r from-rose-200 via-rose-300 to-rose-400" />
+        
+        <div className="max-w-4xl mx-auto -mt-8 px-4 space-y-5">
+          {/* Profile skeleton */}
+          <div className="bg-white rounded-2xl shadow-md p-4 flex items-center gap-3">
+            <Skeleton className="w-16 h-16 rounded-full bg-rose-200" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-5 w-40 bg-rose-200" />
+              <div className="flex gap-3">
+                <Skeleton className="h-4 w-16 bg-rose-200" />
+                <Skeleton className="h-4 w-16 bg-rose-200" />
+                <Skeleton className="h-4 w-16 bg-rose-200" />
+              </div>
+            </div>
+            <Skeleton className="h-8 w-20 rounded-md bg-rose-200" />
+          </div>
+
+          {/* PostCreator skeleton */}
+          <div className="bg-white rounded-xl shadow-sm p-4 space-y-3">
+            <div className="flex items-start gap-3">
+              <Skeleton className="w-10 h-10 rounded-full bg-rose-200" />
+              <Skeleton className="h-16 flex-1 bg-rose-200" />
+            </div>
+            <div className="flex justify-end">
+              <Skeleton className="h-8 w-24 rounded-md bg-rose-200" />
+            </div>
+          </div>
+
+          {/* FeaturedPosts skeleton */}
+          <div className="bg-white rounded-xl shadow-sm p-4 space-y-3">
+            <Skeleton className="h-5 w-32 bg-rose-200" />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {[...Array(3)].map((_, i) => (
+                <Skeleton key={i} className="h-40 w-full rounded-md bg-rose-200" />
+              ))}
+            </div>
+          </div>
+
+          {/* NewestPosts skeleton */}
+          <div className="space-y-3">
+            <Skeleton className="h-5 w-32 bg-rose-200" />
+            {[...Array(2)].map((_, i) => (
+              <div key={i} className="bg-white rounded-xl shadow-sm p-4 space-y-2">
+                <Skeleton className="h-4 w-1/3 bg-rose-200" />
+                <Skeleton className="h-6 w-2/3 bg-rose-200" />
+                <Skeleton className="h-40 w-full bg-rose-200" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     );
   }
 

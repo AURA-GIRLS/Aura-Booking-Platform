@@ -134,7 +134,7 @@ export default function MainContent() {
   const currentUserMinimal = useMemo(
     () =>
       currentUser
-        ? ({ fullName: currentUser.fullName, _id: currentUser._id } as any)
+        ? ({ fullName: currentUser.fullName, _id: currentUser._id,avatarUrl: currentUser.avatarUrl } as any)
         : ({ fullName: '' } as any),
     [currentUser?._id, currentUser?.fullName]
   )
@@ -244,13 +244,13 @@ export default function MainContent() {
           setPrivacy={setPrivacy}
           posts={posts}
           setPosts={setPosts}
-          currentUser={currentUserMinimal}
+          currentUser={(currentUser as any) ?? (mockUser as any)}
           fetchMinimalUser={fetchMinimalUser}
         />
         <PostsFeed
           posts={posts.filter((p) => p.status !== POST_STATUS.PRIVATE)}
           setPosts={setPosts}
-          currentUser={currentUserMinimal}
+          currentUser={(currentUser as any) ?? (mockUser as any)}
           fetchMinimalUser={fetchMinimalUser}
           onOpenUserWall={handleOpenUserWall}
         />
@@ -309,7 +309,6 @@ export default function MainContent() {
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row">
-        <div className="hidden md:block md:w-64 lg:w-72 xl:w-80 flex-shrink-0">
           <LeftSidebar
             userWalls={userWalls}
             setUserWalls={setUserWalls}
@@ -322,7 +321,6 @@ export default function MainContent() {
             activeFilter={activeFilter}
             setActiveFilter={setActiveFilter}
           />
-        </div>
         <div className="flex-1 w-full max-w-2xl mx-auto my-4">{renderCenter()}</div>
         <div className="hidden lg:block lg:w-72 xl:w-80 flex-shrink-0">
           <RightSidebar

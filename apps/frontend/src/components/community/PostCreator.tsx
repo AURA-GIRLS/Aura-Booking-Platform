@@ -1,4 +1,6 @@
-import { Image, Hash, X, Check, Plus } from 'lucide-react';
+'use client';
+
+import { Image, Hash, X, Check, Plus, Loader2 } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { CommunityService } from '@/services/community';
 import type { CreatePostDTO, PostResponseDTO, TagResponseDTO, UserWallResponseDTO } from '@/types/community.dtos';
@@ -45,27 +47,34 @@ export default function PostCreator({
   fetchMinimalUser: () => Promise<void>;
 }>) {
   const [files, setFiles] = useState<File[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const previews = useMemo(() => files.map((f) => URL.createObjectURL(f)), [files]);
+
   // Tags state
   const [tagDialogOpen, setTagDialogOpen] = useState(false);
   const [allTags, setAllTags] = useState<TagResponseDTO[]>([]);
   const [tagsLoading, setTagsLoading] = useState(false);
   const [tagQuery, setTagQuery] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const prependIfMissing = useCallback((list: PostResponseDTO[], item: PostResponseDTO) => (list.some(p => p._id === item._id) ? list : [item, ...list]), []);
+
+  const prependIfMissing = useCallback((list: PostResponseDTO[], item: PostResponseDTO) => (
+    list.some(p => p._id === item._id) ? list : [item, ...list]
+  ), []);
   const prependPost = useCallback((post: PostResponseDTO) => {
     setPosts(prev => prependIfMissing(prev, post));
   }, [setPosts, prependIfMissing]);
+
   const handleRemovePreview = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     const idx = Number((e.currentTarget as HTMLButtonElement).value);
     if (Number.isNaN(idx)) return;
     setFiles((prev) => prev.filter((_, j) => j !== idx));
   }, []);
 
+  // Realtime new post
   useEffect(() => {
     const onNewPost = (post: PostResponseDTO) => {
       prependPost(post);
-      // If this post belongs to the current user, refresh minimal user (postsCount, etc.)
       if (post?.authorId && currentUser?._id && post.authorId === (currentUser as any)._id) {
         void fetchMinimalUser?.();
       }
@@ -76,7 +85,7 @@ export default function PostCreator({
     };
   }, [prependPost, currentUser, fetchMinimalUser]);
 
-  // Fetch tags when dialog opens the first time
+  // Fetch tags when dialog opens first time
   useEffect(() => {
     const fetchTags = async () => {
       try {
@@ -111,47 +120,72 @@ export default function PostCreator({
     setSelectedTags(prev => prev.filter(t => t.toLowerCase() !== name.toLowerCase()));
   }, []);
 
-  const mapPrivacyToStatus = (p: Privacy) => (p === 'private' ? POST_STATUS.PRIVATE : POST_STATUS.PUBLISHED);
-  // no-op
+  const mapPrivacyToStatus = (p: Privacy) =>
+    (p === 'private' ? POST_STATUS.PRIVATE : POST_STATUS.PUBLISHED);
 
   const handleCreatePost = async () => {
     const content = postText.trim();
     if (!content) return;
-    // Upload selected files first, then map to media
-    let media: { type: ResourceType; url: string }[] = [];
-    if (files.length > 0) {
-      const uploadOne = async (file: File) => {
-        let guessedType: ResourceType = 'raw';
-        if (file.type.startsWith('video/')) guessedType = 'video';
-        else if (file.type.startsWith('image/')) guessedType = 'image';
-        const res = await UploadService.uploadFile(file, { resourceType: guessedType, folder: 'community/posts' });
-        if (res.success && res.data) return { type: res.data.resourceType, url: res.data.url };
-        return null;
-      };
-      const results = await Promise.all(files.map(uploadOne));
-      media = results.filter((x): x is { type: ResourceType; url: string } => !!x);
-    }
-    const payload: CreatePostDTO = { content, media, tags: selectedTags, status: mapPrivacyToStatus(privacy) };
+
+    setIsSubmitting(true);
     try {
-      // Trigger creation; rely on realtime 'newPost' event to update the feed
+      // Upload files
+      let media: { type: ResourceType; url: string }[] = [];
+      if (files.length > 0) {
+        const uploadOne = async (file: File) => {
+          let guessedType: ResourceType = 'raw';
+          if (file.type.startsWith('video/')) guessedType = 'video';
+          else if (file.type.startsWith('image/')) guessedType = 'image';
+          const res = await UploadService.uploadFile(file, {
+            resourceType: guessedType,
+            folder: 'community/posts'
+          });
+          if (res.success && res.data) return { type: res.data.resourceType, url: res.data.url };
+          return null;
+        };
+        const results = await Promise.all(files.map(uploadOne));
+        media = results.filter((x): x is { type: ResourceType; url: string } => !!x);
+      }
+
+      const payload: CreatePostDTO = {
+        content,
+        media,
+        tags: selectedTags,
+        status: mapPrivacyToStatus(privacy),
+      };
+
       await CommunityService.createPost(payload);
-      // Clear local inputs on success
+
+      // Clear inputs
       setPostText('');
       setFiles([]);
       setSelectedTags([]);
     } catch (e) {
       console.error('Create post failed', e);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
+  const getInitials = (name: string) =>
+    name.split(' ').map(n => n[0]).join('').toUpperCase();
 
   return (
     <div className="bg-white rounded-xl p-4 mb-6 shadow-sm">
       <div className="flex items-start space-x-3">
-        <div className="w-10 h-10 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full flex items-center justify-center">
-          <span className="text-white font-semibold text-sm">{getInitials(currentUser.fullName)}</span>
-        </div>
+        {currentUser.avatarUrl ? (
+          <img
+            src={currentUser.avatarUrl}
+            alt="avatar"
+            className="w-10 h-10 object-cover rounded-full border-2 border-white"
+          />
+        ) : (
+          <div className="w-10 h-10 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full flex items-center justify-center">
+            <span className="text-white font-semibold text-sm">
+              {getInitials(currentUser.fullName)}
+            </span>
+          </div>
+        )}
         <div className="flex-1">
           <textarea
             value={postText}
@@ -183,7 +217,6 @@ export default function PostCreator({
             <div className="mt-3 grid grid-cols-2 md:grid-cols-3 gap-2">
               {previews.map((src, i) => (
                 <div key={src} className="relative group rounded-lg overflow-hidden border">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={src} alt={`preview-${i}`} className="w-full h-32 object-cover" />
                   <button
                     type="button"
@@ -232,21 +265,35 @@ export default function PostCreator({
                   <SelectItem value="private">Only Me</SelectItem>
                 </SelectContent>
               </Select>
-              <button 
+              <button
                 onClick={handleCreatePost}
-                disabled={!postText.trim()}
-                className="bg-rose-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-rose-700 disabled:opacity-50"
+                disabled={isSubmitting || !postText.trim()}
+                className="bg-rose-600 text-white px-4 py-2 rounded-lg text-sm font-medium 
+                           hover:bg-rose-700 disabled:opacity-50 flex items-center justify-center"
               >
-                Share Post
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Posting...
+                  </>
+                ) : (
+                  "Share Post"
+                )}
               </button>
             </div>
           </div>
         </div>
       </div>
+
       {/* Tag Command Dialog */}
-  <CommandDialog
-  className="bg-white text-foreground"
-  open={tagDialogOpen} onOpenChange={(o) => { setTagDialogOpen(o); setTagQuery(""); }}>
+      <CommandDialog
+        className="bg-white text-foreground"
+        open={tagDialogOpen}
+        onOpenChange={(o) => {
+          setTagDialogOpen(o);
+          setTagQuery("");
+        }}
+      >
         <CommandInput
           placeholder="Search or create tag..."
           value={tagQuery}
@@ -256,7 +303,9 @@ export default function PostCreator({
           <CommandEmpty>
             {sanitizeTag(tagQuery)
               ? (
-                <div className="px-3 py-2 text-sm text-muted-foreground">No tags found. Press Enter to create “{sanitizeTag(tagQuery)}”.</div>
+                <div className="px-3 py-2 text-sm text-muted-foreground">
+                  No tags found. Press Enter to create “{sanitizeTag(tagQuery)}”.
+                </div>
               )
               : 'No tags found.'}
           </CommandEmpty>
@@ -267,7 +316,7 @@ export default function PostCreator({
                 const active = isSelected(name);
                 return (
                   <CommandItem
-                  className="hover:bg-gray-100 focus:bg-gray-100 flex items-center cursor-pointer"
+                    className="hover:bg-gray-100 focus:bg-gray-100 flex items-center cursor-pointer"
                     key={t._id}
                     value={name}
                     onSelect={(val) => toggleTag(val)}
@@ -281,22 +330,25 @@ export default function PostCreator({
             </CommandGroup>
           )}
           <CommandSeparator />
-          {sanitizeTag(tagQuery) && !isSelected(sanitizeTag(tagQuery)) &&
-            !allTags.some(t => (t.name || t.slug).toLowerCase() === sanitizeTag(tagQuery).toLowerCase()) && (
-            <CommandGroup heading="Create">
-              <CommandItem
-                className="hover:bg-gray-100 focus:bg-gray-100"
-                value={sanitizeTag(tagQuery)}
-                onSelect={(val) => {
-                  toggleTag(val);
-                  setTagQuery("");
-                }}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Create “{sanitizeTag(tagQuery)}”
-              </CommandItem>
-            </CommandGroup>
-          )}
+          {sanitizeTag(tagQuery) &&
+            !isSelected(sanitizeTag(tagQuery)) &&
+            !allTags.some(
+              t => (t.name || t.slug).toLowerCase() === sanitizeTag(tagQuery).toLowerCase()
+            ) && (
+              <CommandGroup heading="Create">
+                <CommandItem
+                  className="hover:bg-gray-100 focus:bg-gray-100"
+                  value={sanitizeTag(tagQuery)}
+                  onSelect={(val) => {
+                    toggleTag(val);
+                    setTagQuery("");
+                  }}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create “{sanitizeTag(tagQuery)}”
+                </CommandItem>
+              </CommandGroup>
+            )}
         </CommandList>
       </CommandDialog>
     </div>

@@ -67,7 +67,7 @@ const adjustTagCounts = async (oldSlugs: string[], newTagNames: string[]) => {
 const toObjectId = (id: string) => new mongoose.Types.ObjectId(id);
 
 const mapPostToDTO = async (postDoc: any): Promise<PostResponseDTO> => {
-  const author = await User.findById(postDoc.authorId).select("fullName role");
+  const author = await User.findById(postDoc.authorId).select("fullName role avatarUrl");
 
   return {
     _id: String(postDoc._id),
@@ -97,7 +97,7 @@ const mapPostToDTO = async (postDoc: any): Promise<PostResponseDTO> => {
     };
   }
 const mapCommentToDTO = async (commentDoc: any): Promise<CommentResponseDTO> => {
-  const author = await User.findById(commentDoc.authorId).select("fullName role");
+  const author = await User.findById(commentDoc.authorId).select("fullName role avatarUrl");
   // Note: In a real app, consider caching author info to reduce DB calls
   return {
     _id: String(commentDoc._id),
