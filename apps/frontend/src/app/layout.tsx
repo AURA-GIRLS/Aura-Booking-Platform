@@ -29,7 +29,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           strategy="beforeInteractive"
         />
       </head>
-      <body className={poppins.className}>{children}</body>
+      <body className={poppins.className}>
+        {children} 
+         <SpeedInsights />
+      </body>
     </html>
   );
 }
