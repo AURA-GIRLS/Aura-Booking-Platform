@@ -61,6 +61,9 @@ export default function Navbar({ user, setUser }: Readonly<NavbarProps>)  {
                 <DropdownMenuItem asChild>
                   <Link href="/user/profile">My Profile</Link>
                 </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                  <Link href={{ pathname: "/user/profile/booking-history" }}>Booking History</Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleLogout} className="px-2 py-2 text-red-500 cursor-pointer">Logout</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -101,6 +104,9 @@ export default function Navbar({ user, setUser }: Readonly<NavbarProps>)  {
               <DropdownMenuContent align="end" className="w-44 bg-white rounded-xl shadow-lg py-2 z-50 border border-pink-100">
                 <DropdownMenuItem asChild>
                   <Link href="/user/profile">My Profile</Link>
+                </DropdownMenuItem>
+                   <DropdownMenuItem asChild>
+                  <Link href={{ pathname: "/user/profile/booking-history" }}>Booking History</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleLogout} className="px-2 py-2 text-red-500 cursor-pointer">Logout</DropdownMenuItem>
               </DropdownMenuContent>
