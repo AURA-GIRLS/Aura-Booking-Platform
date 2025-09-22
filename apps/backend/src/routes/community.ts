@@ -13,6 +13,14 @@ router.get("/posts/:id/comments", (req, res) => controller.listCommentsByPost(re
 router.put("/posts/:id", authenticateToken, (req, res) => controller.updatePost(req, res));
 router.delete("/posts/:id", authenticateToken, (req, res) => controller.deletePost(req, res));
 
+// Comments
+router.post("/comments", authenticateToken, (req, res) => controller.createComment(req, res));
+router.get("/comments/:id", (req, res) => controller.getCommentById(req, res));
+router.patch("/comments/:id", authenticateToken, (req, res) => controller.updateComment(req, res));
+router.delete("/comments/:id", authenticateToken, (req, res) => controller.deleteComment(req, res));
+router.get("/comments/:id/replies", (req, res) => controller.listRepliesByComment(req, res));
+router.get("/users/:id/comments", (req, res) => controller.listCommentsByUser(req, res));
+
 // Tags
 router.get("/tags", (req, res) => controller.getAllTags(req, res));
 router.get("/tags/trending", (req, res) => controller.getTrendingTags(req, res));

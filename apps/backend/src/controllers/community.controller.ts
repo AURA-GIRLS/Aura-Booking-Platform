@@ -76,6 +76,84 @@ export class CommunityController {
         }
     }
 
+    // POST /api/community/comments
+    async createComment(req: Request, res: Response): Promise<void> {
+        try {
+            const userId = (req as any).user?.userId as string;
+            if (!userId) {
+                res.status(401).json({ success: false, message: "Unauthorized" } as ApiResponseDTO);
+                return;
+            }
+            const data = await this.service.createComment(userId, req.body);
+            const response: ApiResponseDTO = { success: true, data };
+            res.status(201).json(response);
+        } catch (err) {
+            const response: ApiResponseDTO = {
+                success: false,
+                message: err instanceof Error ? err.message : "Failed to create comment",
+            };
+            res.status(400).json(response);
+        }
+    }
+
+    // GET /api/community/comments/:id
+    async getCommentById(req: Request, res: Response): Promise<void> {
+        try {
+            const data = await this.service.getCommentById(req.params.id);
+            const response: ApiResponseDTO = { success: true, data };
+            res.status(200).json(response);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : "Failed to get comment";
+            const status = message === "Comment not found" ? 404 : 500;
+            const response: ApiResponseDTO = { success: false, message };
+            res.status(status).json(response);
+        }
+    }
+
+    // PATCH /api/community/comments/:id
+    async updateComment(req: Request, res: Response): Promise<void> {
+        try {
+            const userId = (req as any).user?.userId as string;
+            if (!userId) {
+                res.status(401).json({ success: false, message: "Unauthorized" } as ApiResponseDTO);
+                return;
+            }
+            const data = await this.service.updateComment(req.params.id, userId, {
+                content: req.body.content,
+            });
+            const response: ApiResponseDTO = { success: true, data };
+            res.status(200).json(response);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : "Failed to update comment";
+            let status = 400;
+            if (message === "Comment not found") status = 404;
+            else if (message === "Forbidden") status = 403;
+            const response: ApiResponseDTO = { success: false, message };
+            res.status(status).json(response);
+        }
+    }
+
+    // DELETE /api/community/comments/:id
+    async deleteComment(req: Request, res: Response): Promise<void> {
+        try {
+            const userId = (req as any).user?.userId as string;
+            if (!userId) {
+                res.status(401).json({ success: false, message: "Unauthorized" } as ApiResponseDTO);
+                return;
+            }
+            const data = await this.service.deleteComment(req.params.id, userId);
+            const response: ApiResponseDTO = { success: true, data };
+            res.status(200).json(response);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : "Failed to delete comment";
+            let status = 400;
+            if (message === "Comment not found") status = 404;
+            else if (message === "Forbidden") status = 403;
+            const response: ApiResponseDTO = { success: false, message };
+            res.status(status).json(response);
+        }
+    }
+
     // GET /api/community/posts/:id/comments
     async listCommentsByPost(req: Request, res: Response): Promise<void> {
         try {
@@ -98,6 +176,60 @@ export class CommunityController {
             const response: ApiResponseDTO = {
                 success: false,
                 message: err instanceof Error ? err.message : "Failed to list comments",
+            };
+            res.status(500).json(response);
+        }
+    }
+
+    // GET /api/community/comments/:id/replies
+    async listRepliesByComment(req: Request, res: Response): Promise<void> {
+        try {
+            const { page, limit } = req.query as any;
+            const data = await this.service.listRepliesByComment(req.params.id, {
+                page: page ? Number(page) : undefined,
+                limit: limit ? Number(limit) : undefined,
+            });
+            const response: ApiResponseDTO = {
+                success: true,
+                data: {
+                    items: data.items,
+                    total: data.total,
+                    page: data.page,
+                    pages: data.pages,
+                },
+            };
+            res.status(200).json(response);
+        } catch (err) {
+            const response: ApiResponseDTO = {
+                success: false,
+                message: err instanceof Error ? err.message : "Failed to list replies",
+            };
+            res.status(500).json(response);
+        }
+    }
+
+    // GET /api/community/users/:id/comments
+    async listCommentsByUser(req: Request, res: Response): Promise<void> {
+        try {
+            const { page, limit } = req.query as any;
+            const data = await this.service.listCommentsByUser(req.params.id, {
+                page: page ? Number(page) : undefined,
+                limit: limit ? Number(limit) : undefined,
+            });
+            const response: ApiResponseDTO = {
+                success: true,
+                data: {
+                    items: data.items,
+                    total: data.total,
+                    page: data.page,
+                    pages: data.pages,
+                },
+            };
+            res.status(200).json(response);
+        } catch (err) {
+            const response: ApiResponseDTO = {
+                success: false,
+                message: err instanceof Error ? err.message : "Failed to list user comments",
             };
             res.status(500).json(response);
         }
