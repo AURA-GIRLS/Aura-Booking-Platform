@@ -10,6 +10,7 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "types": ["node"],
+    "typeRoots": [ "../node_modules/@types" ],
     "sourceMap": true,
     "inlineSources": true,
     "allowSyntheticDefaultImports": true,
