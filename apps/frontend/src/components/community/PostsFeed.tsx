@@ -126,6 +126,7 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser, 
   }, [isSelfUser, setPosts, applyLikeDecrement]);
 
   const handleSocketPostUpdated = useCallback((payload: PostResponseDTO) => {
+    console.log('Received postUpdated event:', payload);
     setPosts((prev) => applyPostUpdated(prev as any, payload) as any);
   }, [setPosts, applyPostUpdated]);
 

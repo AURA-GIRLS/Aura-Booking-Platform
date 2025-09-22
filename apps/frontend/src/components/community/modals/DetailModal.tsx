@@ -9,6 +9,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/lib/ui/dropdown-menu";
 import { CommunityService } from "@/services/community";
 import { socket } from "@/config/socket";
+import DeleteConfirmDialog from "../dialogs/DeleteConfirmDialog";
 
 type UIComment = CommentResponseDTO & { 
     isLiked?: boolean; 
@@ -40,6 +41,10 @@ export default function DetailModal({
     const [replyInputs, setReplyInputs] = React.useState<Record<string, string>>({});
     const [loading, setLoading] = React.useState(false);
     const [likedComments, setLikedComments] = React.useState<Set<string>>(new Set());
+    const [editingComment, setEditingComment] = React.useState<string | null>(null);
+    const [editContent, setEditContent] = React.useState("");
+    const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+    const [commentToDelete, setCommentToDelete] = React.useState<string | null>(null);
 
     // Load comments when post changes
     React.useEffect(() => {
@@ -145,11 +150,37 @@ export default function DetailModal({
             }
         };
 
+        // Listen for comment edits/updates
+        const handleCommentUpdate = (data: { commentId: string; content: string; isReply: boolean; parentCommentId?: string }) => {
+            if (data.isReply && data.parentCommentId) {
+                setComments(prev => prev.map(comment => {
+                    if (comment._id === data.parentCommentId && comment.replies) {
+                        return {
+                            ...comment,
+                            replies: comment.replies.map(reply => 
+                                reply._id === data.commentId 
+                                    ? { ...reply, content: data.content }
+                                    : reply
+                            )
+                        };
+                    }
+                    return comment;
+                }));
+            } else {
+                setComments(prev => prev.map(comment => 
+                    comment._id === data.commentId 
+                        ? { ...comment, content: data.content }
+                        : comment
+                ));
+            }
+        };
+
         // Register socket listeners
         socket.on('comment:new', handleNewComment);
         socket.on('comment:reply', handleNewReply);
         socket.on('comment:like', handleCommentLike);
         socket.on('comment:delete', handleCommentDelete);
+        socket.on('comment:update', handleCommentUpdate);
 
         // Join post room for realtime updates
         socket.emit('post:join', { postId: post._id });
@@ -160,6 +191,7 @@ export default function DetailModal({
             socket.off('comment:reply', handleNewReply);
             socket.off('comment:like', handleCommentLike);
             socket.off('comment:delete', handleCommentDelete);
+            socket.off('comment:update', handleCommentUpdate);
             socket.emit('post:leave', { postId: post._id });
         };
     }, [post?._id, open]);
@@ -388,6 +420,73 @@ export default function DetailModal({
         setReplyInputs(prev => ({ ...prev, [commentId]: value }));
     };
 
+    const onEditComment = (commentId: string, currentContent: string) => {
+        setEditingComment(commentId);
+        setEditContent(currentContent);
+    };
+
+    const onSaveEditComment = async (commentId: string) => {
+        if (!editContent.trim()) return;
+
+        try {
+            const response = await CommunityService.updateComment(commentId, {
+                content: editContent.trim(),
+            });
+
+            if (response.success && response.data && post?._id) {
+                // Emit socket event for realtime updates
+                const isReply = comments.some(comment => 
+                    comment.replies?.some(reply => reply._id === commentId)
+                );
+                const parentCommentId = isReply 
+                    ? comments.find(comment => 
+                        comment.replies?.some(reply => reply._id === commentId)
+                      )?._id 
+                    : undefined;
+
+                socket.emit('comment:update', {
+                    postId: post._id,
+                    commentId,
+                    content: editContent.trim(),
+                    isReply,
+                    parentCommentId,
+                });
+
+                setEditingComment(null);
+                setEditContent("");
+            }
+        } catch (error) {
+            console.error('Error updating comment:', error);
+        }
+    };
+
+    const onCancelEditComment = () => {
+        setEditingComment(null);
+        setEditContent("");
+    };
+
+    const onDeleteComment = async (commentId: string) => {
+        setCommentToDelete(commentId);
+        setDeleteDialogOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!commentToDelete) return;
+
+        try {
+            const response = await CommunityService.deleteComment(commentToDelete);
+
+            if (response.success && post?._id) {
+                // Socket event will be emitted from backend automatically
+                // No need to emit here as backend handles it
+            }
+        } catch (error) {
+            console.error('Error deleting comment:', error);
+        } finally {
+            setCommentToDelete(null);
+        }
+    };
+
     if (!post) return null;
 
     return (
@@ -478,7 +577,44 @@ export default function DetailModal({
                                                     <span className="ml-2 inline-block bg-rose-100 text-rose-600 text-xs px-2 py-0.5 rounded-full">Author</span>
                                                 )}
                                             </div>
-                                            <div className="text-sm text-gray-800">{comment.content}</div>
+                                            {editingComment === comment._id ? (
+                                                <div className="mt-2">
+                                                    <textarea
+                                                        value={editContent}
+                                                        onChange={(e) => setEditContent(e.target.value)}
+                                                        aria-label="Edit comment"
+                                                        placeholder="Edit your comment..."
+                                                        className="w-full p-2 text-sm border border-gray-200 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-rose-500"
+                                                        rows={3}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter' && !e.shiftKey) {
+                                                                e.preventDefault();
+                                                                onSaveEditComment(comment._id);
+                                                            }
+                                                            if (e.key === 'Escape') {
+                                                                onCancelEditComment();
+                                                            }
+                                                        }}
+                                                    />
+                                                    <div className="flex justify-end space-x-2 mt-2">
+                                                        <button
+                                                            onClick={onCancelEditComment}
+                                                            className="px-3 py-1 text-xs text-gray-600 hover:text-gray-800"
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                        <button
+                                                            onClick={() => onSaveEditComment(comment._id)}
+                                                            disabled={!editContent.trim()}
+                                                            className="px-3 py-1 text-xs bg-rose-600 text-white rounded hover:bg-rose-700 disabled:opacity-50"
+                                                        >
+                                                            Save
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="text-sm text-gray-800">{comment.content}</div>
+                                            )}
                                         </div>
                                         
                                         {/* Comment Actions */}
@@ -518,12 +654,20 @@ export default function DetailModal({
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end" className="w-44 bg-white rounded-xl shadow-lg py-2 z-50 border border-pink-100">
                                                         {isSelfUser(comment.authorId) && (
+                                                            <>
                                                             <DropdownMenuItem
                                                                 className="cursor-pointer focus:bg-rose-100"
-                                                                onClick={() => alert('Feature coming soon: edit comment')}
+                                                                onClick={() => onEditComment(comment._id, comment.content)}
                                                             >
                                                                 Edit comment
                                                             </DropdownMenuItem>
+                                                            <DropdownMenuItem
+                                                                className="text-rose-600 cursor-pointer focus:bg-rose-100"
+                                                                onClick={() => onDeleteComment(comment._id)}
+                                                            >
+                                                                Delete comment
+                                                            </DropdownMenuItem>
+                                                            </>
                                                         )}
                                                         <DropdownMenuItem
                                                             className="text-rose-600 cursor-pointer focus:bg-rose-100"
@@ -633,7 +777,44 @@ export default function DetailModal({
                                                                         <span className="ml-2 inline-block bg-rose-100 text-rose-600 text-xs px-2 py-0.5 rounded-full">Author</span>
                                                                     )}
                                                                 </div>
-                                                                <div className="text-sm text-gray-800">{reply.content}</div>
+                                                                {editingComment === reply._id ? (
+                                                                    <div className="mt-2">
+                                                                        <textarea
+                                                                            value={editContent}
+                                                                            onChange={(e) => setEditContent(e.target.value)}
+                                                                            aria-label="Edit reply"
+                                                                            placeholder="Edit your reply..."
+                                                                            className="w-full p-2 text-sm border border-gray-200 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-rose-500"
+                                                                            rows={2}
+                                                                            onKeyDown={(e) => {
+                                                                                if (e.key === 'Enter' && !e.shiftKey) {
+                                                                                    e.preventDefault();
+                                                                                    onSaveEditComment(reply._id);
+                                                                                }
+                                                                                if (e.key === 'Escape') {
+                                                                                    onCancelEditComment();
+                                                                                }
+                                                                            }}
+                                                                        />
+                                                                        <div className="flex justify-end space-x-2 mt-2">
+                                                                            <button
+                                                                                onClick={onCancelEditComment}
+                                                                                className="px-3 py-1 text-xs text-gray-600 hover:text-gray-800"
+                                                                            >
+                                                                                Cancel
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => onSaveEditComment(reply._id)}
+                                                                                disabled={!editContent.trim()}
+                                                                                className="px-3 py-1 text-xs bg-rose-600 text-white rounded hover:bg-rose-700 disabled:opacity-50"
+                                                                            >
+                                                                                Save
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="text-sm text-gray-800">{reply.content}</div>
+                                                                )}
                                                             </div>
                                                             
                                                             {/* Reply Actions */}
@@ -658,12 +839,20 @@ export default function DetailModal({
                                                                         </DropdownMenuTrigger>
                                                                         <DropdownMenuContent align="end" className="w-44 bg-white rounded-xl shadow-lg py-2 z-50 border border-pink-100">
                                                                             {isSelfUser(reply.authorId) && (
-                                                                                <DropdownMenuItem
-                                                                                    className="cursor-pointer focus:bg-rose-100"
-                                                                                    onClick={() => alert('Feature coming soon: edit reply')}
-                                                                                >
-                                                                                    Edit reply
-                                                                                </DropdownMenuItem>
+                                                                                 <>
+                                                                            <DropdownMenuItem
+                                                                                className="cursor-pointer focus:bg-rose-100"
+                                                                                onClick={() => onEditComment(reply._id, reply.content)}
+                                                                            >
+                                                                                Edit reply
+                                                                            </DropdownMenuItem>
+                                                                            <DropdownMenuItem
+                                                                                className="text-rose-600 cursor-pointer focus:bg-rose-100"
+                                                                                onClick={() => onDeleteComment(reply._id)}
+                                                                            >
+                                                                                Delete reply
+                                                                            </DropdownMenuItem>
+                                                                            </>
                                                                             )}
                                                                             <DropdownMenuItem
                                                                                 className="text-rose-600 cursor-pointer focus:bg-rose-100"
@@ -688,6 +877,15 @@ export default function DetailModal({
                     </div>
                 </div>
             </DialogContent>
+
+            {/* Delete Confirmation Dialog */}
+            <DeleteConfirmDialog
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+                onConfirm={handleConfirmDelete}
+                title="Delete Comment"
+                description="Are you sure you want to delete this comment? This action cannot be undone."
+            />
         </Dialog>
     );
 }

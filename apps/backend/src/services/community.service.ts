@@ -178,6 +178,12 @@ async createRealtimePost(authorId: string, dto: CreatePostDTO): Promise<PostResp
 
     // Increment comments count on the post
     await Post.updateOne({ _id: dto.postId }, { $inc: { commentsCount: 1 } });
+    const updatedPost = await Post.findById(dto.postId);
+    if (updatedPost) {
+      const updatedPostDTO = await mapPostToDTO(updatedPost);
+      console.log('Emitting postUpdated after comment create:', updatedPostDTO._id, 'commentsCount:', updatedPostDTO.commentsCount);
+      safeEmit("postUpdated", updatedPostDTO);
+    }
 
     // If this is a reply, increment replies count on parent comment
     if (dto.parentId) {
@@ -225,7 +231,17 @@ async createRealtimePost(authorId: string, dto: CreatePostDTO): Promise<PostResp
     await comment.save();
 
     const commentDTO = await mapCommentToDTO(comment);
-    safeEmit("commentUpdated", commentDTO);
+    
+    // Emit socket event for realtime updates to specific post room
+    const io = getIO();
+    const roomName = `post:${comment.postId}`;
+    io.to(roomName).emit("comment:update", {
+      commentId: commentId,
+      content: dto.content,
+      isReply: !!comment.parentId,
+      parentCommentId: comment.parentId?.toString(),
+    });
+    
     return commentDTO;
   }
 
@@ -247,9 +263,16 @@ async createRealtimePost(authorId: string, dto: CreatePostDTO): Promise<PostResp
       await Reaction.deleteMany({ commentId: reply._id });
     }
     await Comment.deleteMany({ parentId: comment._id });
-
-    // Decrement comments count on the post
-    await Post.updateOne({ _id: comment.postId }, { $inc: { commentsCount: -1 } });
+    
+    // Decrement comments count on the post (1 for comment + number of replies)
+    const totalDeletedComments = 1 + replies.length;
+    await Post.updateOne({ _id: comment.postId }, { $inc: { commentsCount: -totalDeletedComments } });
+    const updatedPost = await Post.findById(comment.postId);
+    if (updatedPost) {
+      const updatedPostDTO = await mapPostToDTO(updatedPost);
+      console.log('Emitting postUpdated after comment delete:', updatedPostDTO._id, 'commentsCount:', updatedPostDTO.commentsCount);
+      safeEmit("postUpdated", updatedPostDTO);
+    }
 
     // If this was a reply, decrement replies count on parent
     if (comment.parentId) {
