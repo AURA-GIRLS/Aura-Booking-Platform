@@ -53,9 +53,9 @@ export default function ArtistNavbar({ mua, setMua }:  Readonly<ArtistNavbarProp
         {id && (
           <ul className="hidden md:flex items-center gap-6 text-gray-700 font-medium">
             <li><Link href={`/manage-artist/${id}/dashboard`}>Dashboard</Link></li>
-            <li><Link href={`/manage-artist/${id}/portfolio`}>My Portfolio</Link></li>
+            <li><Link href={`/manage-artist/${id}/portfolio` as any}>My Portfolio</Link></li>
             <li><Link href={`/manage-artist/${id}/calendar`}>My Calendar</Link></li>
-            <li><Link href={`/manage-artist/${id}/feedback`}>My Feedback</Link></li>
+            <li><Link href={`/manage-artist/${id}/feedback` as any}>My Feedback</Link></li>
             <li><Link href={`/manage-artist/${id}/community?wall=${user?._id}&wn=${toPlusSeparated(user?.fullName)}`}>Community</Link></li>
             <li><Link href="/manage-artist/about">About Us</Link></li>
           </ul>
@@ -102,9 +102,9 @@ export default function ArtistNavbar({ mua, setMua }:  Readonly<ArtistNavbarProp
           {id && (
             <ul className="flex flex-col gap-2 text-gray-700 font-medium">
               <li><Link href={`/manage-artist/${id}/dashboard`}>Dashboard</Link></li>
-              <li><Link href={`/manage-artist/${id}/portfolio`}>My Portfolio</Link></li>
+              <li><Link href={`/manage-artist/${id}/portfolio`  as any}>My Portfolio</Link></li>
               <li><Link href={`/manage-artist/${id}/calendar`}>My Calendar</Link></li>
-              <li><Link href={`/manage-artist/${id}/feedback`}>My Feedback</Link></li>
+              <li><Link href={`/manage-artist/${id}/feedback`  as any}>My Feedback</Link></li>
               <li><Link href={`/manage-artist/${id}/community?wall=${user?._id}&wn=${toPlusSeparated(user?.fullName)}`}>Community</Link></li>
               <li><Link href="/manage-artist/about">About Us</Link></li>
             </ul>
