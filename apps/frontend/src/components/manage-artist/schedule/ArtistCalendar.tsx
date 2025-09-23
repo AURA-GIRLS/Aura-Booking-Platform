@@ -226,10 +226,18 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
       
       const start = moment(`${slot.day} ${slot.startTime}`, "YYYY-MM-DD HH:mm").toDate();
       const end = moment(`${slot.day} ${slot.endTime}`, "YYYY-MM-DD HH:mm").toDate();
+      
+      // Check if booking was updated within last 2 hours
+      const isRecentlyUpdated = slot.type === 'BOOKING' && slot.updatedAt && 
+        moment().diff(moment(slot.updatedAt), 'hours') <= 2;
+      
       let title = '';
-      if (slot.type === 'BOOKING') title = `${slot.customerName} - ${slot.serviceName} `;
-      else if (slot.type === 'BLOCKED') title = 'Blocked Time';
-  // title already defaults to '' so no need to reassign in else
+      if (slot.type === 'BOOKING') {
+        title = `${slot.customerName} - ${slot.serviceName}`;
+      } else if (slot.type === 'BLOCKED') {
+        title = 'Blocked Time';
+      }
+      // title already defaults to '' so no need to reassign in else
       return {
         id: slot.slotId + slot.startTime|| slot.day + slot.startTime,
         title,
@@ -237,6 +245,9 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
         end,
         type: slot.type,
         note: slot.note,
+        isRecentlyUpdated,
+        updatedAt: slot.updatedAt,
+        slotData: slot,
         _p: priority[slot.type] ?? 1
       };
     };
@@ -292,6 +303,20 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
     return { events: filteredEvents, backgroundEvents: filteredBg };
   }, [slotData,fetchSchedule]);
 
+  // Custom event component to render badge button
+  const EventComponent = ({ event }: { event: any }) => {
+    return (
+      <div className="flex items-center justify-between w-full">
+        <span className="flex-1 truncate">{event.title}</span>
+        {event.isRecentlyUpdated && (
+          <span className="ml-1 px-1.5 py-0.5 bg-[#EC5A86] text-white text-[10px] font-semibold rounded-full shadow-sm">
+            New
+          </span>
+        )}
+      </div>
+    );
+  };
+
   // Điều chỉnh bảng màu: nhấn mạnh tông hồng nhẹ nhưng vẫn phân biệt rõ các loại slot
   // BOOKING: hồng rõ ràng (để nhận biết khách đã đặt) – nền hồng nhạt + viền hồng đậm
   // WORKING (ORIGINAL/NEW_WORKING): nền trắng hơi hồng rất nhạt + viền hồng mềm để thể hiện khả dụng
@@ -313,6 +338,12 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
         textColor = '#111';
         leftBorderWidth = 4;
         zIndex = 2;
+        
+        // Add slight glow for recently updated bookings
+        if (event.isRecentlyUpdated) {
+          leftBorderWidth = 5;
+          zIndex = 3;
+        }
         break;
       case 'BLOCKED':
         backgroundColor = 'rgba(17,17,17,0.04)';
@@ -348,12 +379,15 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
         borderRadius: '6px',
         padding: '2px 4px 2px 6px',
         zIndex,
-        boxShadow: zIndex === 2 ? '0 1px 2px rgba(236,90,134,0.15)' : '0 1px 2px rgba(0,0,0,0.04)',
+        boxShadow: event.isRecentlyUpdated 
+          ? '0 2px 8px rgba(236,90,134,0.25), 0 0 0 1px rgba(236,90,134,0.15)' 
+          : zIndex === 2 ? '0 1px 2px rgba(236,90,134,0.15)' : '0 1px 2px rgba(0,0,0,0.04)',
         letterSpacing: '0.25px',
         backdropFilter: 'saturate(1.05)',
         pointerEvents: 'auto' as React.CSSProperties['pointerEvents'],
         transition: 'background .15s, box-shadow .15s'
-      }
+      },
+      className: event.isRecentlyUpdated ? 'new-booking-animation' : ''
     };
   };
 
@@ -545,10 +579,26 @@ if(loading && scheduleLoading && pendingBookingsLoading){
   );
 }
   return (
-  <div className={`min-h-screen max-w-7xl mx-auto px-4 bg-white text-[#191516] font-sans tracking-wide ${styles.calendarRoot}`}> 
+  <div className={`min-h-screen max-w-8xl mx-auto px-4 bg-white text-[#191516] font-sans tracking-wide ${styles.calendarRoot}`}> 
       {extraStyles /* kept for structure; null now */}
       {matchedHeight && (
-        <style>{`[data-equal-height]{height:var(--equal-col-height);}`}</style>
+        <style>{`
+          [data-equal-height]{height:var(--equal-col-height);}
+          @keyframes newBookingPulse {
+            0%, 100% { 
+              box-shadow: 0 2px 8px rgba(236,90,134,0.25), 0 0 0 1px rgba(236,90,134,0.15); 
+            }
+            50% { 
+              box-shadow: 0 4px 12px rgba(236,90,134,0.4), 0 0 0 2px rgba(236,90,134,0.25); 
+            }
+          }
+          .new-booking-animation {
+            animation: newBookingPulse 2s ease-in-out infinite;
+          }
+          .rbc-event-content {
+            overflow: visible !important;
+          }
+        `}</style>
       )}
       {/* Header */}
   <div className="border-b border-[#EC5A86]/30 bg-white">
@@ -650,6 +700,9 @@ if(loading && scheduleLoading && pendingBookingsLoading){
                   onNavigate={handleNavigate}
                   view={currentView}
                   onView={handleViewChange}
+                  components={{
+                    event: EventComponent
+                  }}
                 />
               )}
             </div>
@@ -693,17 +746,19 @@ if(loading && scheduleLoading && pendingBookingsLoading){
 
                         {/* Customer Info */}
                         {selectedEvent.slotData?.customerName && (
+                          <div className="flex flex-col ">
                           <div className="flex items-center gap-2">
                             <Icon icon="lucide:user" className="w-3 h-3 text-neutral-400" />
                             <div>
-                              <p className="text-sm text-[#111]">{selectedEvent.slotData.customerName}</p>
-                              {selectedEvent.slotData.phoneNumber && (
+                              <p className="text-sm font-semibold text-[#111]">{selectedEvent.slotData.customerName}</p>
+                            </div>
+                          </div>
+                           {selectedEvent.slotData.phoneNumber && (
                                 <div className="flex items-center gap-1">
-                                  <Icon icon="lucide:phone" className="w-2.5 h-2.5 text-neutral-400" />
+                                  <Icon icon="lucide:phone" className="w-2.5 h-2.5 text-neutral-400 mr-2" />
                                   <p className="text-xs text-neutral-500">{selectedEvent.slotData.phoneNumber}</p>
                                 </div>
                               )}
-                            </div>
                           </div>
                         )}
                         
@@ -713,7 +768,7 @@ if(loading && scheduleLoading && pendingBookingsLoading){
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
                             <Icon icon="lucide:calendar-days" className="w-3 h-3 text-neutral-400" />
-                            <p className="text-sm text-[#111]">{dayjs(selectedEvent.start).format('MMM D, YYYY')}</p>
+                            <p className="text-sm font-semibold text-[#111]">{dayjs(selectedEvent.start).format('MMM D, YYYY')}</p>
                           </div>
                           <div className="flex items-center gap-2">
                             <Icon icon="lucide:clock" className="w-3 h-3 text-neutral-400" />
@@ -726,7 +781,7 @@ if(loading && scheduleLoading && pendingBookingsLoading){
                         {/* Location */}
                         <div className="flex items-start gap-2">
                           <Icon icon="lucide:map-pin" className="w-3 h-3 text-neutral-400 mt-0.5" />
-                          <p className="text-sm text-[#111]">{selectedEvent.slotData?.address}</p>
+                          <p className="text-sm font-semibold text-[#111]">{selectedEvent.slotData?.address}</p>
                         </div>
 
                         <Separator className="bg-gray-300"/>

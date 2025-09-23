@@ -85,6 +85,8 @@ function mapBookingToSlot(booking: any): ISlot {
     startTime,
     endTime,
     type: SLOT_TYPES.BOOKING,
+    createdAt: booking.createdAt ? fromUTC(booking.createdAt).toISOString() : undefined,
+    updatedAt: booking.updatedAt ? fromUTC(booking.updatedAt).toISOString() : undefined,
     note: `Khách: ${booking.customerId?.fullName || ""}, Dịch vụ: ${booking.serviceId?.name || ""}`
   };
 }
