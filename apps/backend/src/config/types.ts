@@ -5,6 +5,14 @@ export interface Config {
   
   // Database
   mongoUri: string;
+  redisHost: string;
+  redisPort: number;
+  redisPassword: string;
+
+  //azure
+  azureClientId: string;
+  azureClientSecret: string;
+  azureTenantId: string;
   
   // Security
   jwtSecret: string;
@@ -17,12 +25,17 @@ export interface Config {
   
   // Third-party services
   googleClientId: string;
-  googleClientSecret: string;
-  sepayApiKey: string;
+
+  //Payos
+  payosClientId: string;
+  payosApiKey: string;
+  payosChecksumKey: string;
+  payosApiUrl: string;
+
+  //Cloudinary
   cloudinaryApiKey: string;
-  resendApiKey: string;
-  twilioApiKey: string;
-  upstashRedisUrl: string;
+  cloudinaryApiSecret: string;
+  cloudinaryCloudName: string;
   
   // Environment
   nodeEnv: string;

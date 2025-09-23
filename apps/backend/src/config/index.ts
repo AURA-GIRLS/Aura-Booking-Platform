@@ -18,29 +18,47 @@ if (missingEnvVars.length > 0) {
 export const config = {
   // Server
   port: Number(process.env.PORT || 4000),
-  clientOrigin: process.env.CLIENT_ORIGIN || 'http://localhost:3000',
+  clientOrigin: process.env.CLIENT_ORIGIN || '',
   
   // Database
   mongoUri: process.env.MONGO_URI!,
-  
+  redisHost: process.env.REDIS_HOST || '',
+  redisPort: Number(process.env.REDIS_PORT || 0),
+  redisPassword: process.env.REDIS_PASSWORD || '',
+
+  //azure
+  azureClientId: process.env.AZURE_CLIENT_ID || '',
+  azureClientSecret: process.env.AZURE_CLIENT_SECRET || '',
+  azureTenantId: process.env.AZURE_TENANT_ID || '',
+
   // Security
   jwtSecret: process.env.JWT_SECRET!,
   
   // Email Service
-  smtpHost: process.env.SMTP_HOST || 'smtp.gmail.com',
-  smtpPort: Number(process.env.SMTP_PORT || '587'),
+  smtpHost: process.env.SMTP_HOST || '',
+  smtpPort: Number(process.env.SMTP_PORT || ''),
   smtpUser: process.env.SMTP_USER || '',
   smtpPass: process.env.SMTP_PASS || '',
   
   // Third-party services
   googleClientId: process.env.GOOGLE_CLIENT_ID || '',
-  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-  sepayApiKey: process.env.SEPAY_API_KEY || '',
-  cloudinaryApiKey: process.env.CLOUDINARY_API_KEY || '',
-  resendApiKey: process.env.RESEND_API_KEY || '',
-  twilioApiKey: process.env.TWILIO_API_KEY || '',
-  upstashRedisUrl: process.env.UPSTASH_REDIS_URL || '',
+  // googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+  // sepayApiKey: process.env.SEPAY_API_KEY || '',
+  // resendApiKey: process.env.RESEND_API_KEY || '',
+  // twilioApiKey: process.env.TWILIO_API_KEY || '',
+  // upstashRedisUrl: process.env.UPSTASH_REDIS_URL || '',
+
+  //Payos
+  payosClientId: process.env.PAYOS_CLIENT_ID || '',
+  payosApiKey: process.env.PAYOS_API_KEY || '',
+  payosChecksumKey: process.env.PAYOS_CHECKSUM_KEY || '',
+  payosApiUrl: process.env.PAYOS_API_URL || '',
   
+  //Cloudinary
+  cloudinaryApiKey: process.env.CLOUDINARY_API_KEY || '',
+  cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET || '',
+  cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
+
   // Environment
   nodeEnv: process.env.NODE_ENV || 'development',
   isDevelopment: process.env.NODE_ENV !== 'production',

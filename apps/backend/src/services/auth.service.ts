@@ -18,6 +18,7 @@ import type {
 import { MUA } from '../models/muas.models';
 import { USER_ROLES } from '../constants';
 import { OAuth2Client } from 'google-auth-library';
+import { Wallet } from '@models/transactions.model';
 
 export class AuthService {
   private emailService: EmailService;
@@ -25,6 +26,29 @@ export class AuthService {
 
   constructor() {
     this.emailService = new EmailService();
+  }
+
+  public createAccessToken(userId: string): string {
+    return this.generateToken(userId);
+  }
+  
+  // Public: Tạo refresh token (thời hạn dài hơn)
+  public createRefreshToken(userId: string): string {
+    return jwt.sign(
+      { userId },
+      config.jwtSecret,
+      { expiresIn: '30d' }
+    );
+  }
+  
+  // Public: Xác thực refresh token và trả về payload
+  public verifyRefreshToken(refreshToken: string): { userId: string } {
+    try {
+      const decoded = jwt.verify(refreshToken, config.jwtSecret) as { userId: string };
+      return decoded;
+    } catch (error) {
+      throw new Error('Invalid or expired refresh token');
+    }
   }
 
   // Register as MUA (Makeup Artist)
@@ -48,6 +72,7 @@ export class AuthService {
         emailVerificationExpires: verificationExpires
       });
       await user.save();
+ 
 
       // Create MUA profile
       const mua = new MUA({
@@ -61,6 +86,10 @@ export class AuthService {
         isVerified: false
       });
       await mua.save();
+
+      const muaWallet = new Wallet({muaId: mua._id});
+      await muaWallet.save();
+      
 
       // Send verification email
       await this.emailService.sendEmailVerification(
@@ -177,11 +206,26 @@ export class AuthService {
 
       // Generate token
       const token = this.generateToken(user._id.toString());
-
+      const muaDoc = await MUA.findOne({ userId: user._id });
+      
+      // Transform MUA document to DTO if it exists
+      const mua: MuaResponseDTO | undefined = muaDoc ? {
+        _id: muaDoc._id.toString(),
+        userId: muaDoc.userId?.toString() || '',
+        experienceYears: muaDoc.experienceYears ?? undefined,
+        bio: muaDoc.bio ?? undefined,
+        location: muaDoc.location ?? undefined,
+        ratingAverage: muaDoc.ratingAverage ?? undefined,
+        feedbackCount: muaDoc.feedbackCount ?? undefined,
+        bookingCount: muaDoc.bookingCount ?? undefined,
+        isVerified: muaDoc.isVerified ?? undefined
+      } : undefined;
+      
       // Return user data without password
       return {
         user: this.formatUserResponse(user),
-        token
+        token,
+        mua 
       };
     } catch (error) {
       throw error;
@@ -448,4 +492,154 @@ export class AuthService {
       throw error;
     }
   }
+
+  // Get user booking history with optional status filtering
+  async getBookingHistory(userId: string, status?: string): Promise<any[]> {
+    try {
+      const { Booking } = await import('../models/bookings.models');
+      const { Types } = await import('mongoose');
+      
+      // Convert userId string to ObjectId for MongoDB query
+      const customerObjectId = new Types.ObjectId(userId);
+      
+      // Build filter query
+      const filter: any = { customerId: customerObjectId };
+      if (status && status !== 'ALL') {
+        filter.status = status;
+      }
+      
+
+      // Aggregate booking data with populated service and MUA information
+      const bookings = await Booking.aggregate([
+        { $match: filter },
+        {
+          $lookup: {
+            from: 'servicepackages',
+            localField: 'serviceId',
+            foreignField: '_id',
+            as: 'servicePackage'
+          }
+        },
+        {
+          $lookup: {
+            from: 'muas',
+            localField: 'muaId',
+            foreignField: '_id',
+            as: 'muaProfile'
+          }
+        },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'muaProfile.userId',
+            foreignField: '_id',
+            as: 'muaUser'
+          }
+        },
+        {
+          $unwind: { path: '$servicePackage', preserveNullAndEmptyArrays: true }
+        },
+        {
+          $unwind: { path: '$muaProfile', preserveNullAndEmptyArrays: true }
+        },
+        {
+          $unwind: { path: '$muaUser', preserveNullAndEmptyArrays: true }
+        },
+        {
+          $project: {
+            _id: 1,
+            bookingDate: 1,
+            bookingTime: 1,
+            status: 1,
+            totalPrice: 1,
+            transportFee: 1,
+            locationType: 1,
+            address: 1,
+            createdAt: 1,
+            servicePackage: {
+              _id: '$servicePackage._id',
+              name: '$servicePackage.name',
+              price: '$servicePackage.price',
+              duration: '$servicePackage.duration',
+              images: '$servicePackage.images'
+            },
+            mua: {
+              _id: '$muaProfile._id',
+              fullName: '$muaUser.fullName',
+              avatarUrl: '$muaUser.avatarUrl',
+              location: '$muaProfile.location'
+            }
+          }
+        },
+        { $sort: { createdAt: -1 } }
+      ]);
+
+      return bookings;
+    } catch (error) {
+      console.error('Backend: Error in getBookingHistory:', error);
+      throw error;
+    }
+  }
+
+  // Get user statistics (total spent, booking counts, etc.)
+  async getUserStats(userId: string): Promise<any> {
+    try {
+      console.log('🔍 Backend: Getting user stats for userId:', userId);
+      
+      const { Booking } = await import('../models/bookings.models');
+      const { Types } = await import('mongoose');
+      
+      // Convert userId string to ObjectId for MongoDB query
+      const customerObjectId = new Types.ObjectId(userId);
+      
+      // Aggregate user statistics
+      const stats = await Booking.aggregate([
+        { $match: { customerId: customerObjectId } },
+        {
+          $group: {
+            _id: null,
+            totalBookings: { $sum: 1 },
+            completedBookings: {
+              $sum: { $cond: [{ $eq: ['$status', 'COMPLETED'] }, 1, 0] }
+            },
+            pendingBookings: {
+              $sum: { $cond: [{ $eq: ['$status', 'PENDING'] }, 1, 0] }
+            },
+            confirmedBookings: {
+              $sum: { $cond: [{ $eq: ['$status', 'CONFIRMED'] }, 1, 0] }
+            },
+            cancelledBookings: {
+              $sum: { $cond: [{ $eq: ['$status', 'CANCELLED'] }, 1, 0] }
+            },
+            totalSpent: {
+              $sum: {
+                $cond: [
+                  { $ne: ['$status', 'CANCELLED'] },   
+                  { $ifNull: ['$totalPrice', 0] },     
+                  0
+                ]
+              }
+            }
+          }
+        }
+      ]);
+
+      const result = stats[0] || {
+        totalBookings: 0,
+        completedBookings: 0,
+        pendingBookings: 0,
+        confirmedBookings: 0,
+        cancelledBookings: 0,
+        totalSpent: 0
+      };
+
+      console.log('🔍 Backend: User stats:', result);
+      return result;
+    } catch (error) {
+      console.error('Backend: Error in getUserStats:', error);
+      throw error;
+    }
+  }
+
+  
 }

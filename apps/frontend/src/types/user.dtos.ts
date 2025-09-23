@@ -8,6 +8,8 @@ export interface CreateMuaDTO extends Omit<CreateUserDTO, 'role'> {
 export interface MuaResponseDTO {
   _id: string;
   userId: string;
+  userName:string;
+  avatarUrl?: string;
   experienceYears?: number;
   bio?: string;
   location?: string;
@@ -16,6 +18,7 @@ export interface MuaResponseDTO {
   bookingCount?: number;
   isVerified?: boolean;
 }
+
 import { 
   type UserRole
 } from "../constants/index";
@@ -40,6 +43,15 @@ export interface SendEmailVerificationDTO {
 }
 
 // ===== USER DTOs =====
+export interface NavbarProps {
+  user: UserResponseDTO | null;
+  setUser: (user: UserResponseDTO | null) => void;
+}
+
+export interface ArtistNavbarProps {
+  mua: MuaResponseDTO | null;
+  setMua: (mua: MuaResponseDTO | null) => void;
+}
 
 export interface CreateUserDTO {
   fullName: string;
@@ -68,12 +80,14 @@ export interface UserResponseDTO {
   avatarUrl?: string;
   role: UserRole;
   status: string;
+  isEmailVerified: boolean;
   createdAt: Date;
 }
 
 export interface AuthResponseDTO {
   user: UserResponseDTO;
   token: string;
+  mua: MuaResponseDTO;
 }
 
 // ===== ARTIST DTOs =====
@@ -107,5 +121,3 @@ export interface ArtistResponseDTO {
   createdAt: Date;
   updatedAt: Date;
 }
-
-

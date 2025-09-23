@@ -7,6 +7,7 @@ const ServicePackageSchema = new Schema({
   description: String,
   price: Number,
   duration: Number,
+  imageUrl: String,
   category: {
     type: String,
     enum: Object.values(SERVICE_CATEGORIES),
@@ -14,9 +15,9 @@ const ServicePackageSchema = new Schema({
     default: SERVICE_CATEGORIES.DAILY
   },
   isAvailable: Boolean,
+  // Keep createdAt explicitly for backward compatibility; updatedAt will be added by timestamps
   createdAt: { type: Date, default: Date.now },
-  options: [{ type: Schema.Types.ObjectId, ref: "BookingOption" }]
-});
+}, { timestamps: { createdAt: false, updatedAt: true } });
 
 // Add indexes for better query performance
 ServicePackageSchema.index({ muaId: 1 });

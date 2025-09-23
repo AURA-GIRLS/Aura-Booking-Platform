@@ -1,3 +1,6 @@
+import { 
+  type UserRole
+} from "../constants/index";
 // ===== MUA DTOs =====
 export interface CreateMuaDTO extends Omit<CreateUserDTO, 'role'> {
   experienceYears?: number;
@@ -8,6 +11,8 @@ export interface CreateMuaDTO extends Omit<CreateUserDTO, 'role'> {
 export interface MuaResponseDTO {
   _id: string;
   userId: string;
+  userName?:string;
+  avatarUrl?: string;
   experienceYears?: number;
   bio?: string;
   location?: string;
@@ -16,9 +21,7 @@ export interface MuaResponseDTO {
   bookingCount?: number;
   isVerified?: boolean;
 }
-import { 
-  type UserRole
-} from "../constants/index";
+
 
 // ===== EMAIL VERIFICATION & PASSWORD RESET DTOs =====
 export interface VerifyEmailDTO {
@@ -73,6 +76,7 @@ export interface UserResponseDTO {
 
 export interface AuthResponseDTO {
   user: UserResponseDTO;
+  mua?: MuaResponseDTO;
   token: string;
 }
 

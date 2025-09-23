@@ -17,6 +17,8 @@ export interface IUserDocument extends Document {
   emailVerificationExpires?: Date;
   passwordResetToken?: string;
   passwordResetExpires?: Date;
+  followerCount?: number;
+  followingCount?: number;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -46,7 +48,7 @@ const UserSchema = new Schema<IUserDocument>({
   phoneNumber: {
     type: String,
     trim: true,
-    match: [/^[\+]?[0-9][\d]{0,10}$/, 'Please enter a valid phone number']
+    match: [/^\+?\d\d{0,10}$/, 'Please enter a valid phone number']
   },
   avatarUrl: {
     type: String,

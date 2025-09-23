@@ -1,41 +1,99 @@
 import { 
-  BOOKING_STATUS,
-  type BookingStatus
+  type BookingStatus,
+  type BookingType
 } from "../constants/index";
+import type { ServiceResponseDTO } from "./service.dtos";
+import type { ArtistResponseDTO, MuaResponseDTO } from "./user.dtos";
 
 // ===== BOOKING DTOs =====
 export interface CreateBookingDTO {
-  userId: string;
-  artistId: string;
+  customerId: string;
+  customerPhone?: string;
   serviceId: string;
-  date: Date;
-  startTime: string;
-  endTime: string;
+  muaId: string;
+  bookingDate: Date;
+  duration: number;
+  locationType: BookingType;
   address: string;
-  notes?: string;
+  transportFee?: number;
+  totalPrice: number;
+  payed?: boolean;
+  note?: string;
 }
 
+
 export interface UpdateBookingDTO {
-  date?: Date;
-  startTime?: string;
-  endTime?: string;
+  customerId?: string;
+  serviceId?: string;
+  muaId?: string;
+  bookingDate?: Date;
+  duration?: number;
+  locationType?: BookingType;
   address?: string;
   status?: BookingStatus;
-  notes?: string;
+  transportFee?: number;
+  totalPrice?: number;
+  payed?: boolean;
+  note?: string;
 }
 
 export interface BookingResponseDTO {
   _id: string;
-  userId: string;
+  customerId: string;
   artistId: string;
   serviceId: string;
-  date: Date;
+  customerName: string;
+  customerPhone?: string;
+  serviceName: string;
+  servicePrice: number;
+  bookingDate: string;
   startTime: string;
   endTime: string;
+  duration: number;
+  locationType: BookingType;
   address: string;
   status: BookingStatus;
-  notes?: string;
+  transportFee?: number;
   totalPrice: number;
+  note?: string;
+  payed?: boolean;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface PendingBookingResponseDTO {
+  _id?: string;
+  customerId: string;
+  artistId: string;
+  serviceId: string;
+  orderCode?: number;
+  customerPhone?: string;
+  customerName: string;
+  serviceName: string;
+  bookingDate: string;
+  servicePrice: number;
+  startTime: string;
+  endTime: string;
+  duration: number;
+  locationType: BookingType;
+  address: string;
+  status: BookingStatus;
+  transportFee?: number;
+  totalPrice: number;
+  note?: string;
+  payed?: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+export interface IBookingSlot {
+  serviceId:string;
+  day: string; 
+  startTime: string;
+  endTime: string;
+}
+
+export interface IAvailableMuaServices{
+    day:string;
+    mua:MuaResponseDTO; 
+    services:ServiceResponseDTO[]
 }

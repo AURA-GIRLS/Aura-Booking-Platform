@@ -31,6 +31,16 @@ export class AuthController {
       }
 
       const result = await authService.register(userData);
+
+      // Thêm refresh token cookie
+      const refreshToken = authService.createRefreshToken(result.user._id);
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày
+        path: '/'
+      });
       
       const response: ApiResponseDTO = {
         status: 201,
@@ -65,6 +75,16 @@ export class AuthController {
       }
 
       const result = await authService.registerAsMua(userData);
+
+      // Thêm refresh token cookie
+      const refreshToken = authService.createRefreshToken(result.user._id);
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày
+        path: '/'
+      });
 
       const response: ApiResponseDTO = {
         status: 201,
@@ -103,6 +123,16 @@ export class AuthController {
 
       const result = await authService.login(loginData);
       
+      // Thêm refresh token cookie
+        const refreshToken = authService.createRefreshToken(result.user._id);
+        res.cookie('refreshToken', refreshToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày
+          path: '/'
+      });
+
       const response: ApiResponseDTO = {
         status: 200,
         success: true,
@@ -138,6 +168,16 @@ async googleLogin(req: Request, res: Response): Promise<void> {
       }
 
       const result = await authService.loginWithGoogle({ credential });
+
+      // Thêm refresh token cookie
+      const refreshToken = authService.createRefreshToken(result.user._id);
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày
+        path: '/'
+      });
 
       const response: ApiResponseDTO = {
         status: 200,
@@ -448,6 +488,120 @@ async googleLogin(req: Request, res: Response): Promise<void> {
         message: error instanceof Error ? error.message : 'Failed to update profile'
       };
       res.status(500).json(response);
+    }
+  }
+
+  // Get user booking history
+  async getBookingHistory(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = (req as any).user?.userId;
+      
+      if (!userId) {
+        const response: ApiResponseDTO = {
+          success: false,
+          message: 'Unauthorized'
+        };
+        res.status(401).json(response);
+        return;
+      }
+
+      const { status } = req.query;
+      const bookings = await authService.getBookingHistory(userId, status as string);
+      
+      const response: ApiResponseDTO = {
+        success: true,
+        message: 'Booking history retrieved successfully',
+        data: bookings
+      };
+      
+      res.status(200).json(response);
+    } catch (error) {
+      const response: ApiResponseDTO = {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to retrieve booking history'
+      };
+      res.status(500).json(response);
+    }
+  }
+
+  // Get user statistics (total spent, booking counts, etc.)
+  async getUserStats(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = (req as any).user?.userId;
+      
+      if (!userId) {
+        const response: ApiResponseDTO = {
+          success: false,
+          message: 'Unauthorized'
+        };
+        res.status(401).json(response);
+        return;
+      }
+
+      const stats = await authService.getUserStats(userId);
+      
+      const response: ApiResponseDTO = {
+        success: true,
+        message: 'User statistics retrieved successfully',
+        data: stats
+      };
+      
+      res.status(200).json(response);
+    } catch (error) {
+      const response: ApiResponseDTO = {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to retrieve user statistics'
+      };
+      res.status(500).json(response);
+    }
+  }
+
+  // Refresh access token
+  async refresh(req: Request, res: Response): Promise<void> {
+    try {
+      const authHeader = req.headers['authorization'];
+      const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined;
+      const refreshToken = (req as any).cookies?.refreshToken || req.body?.refreshToken || bearerToken;
+
+      if (!refreshToken) {
+        const response: ApiResponseDTO = {
+          status: 401,
+          success: false,
+          message: 'Refresh token is required'
+        };
+        res.status(401).json(response);
+        return;
+      }
+
+      const payload = authService.verifyRefreshToken(refreshToken);
+      const newAccessToken = authService.createAccessToken(payload.userId);
+
+      // Cập nhật refresh token mới (tuỳ chọn)
+      try {
+        const newRefreshToken = authService.createRefreshToken(payload.userId);
+        res.cookie('refreshToken', newRefreshToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 30 * 24 * 60 * 60 * 1000,
+          path: '/'
+        });
+      } catch (_) {}
+
+      const response: ApiResponseDTO = {
+        status: 200,
+        success: true,
+        message: 'Token refreshed successfully',
+        data: { token: newAccessToken }
+      };
+      res.status(200).json(response);
+    } catch (error) {
+      const response: ApiResponseDTO = {
+        status: 401,
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to refresh token'
+      };
+      res.status(401).json(response);
     }
   }
 }
