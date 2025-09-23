@@ -11,12 +11,13 @@ import mongoose from "mongoose";
 import { ServicePackage } from "@models/services.models";
 import { User } from "@models/users.models";
 import { fromUTC } from "utils/timeUtils";
+import { Booking } from "@models/bookings.models";
 
 // UTIL - map mongoose doc to DTO
 async function formatTransactionResponse(tx: any): Promise<TransactionResponseDTO> {
   // Attempt to extract friendly names from joined docs when available
-  const booking = tx.booking || tx._booking; // support potential aliases
-  const serviceId = booking.serviceId;
+  const booking =  await Booking.findById(tx.bookingId).exec();
+  const serviceId = booking?.serviceId;
   const service = await ServicePackage.findById(serviceId).exec();
   const serviceName = service?.name;
   const customer = await User.findById(tx.customerId).select("fullName");
