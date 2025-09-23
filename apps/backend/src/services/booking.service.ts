@@ -349,6 +349,10 @@ async function checkBookingConflict(
         const dayStart = bookingStart.startOf('day').toDate();
         const dayEnd = bookingStart.endOf('day').toDate();
 
+        console.log("booking start" + bookingStart.toDate());
+        console.log("booking end" + bookingEnd.toDate());
+        console.log("day start" + dayStart);
+        console.log("day end" + dayEnd);
         // Find existing bookings for the same MUA on the same day
         const filter: any = {
             muaId,
@@ -370,7 +374,8 @@ async function checkBookingConflict(
         for (const existingBooking of existingBookings) {
             const existingStart = dayjs(existingBooking.bookingDate);
             const existingEnd = existingStart.add(existingBooking.duration || 0, 'minute');
-
+            console.log("existing start" + existingStart.toDate());
+            console.log("existing end " + existingEnd.toDate());
             if (checkBookingOverlap(
                 bookingStart.toDate(),
                 bookingEnd.toDate(),
