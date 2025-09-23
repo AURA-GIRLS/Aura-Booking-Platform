@@ -83,25 +83,21 @@ export default function FeedbackActions({ booking }: { booking: BookingLite }) {
   );
 
   return (
-    <div className="relative z-20 mt-3 border-t border-gray-100 pt-3">
+    <div className="relative z-20">
       {loading ? (
         <div className="h-8 w-24 animate-pulse rounded-lg bg-gray-200" />
       ) : feedback ? (
-        <div className="flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3 shadow-sm">
           <button
             type="button"
             onClick={handleOpenView}
-            className="inline-flex h-9 items-center justify-center rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 px-5 text-sm font-semibold text-white shadow-lg transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-pink-400/80 focus:ring-offset-2"
-            >
+            className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 px-4 text-sm font-semibold text-white shadow-md transition-transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-pink-400/80 focus:ring-offset-2"            >
             View feedback
           </button>
-        </div>
       ) : (
         <button
           type="button"
           onClick={handleOpenCreate}
-          className="inline-flex h-9 items-center justify-center rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 px-5 text-sm font-semibold text-white shadow-lg transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-pink-400/80 focus:ring-offset-2"
-        >
+          className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 px-4 text-sm font-semibold text-white shadow-md transition-transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-pink-400/80 focus:ring-offset-2"        >
           Give Feedback
         </button>
       )}

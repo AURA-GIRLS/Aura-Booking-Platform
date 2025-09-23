@@ -1,30 +1,29 @@
-import { Schema, model, Types, Document } from 'mongoose'; 
+// apps/backend/src/models/feedback.model.ts
+import { Schema, model, Types, Document } from "mongoose";
 
+export interface FeedbackDocument extends Document {
+  bookingId: Types.ObjectId;
+  userId: Types.ObjectId; // customer
+  muaId: Types.ObjectId;
+  rating: number;
+  comment?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-export interface FeedbackV2Document extends Document { 
-  bookingId: Types.ObjectId; 
-  userId: Types.ObjectId; 
-  muaId: Types.ObjectId; 
-  rating: number; 
-  comment?: string; 
-  createdAt: Date; 
-  updatedAt: Date; 
-} 
-
-
-const FeedbackV2Schema = new Schema<FeedbackV2Document>( 
+const FeedbackSchema = new Schema<FeedbackDocument>(
   {
-    bookingId: { type: Schema.Types.ObjectId, ref: 'Booking', required: true, index: true }, 
-    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true }, 
-    muaId: { type: Schema.Types.ObjectId, ref: 'MUA', required: true }, 
-    rating: { type: Number, required: true }, 
-    comment: { type: String, default: '' } 
+    bookingId: { type: Schema.Types.ObjectId, ref: "Booking", required: true },
+    userId:    { type: Schema.Types.ObjectId, ref: "User",   required: true },
+    muaId:     { type: Schema.Types.ObjectId, ref: "MUA",    required: true },
+    rating:    { type: Number, required: true, min: 1, max: 5 },
+    comment:   { type: String, default: "" },
   },
-  { timestamps: true, collection: 'feedbacks' } 
-); 
+  { timestamps: true, collection: "feedbacks" }
+);
 
-//unique index to ensure 1 feedback per booking
-FeedbackV2Schema.index({ bookingId: 1 }, { unique: true }); 
+// 1 feedback cho mỗi (booking, user) — đổi thành chỉ booking nếu bạn muốn “1 booking = 1 feedback”
+FeedbackSchema.index({ bookingId: 1, userId: 1 }, { unique: true, name: "uniq_booking_user" });
+FeedbackSchema.index({ muaId: 1, createdAt: -1 }, { name: "mua_time" });
 
-
-export const FeedbackV2 = model<FeedbackV2Document>('FeedbackV2', FeedbackV2Schema, 'feedbacks'); 
+export const Feedback = model<FeedbackDocument>("Feedback", FeedbackSchema);

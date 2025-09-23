@@ -1,7 +1,7 @@
 
 import { Types } from 'mongoose'; 
 import { Booking } from '../models/bookings.models'; 
-import { FeedbackV2 } from '../models/feedbacks.models'; 
+import { Feedback } from '../models/feedbacks.models'; 
 
 
 const allowedStatuses = new Set(['COMPLETED', 'DONE', 'FINISHED']); 
@@ -18,7 +18,7 @@ const httpError = (status: number, code: string, message: string) => {
 export class FeedbackService { 
   constructor() { 
     // Ensure unique index at runtime to satisfy 1 booking -> 1 feedback 
-    FeedbackV2.collection.createIndex({ bookingId: 1 }, { unique: true }).catch(() => {}); 
+    Feedback.collection.createIndex({ bookingId: 1 }, { unique: true }).catch(() => {}); 
   } 
 
   private async assertOwnershipAndStatus(userId: string, bookingId: string) { 
@@ -41,19 +41,19 @@ export class FeedbackService {
 
   async getMine(userId: string, bookingId: string) { 
     await this.assertOwnershipAndStatus(userId, bookingId); 
-    const feedback = await FeedbackV2.findOne({ bookingId: new Types.ObjectId(bookingId) }); 
+    const feedback = await Feedback.findOne({ bookingId: new Types.ObjectId(bookingId) }); 
     return feedback; 
   } 
 
   async create(userId: string, payload: { bookingId: string; rating: number; comment?: string }) { 
     const booking = await this.assertOwnershipAndStatus(userId, payload.bookingId); 
 
-    const existing = await FeedbackV2.findOne({ bookingId: booking._id }); 
+    const existing = await Feedback.findOne({ bookingId: booking._id }); 
     if (existing) { 
       throw httpError(409, 'duplicate_feedback', 'Feedback already exists for this booking'); 
     } 
 
-    const created = await FeedbackV2.create({ 
+    const created = await Feedback.create({ 
       bookingId: booking._id, 
       userId: new Types.ObjectId(userId), 
       muaId: booking.muaId, 
@@ -74,7 +74,7 @@ export class FeedbackService {
     if (!Types.ObjectId.isValid(feedbackId)) { 
       throw httpError(400, 'invalid_feedback_id', 'Invalid feedbackId'); 
     } 
-    const feedback = await FeedbackV2.findById(feedbackId); 
+    const feedback = await Feedback.findById(feedbackId); 
     if (!feedback) { 
       throw httpError(404, 'feedback_not_found', 'Feedback not found'); 
     } 
@@ -92,7 +92,7 @@ export class FeedbackService {
     if (!Types.ObjectId.isValid(feedbackId)) { 
       throw httpError(400, 'invalid_feedback_id', 'Invalid feedbackId'); 
     } 
-    const feedback = await FeedbackV2.findById(feedbackId); 
+    const feedback = await Feedback.findById(feedbackId); 
     if (!feedback) { 
       throw httpError(404, 'feedback_not_found', 'Feedback not found'); 
     } 
@@ -103,6 +103,6 @@ export class FeedbackService {
     // Unlink booking if linked 
     await Booking.updateOne({ feedbackId: feedback._id }, { $unset: { feedbackId: '' } }); 
 
-    await FeedbackV2.deleteOne({ _id: feedback._id }); 
+    await Feedback.deleteOne({ _id: feedback._id }); 
   } 
 } 
