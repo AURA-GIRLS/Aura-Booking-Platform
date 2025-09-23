@@ -1,5 +1,6 @@
 import { TransactionResponseDTO } from "@/types/transaction.dto";
 import { Icon as IconifyIcon } from "@iconify/react";
+import dayjs from "dayjs";
 
 export type TransactionListProps = {
   title: string;
@@ -91,7 +92,7 @@ export const TransactionList = ({
                     {(t.amount ?? 0).toLocaleString()} ₫
                   </div>
                   <div className="text-xs text-neutral-500">
-                    {t.bookingTime } {t.bookingDate ? `on ${t.bookingDate}` : ""}
+                    {t.bookingTime } {t.bookingDay ? `on ${dayjs(t.bookingDay).format("DD/MM/YYYY")}` : ""}
                   </div>
                 </div>
               </div>
