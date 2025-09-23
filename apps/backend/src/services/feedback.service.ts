@@ -1,4 +1,3 @@
-
 import { Types } from 'mongoose'; 
 import { Booking } from '../models/bookings.models'; 
 import { Feedback } from '../models/feedbacks.models'; 
@@ -44,6 +43,27 @@ export class FeedbackService {
     const feedback = await Feedback.findOne({ bookingId: new Types.ObjectId(bookingId) }); 
     return feedback; 
   } 
+
+  async getRecentByMua(muaId: string, limit = 5) {
+    if (!Types.ObjectId.isValid(muaId)) {
+      throw httpError(400, 'invalid_mua_id', 'Invalid muaId');
+    }
+    const items = await Feedback.find({ muaId: new Types.ObjectId(muaId) })
+      .sort({ createdAt: -1 })
+      .limit(Math.max(1, Math.min(50, limit)))
+      .populate({ path: 'userId', select: { fullName: 1, avatarUrl: 1 } })
+      .lean();
+
+    // Map to a flatter shape for frontend convenience while maintaining backward compatibility
+    return items.map((it: any) => ({
+      _id: it._id,
+      rating: it.rating,
+      comment: it.comment,
+      createdAt: it.createdAt,
+      reviewerName: it.userId?.fullName || 'Customer',
+      reviewerAvatarUrl: it.userId?.avatarUrl || '',
+    }));
+  }
 
   async create(userId: string, payload: { bookingId: string; rating: number; comment?: string }) { 
     const booking = await this.assertOwnershipAndStatus(userId, payload.bookingId); 

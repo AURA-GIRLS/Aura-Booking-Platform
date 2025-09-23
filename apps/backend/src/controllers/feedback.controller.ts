@@ -1,4 +1,3 @@
-
 import type { Request, Response } from 'express'; 
 import { FeedbackService } from '../services/feedback.service'; 
 
@@ -13,6 +12,17 @@ export class FeedbackController {
       const bookingId = (req.query.bookingId as string) || ''; 
       const data = await svc.getMine(userId, bookingId); 
       res.status(200).json(data); 
+    } catch (e: any) { 
+      res.status(e.status || 500).json({ code: e.code || 'internal_error', message: e.message || 'Server error' }); 
+    } 
+  } 
+
+  async getRecentByMua(req: Request, res: Response) { 
+    try { 
+      const { muaId } = req.params as { muaId: string }; 
+      const limit = Number((req.query.limit as string) || '5'); 
+      const data = await svc.getRecentByMua(muaId, limit); 
+      res.status(200).json({ status: 200, success: true, data }); 
     } catch (e: any) { 
       res.status(e.status || 500).json({ code: e.code || 'internal_error', message: e.message || 'Server error' }); 
     } 
