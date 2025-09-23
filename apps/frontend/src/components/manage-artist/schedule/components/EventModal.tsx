@@ -51,7 +51,7 @@ export const EventModal: React.FC<EventModalProps> = ({
               {modalSlotInfo?.isEdit ? 'Edit Event' : 'Add New Event'}
             </h3>
           </div>
-          <button
+          <button type="button" title="Close" aria-label="Close"
             onClick={onClose}
             className="p-1 hover:bg-gray-100 rounded-md transition-colors"
           >
@@ -70,6 +70,7 @@ export const EventModal: React.FC<EventModalProps> = ({
               </Label>
             </div>
             <select
+            title="type"
               id="type"
               value={newEventForm.type||modalSlotInfo?.type}
               onChange={(e) => handleInputChange('type', e.target.value)}

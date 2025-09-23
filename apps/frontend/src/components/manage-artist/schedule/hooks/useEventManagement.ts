@@ -120,10 +120,37 @@ export const useEventManagement = ({
   ) => {
     const startTime = newEventForm.startTime || modalSlotInfo?.start;
     const endTime = newEventForm.endTime || modalSlotInfo?.end;
-    const slotId = selectedEvent?.slotData?.slotId;
-
+    
+    // Sử dụng originalEvent từ modalSlotInfo nếu selectedEvent bị null
+    const eventToUpdate = selectedEvent || modalSlotInfo?.originalEvent;
+    
+    // Debug logging để tìm hiểu vấn đề
+    console.log("=== DEBUG handleUpdateEvent ===");
+    console.log("newEventForm:", newEventForm);
+    console.log("modalSlotInfo:", modalSlotInfo);
+    console.log("selectedEvent (may be null):", selectedEvent);
+    console.log("eventToUpdate (fallback):", eventToUpdate);
+    console.log("startTime:", startTime);
+    console.log("endTime:", endTime);
+    
+    if (!eventToUpdate) {
+      console.error("Both selectedEvent and originalEvent are null/undefined!");
+      showError('Selected event is missing. Please try selecting the event again.');
+      return;
+    }
+    
+    if (!eventToUpdate.slotData) {
+      console.error("eventToUpdate.slotData is null/undefined!");
+      showError('Event data is missing. Please try selecting the event again.');
+      return;
+    }
+    
+    const slotId = eventToUpdate.slotData.slotId;
+    console.log("slotId extracted:", slotId);
+    
     if (!slotId) {
-      showError('Slot ID is required for updating');
+      console.error("slotId is null/undefined!");
+      showError('Slot ID is required for updating. Event data may be corrupted.');
       return;
     }
 
@@ -158,7 +185,7 @@ export const useEventManagement = ({
         setShowAddEventModal(false);
         setNewEventForm({ type: 'BLOCKED', name: '', note: '', startTime: '', endTime: '' });
         setSelectedEvent(null);
-        fetchSchedule(getMondayOfWeek(selectedEvent.slotData.day));
+        fetchSchedule(getMondayOfWeek(eventToUpdate.slotData.day));
       } else {
         showError(response?.message || 'Event update failed');
       }
@@ -170,28 +197,45 @@ export const useEventManagement = ({
   }, [id, fetchSchedule, setLoading, showSuccess, showError, setShowAddEventModal, setNewEventForm, setSelectedEvent]);
 
   const handleOpenEditEvent = useCallback((selectedEvent: any, setNewEventForm: any, setModalSlotInfo: any, setShowAddEventModal: any) => {
-    console.log("ssss" + selectedEvent.slotData);
-    if (!selectedEvent || !selectedEvent.slotData) {
+    console.log("=== DEBUG handleOpenEditEvent ===");
+    console.log("selectedEvent:", selectedEvent);
+    console.log("selectedEvent.slotData:", selectedEvent?.slotData);
+    
+    if (!selectedEvent) {
+      console.error("selectedEvent is null in handleOpenEditEvent!");
       showError('Event information not found for editing');
+      return;
+    }
+    
+    if (!selectedEvent.slotData) {
+      console.error("selectedEvent.slotData is null in handleOpenEditEvent!");
+      showError('Event data is missing. Please try selecting the event again.');
       return;
     }
 
     // Pre-fill form with current event data
-    setNewEventForm({
+    const formData = {
       type: selectedEvent.type,
       name: selectedEvent.slotData.note || selectedEvent.title,
       note: selectedEvent.slotData.note || '',
       startTime: dayjs(selectedEvent.start).format('YYYY-MM-DDTHH:mm'),
       endTime: dayjs(selectedEvent.end).format('YYYY-MM-DDTHH:mm')
-    });
+    };
     
-    setModalSlotInfo({
+    const modalData = {
       start: dayjs(selectedEvent.start).format('YYYY-MM-DDTHH:mm'),
       end: dayjs(selectedEvent.end).format('YYYY-MM-DDTHH:mm'),
       day: dayjs(selectedEvent.start).format('YYYY-MM-DD'),
-      isEdit: true
-    });
+      isEdit: true,
+      // Lưu toàn bộ selectedEvent data để sử dụng khi update
+      originalEvent: selectedEvent
+    };
     
+    console.log("Setting form data:", formData);
+    console.log("Setting modal data:", modalData);
+    
+    setNewEventForm(formData);
+    setModalSlotInfo(modalData);
     setShowAddEventModal(true);
   }, [showError]);
 

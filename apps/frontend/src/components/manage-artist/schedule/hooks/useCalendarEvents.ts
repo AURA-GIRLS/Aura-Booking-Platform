@@ -80,21 +80,21 @@ export const useCalendarEvents = ({
     try {
       setLoading(true);
       let response;
-      
+      const realId = event.id.includes('_') ? event.id.split('_')[0] : event.id;
       if (event.type === 'NEW_WORKING' || event.type === 'ORIGINAL_WORKING') {
         const weekday = getWeekdayName(startDate);
-        response = await artistScheduleService.updateWorkingSlot(id, event.id, {
+        response = await artistScheduleService.updateWorkingSlot(id, realId, {
           weekday,
           startTime: formatTimeForAPI(startDate),
           endTime: formatTimeForAPI(endDate)
         });
       } else if (event.type === 'OVERRIDE') {
-        response = await artistScheduleService.updateOverrideSlot(id, event.id, {
+        response = await artistScheduleService.updateOverrideSlot(id, realId, {
           overrideStart: formatDateForAPI(startDate),
           overrideEnd: formatDateForAPI(endDate)
         });
       } else if (event.type === 'BLOCKED') {
-        response = await artistScheduleService.updateBlockedSlot(id, event.id, {
+        response = await artistScheduleService.updateBlockedSlot(id, realId, {
           blockStart: formatDateForAPI(startDate),
           blockEnd: formatDateForAPI(endDate)
         });
