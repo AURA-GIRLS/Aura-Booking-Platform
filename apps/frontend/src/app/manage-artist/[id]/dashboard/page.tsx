@@ -1,3 +1,7 @@
-export default function DashboardPage() {
-    return <div>DashboardPage</div>;
+"use client";
+
+import MUADashboard from "@/components/manage-artist/dashboard/MUADashboard";
+
+export default function DashboardPage({ params }: { params: { id: string } }) {
+  return <MUADashboard muaId={params.id} />;
 }

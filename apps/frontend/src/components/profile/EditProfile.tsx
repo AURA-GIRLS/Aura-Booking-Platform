@@ -17,8 +17,9 @@ const EditProfile: React.FC = () => {
     phoneNumber: "",
     avatarUrl: ""
   });
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
 
-  // Notification state
   const [notification, setNotification] = useState<{
     type: "success" | "error";
     message: string;
@@ -29,7 +30,6 @@ const EditProfile: React.FC = () => {
     isVisible: false
   });
 
-  // Load user profile on component mount
   useEffect(() => {
     loadProfile();
   }, []);
@@ -85,19 +85,48 @@ const EditProfile: React.FC = () => {
 
     try {
       setIsSaving(true);
-      
+
+      if (avatarFile) {
+        setIsUploading(true);
+        const uploadRes = await authService.uploadAvatar(avatarFile);
+        if (!uploadRes.success || !uploadRes.data) {
+          throw new Error(uploadRes.message || "Failed to upload avatar");
+        }
+
+        setProfile(uploadRes.data.user);
+        setEditedProfile(prev => ({
+          ...prev,
+          avatarUrl: uploadRes.data?.avatarUrl || uploadRes.data?.user?.avatarUrl || prev.avatarUrl
+        }));
+        try {
+          localStorage.setItem('currentUser', JSON.stringify(uploadRes.data.user));
+          window.dispatchEvent(new CustomEvent('userUpdated'));
+        } catch {}
+        setIsUploading(false);
+      }
+
       const updateData = {
         fullName: editedProfile.fullName,
         phoneNumber: editedProfile.phoneNumber || undefined,
-        avatarUrl: editedProfile.avatarUrl || undefined
-      };
+      } as { fullName?: string; phoneNumber?: string };
 
       const response = await authService.updateProfile(updateData);
-      
+
       if (response.success && response.data) {
         setProfile(response.data);
         setIsEditing(false);
         showNotification("success", "Profile updated successfully!");
+
+        try {
+          localStorage.setItem('currentUser', JSON.stringify(response.data));
+          window.dispatchEvent(new CustomEvent('userUpdated'));
+        } catch {}
+
+        if (avatarPreviewUrl) {
+          URL.revokeObjectURL(avatarPreviewUrl);
+        }
+        setAvatarPreviewUrl(null);
+        setAvatarFile(null);
       }
     } catch (error: any) {
       showNotification("error", error.message || "Failed to update profile");
@@ -114,6 +143,11 @@ const EditProfile: React.FC = () => {
         avatarUrl: profile.avatarUrl || ""
       });
     }
+    if (avatarPreviewUrl) {
+      URL.revokeObjectURL(avatarPreviewUrl);
+    }
+    setAvatarPreviewUrl(null);
+    setAvatarFile(null);
     setIsEditing(false);
   };
 
@@ -121,35 +155,20 @@ const EditProfile: React.FC = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       showNotification("error", "Please select an image file");
       return;
     }
 
-    // Validate file size (5MB limit)
     if (file.size > 5 * 1024 * 1024) {
       showNotification("error", "Image size must be less than 5MB");
       return;
     }
 
-    try {
-      setIsUploading(true);
-      const response = await authService.uploadAvatar(file);
-      
-      if (response.success && response.data) {
-        setProfile(response.data.user);
-        setEditedProfile(prev => ({
-          ...prev,
-          avatarUrl: response.data?.avatarUrl || ""
-        }));
-        showNotification("success", "Avatar updated successfully!");
-      }
-    } catch (error: any) {
-      showNotification("error", error.message || "Failed to upload avatar");
-    } finally {
-      setIsUploading(false);
-    }
+    const url = URL.createObjectURL(file);
+    setAvatarFile(file);
+    setAvatarPreviewUrl(url);
+    setEditedProfile(prev => ({ ...prev, avatarUrl: url }));
   };
 
   if (isLoading) {
@@ -232,8 +251,8 @@ const EditProfile: React.FC = () => {
               <div className="text-center">
                 <div className="relative inline-block">
                   <div className="w-32 h-32 rounded-full bg-pink-100 flex items-center justify-center overflow-hidden">
-                    {profile?.avatarUrl ? (
-                      <img src={profile.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                    {editedProfile?.avatarUrl ? (
+                      <img src={editedProfile.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                     ) : (
                       <User size={48} className="text-pink-400" />
                     )}
@@ -251,7 +270,7 @@ const EditProfile: React.FC = () => {
                         onChange={handleAvatarUpload}
                         className="hidden"
                         id="avatar-upload"
-                        disabled={isUploading}
+                        disabled={isSaving}
                       />
                       <label
                         htmlFor="avatar-upload"

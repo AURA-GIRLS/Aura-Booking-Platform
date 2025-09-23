@@ -28,6 +28,29 @@ export class AuthService {
     this.emailService = new EmailService();
   }
 
+  public createAccessToken(userId: string): string {
+    return this.generateToken(userId);
+  }
+  
+  // Public: Tạo refresh token (thời hạn dài hơn)
+  public createRefreshToken(userId: string): string {
+    return jwt.sign(
+      { userId },
+      config.jwtSecret,
+      { expiresIn: '30d' }
+    );
+  }
+  
+  // Public: Xác thực refresh token và trả về payload
+  public verifyRefreshToken(refreshToken: string): { userId: string } {
+    try {
+      const decoded = jwt.verify(refreshToken, config.jwtSecret) as { userId: string };
+      return decoded;
+    } catch (error) {
+      throw new Error('Invalid or expired refresh token');
+    }
+  }
+
   // Register as MUA (Makeup Artist)
   async registerAsMua(muaData: CreateMuaDTO): Promise<AuthResponseDTO & { mua: MuaResponseDTO }> {
     try {
@@ -617,4 +640,6 @@ export class AuthService {
       throw error;
     }
   }
+
+  
 }

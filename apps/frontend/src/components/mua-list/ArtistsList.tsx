@@ -46,7 +46,7 @@ export default function ArtistsList() {
   const [selectedAddons, setSelectedAddons] = useState<ServiceAddon[]>([]);
   const [sort, setSort] = useState<SortKey>("rating_desc");
   const [page, setPage] = useState(1);
-  const limit = 12;
+  const limit = 6;
 
   const { priceMin, priceMax } = useMemo(() => {
     const mins = selectedBudgets.map((b) => budgetToRange(b).min).filter((n): n is number => typeof n === "number");
@@ -151,7 +151,7 @@ export default function ArtistsList() {
 
           setTotal(data.total ?? 0);
           setPages(data.pages ?? 1);
-          setArtists((prev) => (page === 1 ? data.items : [...prev, ...data.items]));
+          setArtists(data.items);
           setAvailableMuas([]); // Clear available MUAs when showing regular results
         }
       } catch (e: any) {
@@ -205,6 +205,13 @@ export default function ArtistsList() {
   const handleBookService = (artistId: string, serviceId: string) => {
     // Navigate to booking page with artist and service parameters
     router.push(`/user/booking/${artistId}/${serviceId}`);
+  };
+
+  const handlePageChange = (p: number) => {
+    setPage(p);
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   return (
@@ -341,21 +348,24 @@ export default function ArtistsList() {
 
           <div className="lg:col-span-9">
             <ResultsPanel
-              occasion={occasion}
-              onOccasionChange={(v) => { setOccasion(v); setPage(1); }}
-              sort={sort}
-              onSortChange={(v) => { setSort(v); setPage(1); }}
-              artists={artists}
-              availableMuas={filteredMuas}
-              isDateFiltered={isDateFiltered}
-              selectedDate={selectedDate}
-              loading={loading}
-              total={total}
-              error={error}
-              canLoadMore={canLoadMore && !isDateFiltered}
-              onLoadMore={() => !loading && setPage((p) => p + 1)}
-              onViewProfile={handleViewProfile}
-              onBookService={handleBookService}
+                occasion={occasion}
+                onOccasionChange={(v) => { setOccasion(v); setPage(1); }}
+                sort={sort}
+                onSortChange={(v) => { setSort(v); setPage(1); }}
+                artists={artists}
+                availableMuas={filteredMuas}
+                isDateFiltered={isDateFiltered}
+                selectedDate={selectedDate}
+                loading={loading}
+                total={total}
+                error={error}
+                canLoadMore={canLoadMore && !isDateFiltered}
+                onLoadMore={() => !loading && setPage((p) => p + 1)}
+                onViewProfile={handleViewProfile}
+                onBookService={handleBookService}
+                currentPage={page}
+                totalPages={pages}
+                onPageChange={handlePageChange}
             />
           </div>
         </div>
