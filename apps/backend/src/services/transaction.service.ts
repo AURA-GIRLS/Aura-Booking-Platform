@@ -12,7 +12,11 @@ import { ServicePackage } from "@models/services.models";
 import { User } from "@models/users.models";
 import { fromUTC } from "utils/timeUtils";
 import { Booking } from "@models/bookings.models";
-
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+dayjs.extend(utc);
+dayjs.extend(timezone);
 // UTIL - map mongoose doc to DTO
 async function formatTransactionResponse(tx: any): Promise<TransactionResponseDTO> {
   // Attempt to extract friendly names from joined docs when available
@@ -22,13 +26,11 @@ async function formatTransactionResponse(tx: any): Promise<TransactionResponseDT
   const serviceName = service?.name;
   const customer = await User.findById(tx.customerId).select("fullName");
   const customerName = customer?.fullName;
-  //
-  const startDate: Date | null = booking?.bookingDate ? new Date(booking.bookingDate) : null;
-  const durationMinutes: number = typeof booking?.duration === 'number' ? booking.duration : 0;
-  const endDate: Date | null = startDate ? new Date(startDate.getTime() + durationMinutes * 60000) : null;
-  const fmtTime = (d: Date) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-  const bookingTime = startDate && endDate ? `${fmtTime(startDate)} - ${fmtTime(endDate)}` : "";
-  const bookingDate = fromUTC(startDate!).format("YYYY-MM-DD"); // DD/MM/YYYY
+  const rawDate = booking?.bookingDate;
+  const bookingDay = rawDate ? fromUTC(rawDate) : dayjs();
+ const startTime= bookingDay.format("HH:mm");
+  const  endTime= bookingDay.add(booking && typeof booking.duration === "number" ? booking.duration : 0, 'minute').format("HH:mm");
+  const bookingTime = `${startTime} - ${endTime}`;
   return {
     _id: String(tx._id),
     bookingId: tx.bookingId ? String(tx.bookingId) : "",
@@ -37,7 +39,7 @@ async function formatTransactionResponse(tx: any): Promise<TransactionResponseDT
     currency: tx.currency || "",
     status: tx.status || 'HOLD',
     paymentMethod: tx.paymentMethod,
-   bookingDate,
+   bookingDay,
     // extra friendly fields expected by DTO
     serviceName,
     customerName,
@@ -198,15 +200,19 @@ export async function handlePayOSWebhook(data: PaymentWebhookResponse): Promise<
   return await createTransaction(input);
 }
 
+
+// bookingDate: "2025-09-24"
+// startTime: "12:30"
+
 // ==================== MAPPERS ====================
 function mapPendingBookingToCreate(pb: PendingBookingResponseDTO): CreateBookingDTO {
   // Combine bookingDate (YYYY-MM-DD) and startTime (HH:mm) into a Date
-  const bookingDate = new Date(`${pb.bookingDate}T${pb.startTime}:00`);
+  const bookingDate = dayjs.tz(`${pb.bookingDate} ${pb.startTime}`, "YYYY-MM-DD HH:mm", "Asia/Ho_Chi_Minh");
   return {
     customerId: pb.customerId,
     serviceId: pb.serviceId,
     muaId: pb.artistId,
-    bookingDate,
+    bookingDate: bookingDate.toDate(),
     customerPhone: pb.customerPhone,
     duration: pb.duration,
     locationType: pb.locationType,
