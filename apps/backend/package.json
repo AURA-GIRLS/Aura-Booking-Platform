@@ -11,14 +11,15 @@
     "format": "prettier --write ."
   },
   "dependencies": {
-    "@types/node": "^20.19.17",
     "@payos/node": "^2.0.3",
     "@redis/entraid": "^5.8.2",
+    "@types/node": "^20.19.17",
     "@types/nodemailer": "^7.0.1",
     "axios": "^1.7.2",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.20.3",
     "cloudinary": "^2.7.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "date-fns": "^4.1.0",
     "dotenv": "^16.6.1",
