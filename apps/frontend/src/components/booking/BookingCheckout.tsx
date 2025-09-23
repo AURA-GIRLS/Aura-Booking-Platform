@@ -8,6 +8,7 @@ import { TransactionService } from "@/services/transaction";
 import { PayOSCreateLinkInput } from "@/types/transaction.dto";
 import { CheckCircle, QrCode } from "lucide-react";
 import { useNotification } from "@/hooks/useNotification";
+import { convertStringToLocalDate } from "src/utils/TimeUtils";
 
 // moved into component with useMemo so changes propagate correctly
 
@@ -98,12 +99,13 @@ export function BookingCheckout({customer, onPrev, bookingData }: Readonly<Booki
   }, [bookingData._id, bookingData.totalPrice, orderCode]);
 
   const createPendingBooking = useCallback((async (): Promise<number | null> => {
+    const localBookingDate = convertStringToLocalDate(bookingData.bookingDate, bookingData.startTime); 
         const payload: CreateBookingDTO = {
           customerId: bookingData.customerId,
           serviceId: bookingData.serviceId,
           customerPhone: phone || '',
           muaId: bookingData.artistId,
-          bookingDate: new Date(`${bookingData.bookingDate}T${bookingData.startTime}:00`),
+          bookingDate: new Date(localBookingDate),
           duration: bookingData.duration,
           locationType: bookingData.locationType,
           address: bookingData.address,
