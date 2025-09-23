@@ -26,13 +26,11 @@ async function formatTransactionResponse(tx: any): Promise<TransactionResponseDT
   const serviceName = service?.name;
   const customer = await User.findById(tx.customerId).select("fullName");
   const customerName = customer?.fullName;
-  //
-  const startDate: Date | null = booking?.bookingDate ? new Date(booking.bookingDate) : null;
-  const durationMinutes: number = typeof booking?.duration === 'number' ? booking.duration : 0;
-  const endDate: Date | null = startDate ? new Date(startDate.getTime() + durationMinutes * 60000) : null;
-  const fmtTime = (d: Date) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-  const bookingTime = startDate && endDate ? `${fmtTime(startDate)} - ${fmtTime(endDate)}` : "";
-  const bookingDate = fromUTC(startDate!).format("YYYY-MM-DD"); // DD/MM/YYYY
+  const rawDate = booking?.bookingDate;
+  const bookingDay = rawDate ? fromUTC(rawDate) : dayjs();
+ const startTime= bookingDay.format("HH:mm");
+  const  endTime= bookingDay.add(booking && typeof booking.duration === "number" ? booking.duration : 0, 'minute').format("HH:mm");
+  const bookingTime = `${startTime} - ${endTime}`;
   return {
     _id: String(tx._id),
     bookingId: tx.bookingId ? String(tx.bookingId) : "",
@@ -41,7 +39,7 @@ async function formatTransactionResponse(tx: any): Promise<TransactionResponseDT
     currency: tx.currency || "",
     status: tx.status || 'HOLD',
     paymentMethod: tx.paymentMethod,
-   bookingDate,
+   bookingDay,
     // extra friendly fields expected by DTO
     serviceName,
     customerName,
