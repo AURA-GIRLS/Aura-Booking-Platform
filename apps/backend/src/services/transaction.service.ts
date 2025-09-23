@@ -12,7 +12,11 @@ import { ServicePackage } from "@models/services.models";
 import { User } from "@models/users.models";
 import { fromUTC } from "utils/timeUtils";
 import { Booking } from "@models/bookings.models";
-
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+dayjs.extend(utc);
+dayjs.extend(timezone);
 // UTIL - map mongoose doc to DTO
 async function formatTransactionResponse(tx: any): Promise<TransactionResponseDTO> {
   // Attempt to extract friendly names from joined docs when available
@@ -198,15 +202,19 @@ export async function handlePayOSWebhook(data: PaymentWebhookResponse): Promise<
   return await createTransaction(input);
 }
 
+
+// bookingDate: "2025-09-24"
+// startTime: "12:30"
+
 // ==================== MAPPERS ====================
 function mapPendingBookingToCreate(pb: PendingBookingResponseDTO): CreateBookingDTO {
   // Combine bookingDate (YYYY-MM-DD) and startTime (HH:mm) into a Date
-  const bookingDate = new Date(`${pb.bookingDate}T${pb.startTime}:00`);
+  const bookingDate = dayjs.tz(`${pb.bookingDate} ${pb.startTime}`, "YYYY-MM-DD HH:mm", "Asia/Ho_Chi_Minh");
   return {
     customerId: pb.customerId,
     serviceId: pb.serviceId,
     muaId: pb.artistId,
-    bookingDate,
+    bookingDate: bookingDate.toDate(),
     customerPhone: pb.customerPhone,
     duration: pb.duration,
     locationType: pb.locationType,
