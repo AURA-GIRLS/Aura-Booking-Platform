@@ -57,7 +57,7 @@ export const config = {
   //Cloudinary
   cloudinaryApiKey: process.env.CLOUDINARY_API_KEY || '',
   cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET || '',
-  cloudinaryCloudName: process.env.CLOUDINARY_NAME || '',
+  cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
 
   // Environment
   nodeEnv: process.env.NODE_ENV || 'development',

@@ -14,6 +14,7 @@ router.post('/send-verification', authController.sendEmailVerification.bind(auth
 router.post('/verify-email', authController.verifyEmail.bind(authController));
 router.post('/forgot-password', authController.forgotPassword.bind(authController));
 router.post('/reset-password', authController.resetPassword.bind(authController));
+router.post('/refresh', authController.refresh.bind(authController));
 
 // Protected routes (authentication required)
 router.get('/profile', authenticateToken, authController.getProfile.bind(authController));

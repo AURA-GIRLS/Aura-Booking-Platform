@@ -19,7 +19,9 @@
     "install:all": "npm install --workspaces"
   },
   "dependencies": {
+    "@types/cookie-parser": "^1.4.9",
     "@types/multer": "^2.0.0",
+    "cookie-parser": "^1.4.7",
     "multer": "^2.0.2"
   }
 }

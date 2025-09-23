@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import cookieParser from 'cookie-parser';
 import { config } from './config';
 import { connectDB } from './config/database';
 import routes from './routes/index';
@@ -18,6 +19,7 @@ const server = http.createServer(app);
 app.use(helmet());
 app.use(cors({ origin: config.clientOrigin, credentials: true }));
 app.use(express.json());
+app.use(cookieParser());
 app.use(morgan('dev'));
 
 // Routes
@@ -50,5 +52,3 @@ async function start() {
 }
 
 start();
-
-

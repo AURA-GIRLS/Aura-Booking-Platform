@@ -51,13 +51,13 @@ export default function ArtistNavbar({ mua, setMua }:  Readonly<ArtistNavbarProp
 
         {/* Center: Menu */}
         {id && (
-          <ul className="hidden md:flex items-center gap-6 text-gray-700 font-medium">
-            <li><Link href={`/manage-artist/${id}/dashboard`}>Dashboard</Link></li>
-            <li><Link href={`/manage-artist/${id}/portfolio` as any}>My Portfolio</Link></li>
-            <li><Link href={`/manage-artist/${id}/calendar`}>My Calendar</Link></li>
-            <li><Link href={`/manage-artist/${id}/feedback` as any}>My Feedback</Link></li>
+          <ul className="hidden md:flex items-center gap-6 text-[#111] font-medium hover:*:text-[#EC5A86] *:transition-colors">
+            <li><a href={`/dashboard/mua/${id}/dashboard`}>Dashboard</a></li>
+            <li><a href={`/manage-artist/${id}/portfolio`}>My Portfolio</a></li>
+            <li><a href={`/manage-artist/${id}/calendar`}>My Calendar</a></li>
+            <li><a href={`/manage-artist/${id}/feedback`}>My Feedback</a></li>
             <li><Link href={`/manage-artist/${id}/community?wall=${user?._id}&wn=${toPlusSeparated(user?.fullName)}`}>Community</Link></li>
-            <li><Link href="/manage-artist/about">About Us</Link></li>
+            <li><a href="/manage-artist/about">About Us</a></li>
           </ul>
         )}
 
@@ -100,13 +100,13 @@ export default function ArtistNavbar({ mua, setMua }:  Readonly<ArtistNavbarProp
       {isOpen && (
         <div className="md:hidden px-6 pb-4">
           {id && (
-            <ul className="flex flex-col gap-2 text-gray-700 font-medium">
-              <li><Link href={`/manage-artist/${id}/dashboard`}>Dashboard</Link></li>
-              <li><Link href={`/manage-artist/${id}/portfolio`  as any}>My Portfolio</Link></li>
-              <li><Link href={`/manage-artist/${id}/calendar`}>My Calendar</Link></li>
-              <li><Link href={`/manage-artist/${id}/feedback`  as any}>My Feedback</Link></li>
-              <li><Link href={`/manage-artist/${id}/community?wall=${user?._id}&wn=${toPlusSeparated(user?.fullName)}`}>Community</Link></li>
-              <li><Link href="/manage-artist/about">About Us</Link></li>
+            <ul className="flex flex-col gap-2 text-[#111] font-medium hover:*:text-[#EC5A86] *:transition-colors">
+               <li><a href={`/dashboard/mua/${id}/dashboard`}>Dashboard</a></li>
+            <li><a href={`/manage-artist/${id}/portfolio`}>My Portfolio</a></li>
+            <li><a href={`/manage-artist/${id}/calendar`}>My Calendar</a></li>
+            <li><a href={`/manage-artist/${id}/feedback`}>My Feedback</a></li>
+            <li><Link href={`/manage-artist/${id}/community?wall=${user?._id}&wn=${toPlusSeparated(user?.fullName)}`}>Community</Link></li>
+            <li><a href="/manage-artist/about">About Us</a></li>
             </ul>
           )}
           <div className="mt-3 flex items-center gap-3">

@@ -23,7 +23,7 @@ import { BOOKING_STATUS } from "constants/index";
 
 export class BookingController {
 
- // READ - Lấy available slots
+  // READ - Lấy available slots
   async getAvailableSlots(req: Request, res: Response): Promise<void> {
     try {
       const { muaId, serviceId, day, duration } = req.query as Record<string, string>;
@@ -337,8 +337,6 @@ export class BookingController {
       res.status(500).json(response);
     }
   }
-
- 
 
   // UPDATE - Cập nhật booking
   async update(req: Request, res: Response): Promise<void> {

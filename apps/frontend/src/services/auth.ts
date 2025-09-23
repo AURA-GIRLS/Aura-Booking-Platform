@@ -145,9 +145,9 @@ export const authService = {
 	async uploadAvatar(file: File): Promise<ApiResponseDTO<{ avatarUrl: string; user: UserResponseDTO }>> {
 		try {
 			const formData = new FormData();
-			formData.append('avatar', file);
+			formData.append('file', file);
 
-			const res = await api.post<ApiResponseDTO<{ avatarUrl: string; user: UserResponseDTO }>>('/auth/upload-avatar', formData, {
+			const res = await api.post<ApiResponseDTO<{ avatarUrl: string; user: UserResponseDTO }>>('/profile/avatar', formData, {
 				headers: {
 					'Content-Type': 'multipart/form-data',
 					Authorization: `Bearer ${localStorage.getItem('token')}`,
