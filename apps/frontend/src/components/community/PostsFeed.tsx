@@ -445,9 +445,19 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser, 
               <div className="p-4">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center">
+                  {post.authorAvatarUrl ? (
+                    <img
+                      src={post.authorAvatarUrl}
+                      alt={post.authorName}
+                      className="w-10 h-10 rounded-full object-cover"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  ) : (
                     <div className="w-10 h-10 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full flex items-center justify-center">
-                      <span className="text-white font-semibold text-sm">{post.authorName ? getInitials(post.authorName) : ''}</span>
+                      <span className="text-white font-semibold text-sm">{getInitials(post.authorName)}</span>
                     </div>
+                  )}
                     <div className="ml-3">
                       <h4 className="font-semibold text-gray-900 flex items-center">
                         <button

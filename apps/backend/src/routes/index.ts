@@ -8,6 +8,7 @@ import communityRoutes from "./community";
 import uploadRoutes from "./upload";
 import dashboardRoutes from "./dashboard";
 import profileRoutes from "./profile";
+import feedbackRoutes from "./feedback"; 
 const router = Router();
 
 // API routes
@@ -32,4 +33,5 @@ router.use("/community", communityRoutes);
 router.use('/upload', uploadRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/profile', profileRoutes);
+router.use('/feedback', feedbackRoutes); 
 export default router;

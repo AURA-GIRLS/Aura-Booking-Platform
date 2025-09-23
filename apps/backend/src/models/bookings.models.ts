@@ -17,7 +17,8 @@ const BookingSchema = new Schema({
   duration: Number,
   locationType: { type: String, enum: Object.values(BOOKING_TYPES)},
   address: String,
-  status: { type: String, enum: Object.values(BOOKING_STATUS) },
+  status: { type: String, enum: Object.values(BOOKING_STATUS) },  
+  // pending', 'confirmed', 'completed', 'cancelled'
   transportFee: Number,
   totalPrice: Number,
   createdAt: { type: Date, default: Date.now },
@@ -25,6 +26,7 @@ const BookingSchema = new Schema({
   note: String,
   feedbackId: { type: Schema.Types.ObjectId, ref: "Feedback" },
   paymentId: { type: Schema.Types.ObjectId, ref: 'Transaction' },
+  completedAt: { type: Date, default: null },
 });
 
 export const Booking = model("Booking", BookingSchema);

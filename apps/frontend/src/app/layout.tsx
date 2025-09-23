@@ -3,7 +3,7 @@ import { Poppins } from "next/font/google";
 import "../styles/globals.css";
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import Script from "next/script";
-
+import { SpeedInsights } from "@vercel/speed-insights/next"
 const poppins = Poppins({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
@@ -29,7 +29,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           strategy="beforeInteractive"
         />
       </head>
-      <body className={poppins.className}>{children}</body>
+      <body className={poppins.className}>
+        {children} 
+         <SpeedInsights />
+      </body>
     </html>
   );
 }

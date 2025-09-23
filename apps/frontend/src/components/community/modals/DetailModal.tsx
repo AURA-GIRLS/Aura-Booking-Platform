@@ -51,9 +51,13 @@ export default function DetailModal({
                 <div className="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
                     {/* Input */}
                     <div className="flex items-start space-x-3 mb-4">
-                        <div className="w-8 h-8 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full flex items-center justify-center">
-                            <span className="text-white text-xs font-semibold">{getInitials(_currentUser.fullName)}</span>
-                        </div>
+                        {_currentUser.avatarUrl ? (
+                            <img src={_currentUser.avatarUrl} alt="avatar" className="w-8 h-8 rounded-full object-cover" />
+                        ) : (
+                            <div className="w-8 h-8 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full flex items-center justify-center">
+                                <span className="text-white text-xs font-semibold">{getInitials(_currentUser.fullName)}</span>
+                            </div>
+                        )}
                         <div className="flex-1">
                             <div className="flex items-center border border-gray-200 rounded-lg px-3">
                                 <input
@@ -81,9 +85,13 @@ export default function DetailModal({
                     <div className="space-y-3">
                         {(comments || []).map((c) => (
                             <div key={c._id} className="flex items-start space-x-3">
-                                <div className="w-8 h-8 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full flex items-center justify-center">
-                                    <span className="text-white text-xs font-semibold">{getInitials(c.authorName)}</span>
-                                </div>
+                                {c.authorAvatarUrl ? (
+                                    <img src={c.authorAvatarUrl} alt="avatar" className="w-8 h-8 rounded-full object-cover" />
+                                ) : (
+                                    <div className="w-8 h-8 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full flex items-center justify-center">
+                                        <span className="text-white text-xs font-semibold">{getInitials(_currentUser.fullName)}</span>
+                                    </div>
+                                )}
                                 <div className="flex-1">
                                     <div className="bg-gray-50 rounded-lg px-3 py-2">
                                         <div className="text-sm font-medium text-gray-900">{c.authorName}

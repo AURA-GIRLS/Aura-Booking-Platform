@@ -13,6 +13,8 @@ import mongoose from "mongoose";
 import { redisClient } from "config/redis";
 import { generateOrderCode } from "./transaction.service";
 import { invalidateWeeklyCache } from "./slot.service";
+import { BOOKING_STATUS as BOOKING_STATUS_CONST } from "constants/booking";
+import { hasBookingEnded } from "constants/booking";
 
 // Helper function to check if two time slots overlap
 function slotsOverlap(slot1: ISlot, slot2: ISlot): boolean {
@@ -803,5 +805,63 @@ export function formatBookingResponse(booking: any): BookingResponseDTO {
         note: booking.note,
         createdAt: booking.createdAt || new Date(),
         updatedAt: booking.updatedAt || booking.createdAt || new Date()
+    };
+}
+
+// ==================== MARK COMPLETED ====================
+export async function markBookingCompleted(bookingId: string, muaIdFromReq: string) {
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(bookingId)) {
+        const err: any = { status: 404, code: "booking_not_found", message: "Booking not found" };
+        throw err;
+    }
+    if (!muaIdFromReq || !mongoose.Types.ObjectId.isValid(muaIdFromReq)) {
+        const err: any = { status: 401, code: "unauthorized", message: "Unauthorized" };
+        throw err;
+    }
+
+    const booking = await Booking.findById(bookingId).exec();
+    if (!booking) {
+        const err: any = { status: 404, code: "booking_not_found", message: "Booking not found" };
+        throw err;
+    }
+
+    // Ownership check
+    const ownerMuaId = booking.muaId?.toString?.();
+    if (!ownerMuaId || ownerMuaId !== muaIdFromReq) {
+        const err: any = { status: 403, code: "not_owner", message: "You are not the owner of this booking" };
+        throw err;
+    }
+
+    // Status check
+    if (booking.status !== BOOKING_STATUS_CONST.CONFIRMED) {
+        const err: any = { status: 409, code: "invalid_status", message: "Only CONFIRMED bookings can be completed" };
+        throw err;
+    }
+
+    // Time check (bookingDate + duration must be in the past)
+    const ended = hasBookingEnded({ bookingDate: booking.bookingDate as Date, duration: booking.duration as number });
+    if (!ended) {
+        const err: any = { status: 422, code: "too_early", message: "Booking has not ended yet" };
+        throw err;
+    }
+
+    // Update to COMPLETED with completedAt timestamp
+    const now = new Date();
+    const updated = await Booking.findByIdAndUpdate(
+        bookingId,
+        { status: BOOKING_STATUS_CONST.COMPLETED, completedAt: now, updatedAt: now },
+        { new: true, runValidators: true }
+    ).exec();
+
+    if (!updated) {
+        const err: any = { status: 500, code: "internal_error", message: "Failed to update booking" };
+        throw err;
+    }
+
+    return {
+        _id: updated._id.toString(),
+        status: updated.status,
+        completedAt: updated.completedAt
     };
 }

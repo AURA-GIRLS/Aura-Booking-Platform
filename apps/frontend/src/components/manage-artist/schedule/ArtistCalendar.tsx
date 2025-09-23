@@ -2,7 +2,7 @@
 import { Badge } from "@/components/lib/ui/badge";
 import { Button } from "@/components/lib/ui/button";
 import { Icon } from "@iconify/react";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/lib/ui/card";
+import { Card, CardHeader, CardContent, CardFooter } from "@/components/lib/ui/card";
 import { Separator } from "@/components/lib/ui/separator";
 import { useCallback, useEffect, useMemo, useState, useRef, useLayoutEffect } from "react";
 import dayjs from 'dayjs';
@@ -44,6 +44,7 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
   const [scheduleLoading, setScheduleLoading] = useState(false);
   const [pendingBookingsLoading, setPendingBookingsLoading] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [isCompleting, setIsCompleting] = useState(false);
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [modalSlotInfo, setModalSlotInfo] = useState<any>(null);
   const [newEventForm, setNewEventForm] = useState({
@@ -166,6 +167,39 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
       setLoading(false);
     }
   }, [fetchPendingBookings, fetchSchedule, showSuccess, showError]);
+
+  // Handle mark booking as COMPLETED
+  const handleMarkCompleted = useCallback(async () => {
+    if (!selectedEvent) return;
+    try {
+      setIsCompleting(true);
+      // Use the real Booking _id mapped into slotData.slotId
+      const bookingId = selectedEvent?.slotData?.slotId;
+      if (!bookingId) throw { code: 'invalid_request', message: 'Missing booking id' };
+      const res = await BookingService.completeBooking(String(bookingId));
+      // Success: update local state and notify
+      const newSelected = {
+        ...selectedEvent,
+        slotData: {
+          ...selectedEvent.slotData,
+          status: 'COMPLETED'
+        }
+      };
+      setSelectedEvent(newSelected);
+      // Keep calendar data in sync: update slotData list so future selections reflect COMPLETED
+      setSlotData(prev => prev.map(s => s.slotId === bookingId ? { ...s, status: 'COMPLETED' } : s));
+      showSuccess('Booking marked as completed');
+    } catch (err: any) {
+      const code = err?.code;
+      if (code === 'not_owner') showError('You are not the owner of this booking');
+      else if (code === 'invalid_status') showError('Only CONFIRMED bookings can be completed');
+      else if (code === 'too_early') showError('This booking has not ended yet');
+      else if (code === 'booking_not_found') showError('Booking not found');
+      else showError(err?.message || 'Failed to mark booking completed');
+    } finally {
+      setIsCompleting(false);
+    }
+  }, [selectedEvent, showError, showSuccess]);
 
   // Initialize calendar event handlers
   const { handleEventDrop, handleEventResize } = useCalendarEvents({
@@ -393,7 +427,7 @@ export function ArtistCalendar({ id }: { readonly id: string }) {
         // Find the corresponding slot data
         const slot = slotData.find(s => 
           (s.slotId && s.slotId === event.id) || 
-          (s.day + s.startTime === event.id)
+          (s.slotId + s.startTime === event.id)
         );
         setSelectedEvent({
           ...event,
@@ -830,46 +864,62 @@ if(loading && scheduleLoading && pendingBookingsLoading){
                   </>
                 ) : (
                   <div className="text-center py-8">
-                    <Icon icon="lucide:calendar" className="h-12 w-12 text-neutral-300 mx-auto mb-4" />
+                    <Icon icon="lucide:calendar" className="mx-auto h-12 w-12 text-neutral-300 mb-4" />
                     <p className="text-neutral-400">Select an event to view details</p>
                   </div>
                 )}
               </CardContent>
               {selectedEvent && (
-                <CardFooter className="px-6 pb-6">
+                <CardFooter className="px-6 pb-6 flex flex-col w-full">
                   <div className="flex gap-3 w-full">
-                    {selectedEvent.type === 'BOOKING' ? (
-                      /* Booking Actions - Reschedule/Cancel */
+                    {selectedEvent.type === "BOOKING" ? (
                       <>
                         <Button
-                          variant="outline" disabled={true}
+                          variant="outline"
+                          disabled={true}
                           className="flex-1 border-neutral-300 text-[#111] hover:bg-neutral-50 focus-visible:ring-2 focus-visible:ring-neutral-300 transition-all duration-200"
-                          onClick={() => handleOpenEditEvent(selectedEvent, setNewEventForm, setModalSlotInfo, setShowAddEventModal)}
+                          onClick={() =>
+                            handleOpenEditEvent(
+                              selectedEvent,
+                              setNewEventForm,
+                              setModalSlotInfo,
+                              setShowAddEventModal
+                            )
+                          }
                         >
                           <Icon icon="lucide:calendar" className="mr-2 h-4 w-4" />
                           Reschedule
                         </Button>
+
                         <Button
-                          variant="outline" 
+                          variant="outline"
                           className="flex-1 border-red-300 text-red-600 hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-300 transition-all duration-200"
                           onClick={() => handleDeleteEvent(selectedEvent)}
                           disabled={true}
                         >
                           <Icon icon="lucide:x" className="mr-2 h-4 w-4" />
-                          {loading ? 'Canceling...' : 'Cancel'}
+                          {loading ? "Canceling..." : "Cancel"}
                         </Button>
                       </>
                     ) : selectedEvent.canUpdate ? (
-                      /* Other Event Actions - Edit/Delete */
                       <>
                         <Button
                           variant="outline"
                           className="flex-1 border-[#EC5A86] text-[#111] hover:bg-[#EC5A86]/10 focus-visible:ring-2 focus-visible:ring-[#EC5A86]/40 hover:scale-105 transition-all duration-200"
-                          onClick={() => handleOpenEditEvent(selectedEvent, setNewEventForm, setModalSlotInfo, setShowAddEventModal)}
+                          onClick={() => {
+                            console.log("Editing event:", selectedEvent);
+                            handleOpenEditEvent(
+                              selectedEvent,
+                              setNewEventForm,
+                              setModalSlotInfo,
+                              setShowAddEventModal
+                            );
+                          }}
                         >
                           <Icon icon="lucide:edit" className="mr-2 h-4 w-4" />
                           Reschedule
                         </Button>
+
                         <Button
                           variant="destructive"
                           className="flex-1 bg-[#EC5A86] hover:bg-[#d54e77] text-white border-none focus-visible:ring-2 focus-visible:ring-[#EC5A86]/40 hover:scale-105 transition-all duration-200"
@@ -877,16 +927,32 @@ if(loading && scheduleLoading && pendingBookingsLoading){
                           disabled={loading}
                         >
                           <Icon icon="lucide:trash" className="mr-2 h-4 w-4" />
-                          {loading ? 'Canceling...' : 'Cancel'}
+                          {loading ? "Canceling..." : "Cancel"}
                         </Button>
                       </>
                     ) : (
-                      <div className="w-full text-center py-2">
+                      <div className="flex-1">
                         <p className="text-sm text-neutral-400">This event cannot be modified</p>
                       </div>
                     )}
                   </div>
+                  
+                  {selectedEvent.type === "BOOKING" &&
+                    selectedEvent.slotData?.status === "CONFIRMED" &&
+                    dayjs().isAfter(dayjs(selectedEvent.end)) && (
+                      <div className="mt-3 w-full">
+                        <Button
+                          aria-label="Mark booking as completed"
+                          disabled={isCompleting}
+                          onClick={handleMarkCompleted}
+                          className="w-full bg-[#EC5A86] hover:bg-[#d54e77] text-white h-9 text-sm rounded"
+                        >
+                          {isCompleting ? "Completing..." : "Mark as Completed"}
+                        </Button>
+                      </div>
+                    )}
                 </CardFooter>
+
               )}
             </Card>
           </div>

@@ -200,6 +200,17 @@ export const BookingService = {
     }
   },
 
+  // PATCH - Mark booking as COMPLETED
+  async completeBooking(id: string): Promise<ApiResponseDTO<{ _id: string; status: string; completedAt: string }>> {
+    try {
+      const res = await api.patch<ApiResponseDTO<{ _id: string; status: string; completedAt: string }>>(`/booking/${id}/complete`);
+      return res.data;
+    } catch (error: any) {
+      // throw backend JSON error { code, message, details? }
+      throw error.response?.data || error;
+    }
+  },
+
   // UPDATE - Reject booking request (MUA calendar)
   async rejectBooking(id: string): Promise<ApiResponseDTO<BookingResponseDTO>> {
     try {

@@ -27,9 +27,7 @@ export interface TransactionResponseDTO {
     currency: string;
     status: TransactionStatus;
     paymentMethod: PaymentMethod;
-    paymentReference: string;
-    createdAt: Date;
-    updatedAt: Date;
+    bookingDate?: string;
 }
 
 export interface PayOSCreateLinkInput {

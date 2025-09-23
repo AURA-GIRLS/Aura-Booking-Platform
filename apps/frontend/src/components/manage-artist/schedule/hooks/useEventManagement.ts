@@ -170,6 +170,7 @@ export const useEventManagement = ({
   }, [id, fetchSchedule, setLoading, showSuccess, showError, setShowAddEventModal, setNewEventForm, setSelectedEvent]);
 
   const handleOpenEditEvent = useCallback((selectedEvent: any, setNewEventForm: any, setModalSlotInfo: any, setShowAddEventModal: any) => {
+    console.log("ssss" + selectedEvent.slotData);
     if (!selectedEvent || !selectedEvent.slotData) {
       showError('Event information not found for editing');
       return;
