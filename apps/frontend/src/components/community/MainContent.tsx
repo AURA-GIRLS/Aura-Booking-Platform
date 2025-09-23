@@ -16,6 +16,7 @@ import { PostResponseDTO, TagResponseDTO, UserWallResponseDTO } from '@/types/co
 import type { UserResponseDTO } from '@/types/user.dtos'
 import { POST_STATUS } from '@/constants/index'
 import { Skeleton } from '@/components/lib/ui/skeleton'
+import { GeneralSkeleton } from '../generalUI/GeneralSkeleton'
 
 // Reusable filter state
 export type FilterState =

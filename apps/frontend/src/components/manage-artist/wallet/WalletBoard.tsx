@@ -75,6 +75,7 @@ export const WalletBoard = ({ muaId }: WalletBoardProps) => {
         status,
       });
       if (res.success && res.data) {
+        console.log("Loaded transactions", status, res.data);
         setState({
           items: res.data.transactions ?? [],
           total: res.data.total,
