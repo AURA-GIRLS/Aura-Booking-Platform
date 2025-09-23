@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Calendar, Clock, MapPin, DollarSign, Filter, User, Star, ChevronDown } from "lucide-react";
 import Notification from "@/components/generalUI/Notification";
+import FeedbackActions from "@/components/feedback/FeedbackActions";
 import { authService } from "@/services/auth";
 
 interface BookingHistoryItem {
@@ -356,6 +357,7 @@ const BookingHistory: React.FC = () => {
                       </div>
                     </div>
                   </div>
+                  <FeedbackActions booking={{ _id: booking._id, status: booking.status, feedbackId: (booking as any).feedbackId }} />
                 </div>
               ))}
             </div>

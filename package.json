@@ -19,10 +19,12 @@
     "install:all": "npm install --workspaces"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "@types/cookie-parser": "^1.4.9",
     "@types/multer": "^2.0.0",
     "@vercel/speed-insights": "^1.2.0",
     "cookie-parser": "^1.4.7",
+    "lucide-react": "^0.544.0",
     "multer": "^2.0.2"
   }
 }
