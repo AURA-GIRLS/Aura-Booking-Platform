@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import type { ApiResponseDTO } from "types";
-import { getMuaDashboardSummary, getRecentBookingsByMUA, getMuaServices, getMuaCalendarEvents, setServiceAvailability } from "@services/dashboard.service";
+import { getMuaDashboardSummary, getRecentBookingsByMUA, getMuaServices, getMuaCalendarEvents, setServiceAvailability, getServiceInsights } from "@services/dashboard.service";
 
 export class DashboardController {
   // GET /dashboard/mua/:muaId/summary
@@ -92,6 +92,38 @@ export class DashboardController {
         status: 500,
         success: false,
         message: error instanceof Error ? error.message : "Failed to get MUA services",
+      };
+      res.status(500).json(response);
+    }
+  }
+
+  // GET /dashboard/mua/:muaId/service-insights?limit=5
+  async getServiceInsights(req: Request, res: Response): Promise<void> {
+    try {
+      const { muaId } = req.params;
+      const { limit = "5" } = req.query as Record<string, string>;
+      if (!muaId) {
+        const response: ApiResponseDTO = {
+          status: 400,
+          success: false,
+          message: "muaId is required",
+        };
+        res.status(400).json(response);
+        return;
+      }
+      const data = await getServiceInsights(muaId, Number(limit));
+      const response: ApiResponseDTO = {
+        status: 200,
+        success: true,
+        message: "Service insights retrieved successfully",
+        data,
+      };
+      res.status(200).json(response);
+    } catch (error) {
+      const response: ApiResponseDTO = {
+        status: 500,
+        success: false,
+        message: error instanceof Error ? error.message : "Failed to get service insights",
       };
       res.status(500).json(response);
     }

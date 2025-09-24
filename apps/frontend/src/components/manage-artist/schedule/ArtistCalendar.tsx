@@ -939,7 +939,7 @@ if(loading && scheduleLoading && pendingBookingsLoading){
                   
                   {selectedEvent.type === "BOOKING" &&
                     selectedEvent.slotData?.status === "CONFIRMED" &&
-                    dayjs().isAfter(dayjs(selectedEvent.end)) && (
+                    dayjs().isAfter(dayjs(selectedEvent.end), 'minute') && (
                       <div className="mt-3 w-full">
                         <Button
                           aria-label="Mark booking as completed"

@@ -13,6 +13,9 @@ router.get("/mua/:muaId/recent", authenticateToken, (req, res) => ctrl.getMuaRec
 router.get("/mua/:muaId/services", authenticateToken, (req, res) => ctrl.getMuaServices(req, res));
 router.patch("/mua/:muaId/services/:serviceId/availability", authenticateToken, (req, res) => ctrl.setServiceAvailability(req, res));
 
+// Dashboard - Service insights
+router.get("/mua/:muaId/service-insights", authenticateToken, (req, res) => ctrl.getServiceInsights(req, res));
+
 // Dashboard - Calendar events
 router.get("/mua/:muaId/calendar", authenticateToken, (req, res) => ctrl.getMuaCalendarEvents(req, res));
 
