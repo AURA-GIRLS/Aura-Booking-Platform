@@ -15,7 +15,7 @@ export const createService = async (muaId: string, serviceData: Partial<ServiceR
 };
 
 export const updateService = async (serviceId: string, serviceData: Partial<ServiceResponseDTO>) => {
-  return ServicePackage.findByIdAndUpdate(serviceId, serviceData, { new: true });
+  return ServicePackage.findByIdAndUpdate(serviceId, serviceData, { new: true, runValidators: true });
 };
 
 export const deleteService = async (serviceId: string) => {

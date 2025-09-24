@@ -386,7 +386,15 @@ const BookingHistory: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => handleBookAgain(booking.mua._id, booking.servicePackage._id)}
-                        className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-pink-200 bg-white px-4 text-sm font-semibold text-pink-700 shadow-sm transition-colors hover:bg-pink-50"                      >
+                        disabled={booking.status !== 'COMPLETED'}
+                        aria-disabled={booking.status !== 'COMPLETED'}
+                        title={booking.status !== 'COMPLETED' ? 'Available after this booking is completed' : 'Book this service again'}
+                        className={`inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold shadow-sm transition-colors
+                          ${booking.status !== 'COMPLETED'
+                            ? 'border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed hover:bg-gray-100'
+                            : 'border border-pink-200 bg-white text-pink-700 hover:bg-pink-50'}`}
+                      >
+
                         <RefreshCcw size={16} /> Book Again
                       </button>
                     </div>

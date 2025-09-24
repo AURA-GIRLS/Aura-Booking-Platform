@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { DashboardService, type MuaDashboardSummary, type MuaService, type CalendarEvent, type FeedbackItem } from "@/services/dashboard";
+import { DashboardService, type MuaDashboardSummary, type MuaService, type CalendarEvent, type FeedbackItem, type ServiceInsightItem } from "@/services/dashboard";
 import type { BookingResponseDTO } from "@/types/booking.dtos";
 import type { MuaResponseDTO } from "@/types/user.dtos";
 import ProfileHeader from "./components/ProfileHeader";
@@ -10,6 +10,8 @@ import CalendarOverview from "./components/CalendarOverview";
 import ServicesList from "./components/ServicesList";
 import RecentFeedback from "./components/RecentFeedback";
 import RecentBookings from "./components/RecentBookings";
+import ServiceInsights from "./components/ServiceInsights";
+
 
 interface Props {
   muaId?: string;
@@ -38,6 +40,8 @@ export default function MUADashboard({ muaId }: Props) {
   const [services, setServices] = useState<MuaService[]>([]);
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
   const [recentFeedback, setRecentFeedback] = useState<FeedbackItem[]>([]);
+
+  const [serviceInsights, setServiceInsights] = useState<ServiceInsightItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [recentFilter, setRecentFilter] = useState<'ALL' | 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED'>('ALL');
@@ -73,12 +77,13 @@ export default function MUADashboard({ muaId }: Props) {
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth() + 1;
 
-        const [summaryRes, recentRes, servicesRes, calendarRes, feedbackRes] = await Promise.all([
+        const [summaryRes, recentRes, servicesRes, calendarRes, feedbackRes, insightsRes] = await Promise.all([
           DashboardService.getMuaSummary(effectiveMuaId),
           DashboardService.getMuaRecent(effectiveMuaId, 5),
           DashboardService.getMuaServices(effectiveMuaId),
           DashboardService.getMuaCalendarEvents(effectiveMuaId, year, month),
           DashboardService.getRecentFeedback(effectiveMuaId, 5),
+         DashboardService.getServiceInsights(effectiveMuaId, 3),
         ]);
 
         if (summaryRes.success && summaryRes.data) setStats(summaryRes.data);
@@ -86,6 +91,8 @@ export default function MUADashboard({ muaId }: Props) {
         if (servicesRes.success && servicesRes.data) setServices(servicesRes.data);
         if (calendarRes.success && calendarRes.data) setCalendarEvents(calendarRes.data);
         if (feedbackRes.success && feedbackRes.data) setRecentFeedback(feedbackRes.data);
+        if (insightsRes.success && insightsRes.data) setServiceInsights(insightsRes.data);
+
       } catch (error) {
         console.error('Failed to load dashboard data:', error);
       } finally {
@@ -206,6 +213,8 @@ export default function MUADashboard({ muaId }: Props) {
             formatCurrency={formatCurrency}
           />
         </div>
+        <ServiceInsights items={serviceInsights} />
+
       </div>
     </div>
   );

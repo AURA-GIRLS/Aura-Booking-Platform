@@ -10,10 +10,8 @@ export default function ArtistNavbar({ mua, setMua }:  Readonly<ArtistNavbarProp
   const [id, setId] = useState<string | null>(null);
   // Defer reading from localStorage until client-side to avoid SSR ReferenceError
   const [user, setUser] = useState<any>(null);
-  
   // Helper: convert full name to `A+B+C` format for query param `wn`
   const toPlusSeparated = (name?: string) => (name || "").trim().split(/\s+/).filter(Boolean).join("+");
-  
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {

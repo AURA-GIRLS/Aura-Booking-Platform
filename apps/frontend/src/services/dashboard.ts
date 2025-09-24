@@ -15,7 +15,7 @@ export interface MuaDashboardSummary {
   monthlyBookings: number;
   revenueGrowthPercent: number;
   bookingsGrowthPercent: number;
-  customersGrowthPercent: number; 
+  customersGrowthPercent: number;
 }
 
 export interface MuaService {
@@ -42,6 +42,14 @@ export interface FeedbackItem {
   createdAt?: string;
   reviewerName?: string;
   reviewerAvatarUrl?: string;
+}
+
+export interface ServiceInsightItem {
+  serviceId: string;
+  name: string;
+  category: string;
+  bookings: number;
+
 }
 
 export const DashboardService = {
@@ -76,6 +84,13 @@ export const DashboardService = {
 
   async setServiceAvailability(muaId: string, serviceId: string, isAvailable: boolean): Promise<ApiResponseDTO<any>> {
     const res = await api.patch<ApiResponseDTO<any>>(`/dashboard/mua/${muaId}/services/${serviceId}/availability`, { isAvailable });
+    return res.data;
+  },
+
+  async getServiceInsights(muaId: string, limit = 5): Promise<ApiResponseDTO<ServiceInsightItem[]>> {
+    const res = await api.get<ApiResponseDTO<ServiceInsightItem[]>>(`/dashboard/mua/${muaId}/service-insights`, {
+      params: { limit }
+    });
     return res.data;
   }
 };

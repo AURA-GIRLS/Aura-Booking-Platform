@@ -229,3 +229,27 @@ export async function setServiceAvailability(serviceId: string, isAvailable: boo
     throw new Error(`Failed to set service availability: ${error}`);
   }
 }
+
+export async function getServiceInsights(muaId: string, limit: number = 5): Promise<Array<{ serviceId: string; name: string; category: string; bookings: number }>> {
+  try {
+    const agg = await Booking.aggregate([
+      { $match: { muaId: new mongoose.Types.ObjectId(muaId), status: { $in: [BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.COMPLETED] } } },
+      { $group: { _id: "$serviceId", bookings: { $sum: 1 } } },
+      { $sort: { bookings: -1 } },
+      { $limit: limit },
+      { $lookup: { from: ServicePackage.collection.name, localField: "_id", foreignField: "_id", as: "service" } },
+      { $unwind: { path: "$service", preserveNullAndEmptyArrays: true } },
+      { $project: { _id: 0, serviceId: "$_id", name: { $ifNull: ["$service.name", "Unknown Service"] }, category: { $ifNull: ["$service.category", "UNKNOWN"] }, bookings: 1 } }
+    ]);
+
+    return agg.map((r: any) => ({
+      serviceId: r.serviceId?.toString?.() || "",
+      name: r.name,
+      category: r.category,
+      bookings: r.bookings || 0,
+    }));
+  } catch (error) {
+    throw new Error(`Failed to get service insights: ${error}`);
+  }
+}
+
