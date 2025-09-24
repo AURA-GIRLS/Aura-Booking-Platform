@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { PlusCircle } from 'lucide-react';
 import ServiceTable from './ServiceTable';
 import ServiceFormModal from './ServiceFormModal';
-import type { MuaService } from '@/services/dashboard'; // Re-using this type for now
+import type { MuaService } from '@/services/dashboard'; 
+import { api } from '@/config/api';
 
 interface Props {
   muaId: string;
@@ -19,19 +20,27 @@ export default function ManageServices({ muaId }: Props) {
   useEffect(() => {
     const fetchServices = async () => {
       setLoading(true);
-      // TODO: Replace with actual service call
-      // const response = await servicesService.getServicesByMua(muaId);
-      // if (response.success) {
-      //   setServices(response.data);
-      // }
-      // Mock data for now:
-      const mockServices: MuaService[] = [
-        { id: '1', name: 'Bridal Makeup', category: 'BRIDAL', duration: '120 minutes', price: '3000000', isActive: true },
-        { id: '2', name: 'Party Makeup', category: 'PARTY', duration: '60 minutes', price: '1500000', isActive: true },
-        { id: '3', name: 'Photoshoot Makeup', category: 'PHOTOSHOOT', duration: '90 minutes', price: '2000000', isActive: false },
-      ];
-      setServices(mockServices);
-      setLoading(false);
+      try {
+        // GET /api/services/mua/:muaId
+        const res = await api.get(`/services/mua/${muaId}`);
+        const data = res.data?.data || [];
+        // Map backend ServicePackage -> UI MuaService
+        const mapped: MuaService[] = data.map((s: any) => ({
+          id: s._id,
+          name: s.name,
+          category: s.category,
+          // duration is number (minutes) in DB; keep UI as "90 minutes"
+          duration: typeof s.duration === 'number' ? `${s.duration} minutes` : String(s.duration || ''),
+          price: String(s.price ?? ''),
+          // isAvailable in DB -> isActive in UI
+          isActive: Boolean(s.isAvailable ?? true),
+        }));
+        setServices(mapped);
+      } catch (err) {
+        console.error('Failed to fetch services', err);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchServices();
   }, [muaId]);
@@ -46,35 +55,91 @@ export default function ManageServices({ muaId }: Props) {
     setEditingService(null);
   };
 
-  const handleSaveService = (serviceToSave: MuaService) => {
-    // TODO: Add create/update logic with API call
-    if (editingService) {
-      // Update existing service in the UI
-      setServices(services.map(s => s.id === editingService.id ? { ...s, ...serviceToSave } : s));
-      console.log('Updating service:', { ...editingService, ...serviceToSave });
-    } else {
-      // Add new service in the UI (with a temporary ID)
-      const newService = { ...serviceToSave, id: `new-${Date.now()}` };
-      setServices([...services, newService]);
-      console.log('Creating new service:', newService);
+  const toBackendPayload = (svc: MuaService) => {
+    // Convert UI fields -> backend schema
+    const durationNumber = (() => {
+      if (typeof svc.duration === 'number') return svc.duration;
+      // extract first integer from string like "90 minutes"
+      const match = String(svc.duration).match(/\d+/);
+      return match ? parseInt(match[0], 10) : undefined;
+    })();
+    const priceNumber = typeof svc.price === 'string' ? parseInt(svc.price.toString().replace(/[^\d]/g, ''), 10) : Number(svc.price);
+
+    return {
+      name: svc.name,
+      category: svc.category,
+      duration: durationNumber,
+      price: priceNumber,
+      isAvailable: Boolean(svc.isActive),
+    };
+  };
+
+  const handleSaveService = async (serviceToSave: MuaService) => {
+    try {
+      if (editingService) {
+        // Update existing service
+        const payload = toBackendPayload(serviceToSave);
+        const res = await api.put(`/services/${editingService.id}`, payload);
+        const updated = res.data?.data;
+        // Map back to UI and update state
+        setServices((prev) => prev.map((s) =>
+          s.id === editingService.id
+            ? {
+                id: updated?._id || editingService.id,
+                name: updated?.name ?? serviceToSave.name,
+                category: updated?.category ?? serviceToSave.category,
+                duration: typeof updated?.duration === 'number' ? `${updated.duration} minutes` : serviceToSave.duration,
+                price: String(updated?.price ?? serviceToSave.price),
+                isActive: Boolean(updated?.isAvailable ?? serviceToSave.isActive),
+              }
+            : s
+        ));
+      } else {
+        // Create new service
+        const payload = toBackendPayload(serviceToSave);
+        const res = await api.post(`/services/mua/${muaId}`, payload);
+        const created = res.data?.data;
+        // Append to list
+        const newService: MuaService = {
+          id: created?._id || `tmp-${Date.now()}`,
+          name: created?.name ?? serviceToSave.name,
+          category: created?.category ?? serviceToSave.category,
+          duration: typeof created?.duration === 'number' ? `${created.duration} minutes` : serviceToSave.duration,
+          price: String(created?.price ?? serviceToSave.price),
+          isActive: Boolean(created?.isAvailable ?? serviceToSave.isActive),
+        };
+        setServices((prev) => [...prev, newService]);
+      }
+    } catch (err) {
+      console.error('Failed to save service', err);
+      alert('Failed to save service. Please try again.');
+    } finally {
+      handleCloseModal();
     }
-    handleCloseModal();
   };
 
-  const handleDeleteService = (serviceId: string) => {
-    // TODO: Add delete logic with API call
-    if (window.confirm('Are you sure you want to delete this service?')) {
-      setServices(services.filter(s => s.id !== serviceId));
-      console.log('Deleting service:', serviceId);
+  const handleDeleteService = async (serviceId: string) => {
+    if (!window.confirm('Are you sure you want to delete this service?')) return;
+    try {
+      await api.delete(`/services/${serviceId}`);
+      setServices((prev) => prev.filter((s) => s.id !== serviceId));
+    } catch (err) {
+      console.error('Failed to delete service', err);
+      alert('Failed to delete service. Please try again.');
     }
   };
 
-  const handleToggleStatus = (serviceToToggle: MuaService) => {
-    // TODO: Add status toggle logic with API call
-    setServices(services.map(s => s.id === serviceToToggle.id ? { ...s, isActive: !s.isActive } : s));
-    console.log('Toggling status for service:', serviceToToggle.id);
+  const handleToggleStatus = async (serviceToToggle: MuaService) => {
+    try {
+      const nextActive = !serviceToToggle.isActive;
+      // Update only isAvailable via PUT
+      await api.put(`/services/${serviceToToggle.id}`, { isAvailable: nextActive });
+      setServices((prev) => prev.map((s) => (s.id === serviceToToggle.id ? { ...s, isActive: nextActive } : s)));
+    } catch (err) {
+      console.error('Failed to toggle service status', err);
+      alert('Failed to update service status. Please try again.');
+    }
   };
-
 
   if (loading) {
     return <div className="text-center py-10">Loading services...</div>;

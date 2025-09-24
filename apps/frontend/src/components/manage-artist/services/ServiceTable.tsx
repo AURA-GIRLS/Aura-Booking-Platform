@@ -18,21 +18,21 @@ export default function ServiceTable({ services, onEdit, onDelete, onToggleStatu
   return (
     <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="min-w-full text-sm text-left text-gray-700">
+        <table className="min-w-full text-sm text-left text-gray-700 table-fixed">
           <thead className="bg-gray-50 text-xs text-gray-700 uppercase tracking-wider">
             <tr>
-              <th scope="col" className="px-6 py-3">Service Name</th>
-              <th scope="col" className="px-6 py-3">Category</th>
-              <th scope="col" className="px-6 py-3">Duration</th>
-              <th scope="col" className="px-6 py-3">Price</th>
-              <th scope="col" className="px-6 py-3">Status</th>
-              <th scope="col" className="px-6 py-3 text-center">Actions</th>
+              <th scope="col" className="px-6 py-3 w-[28%]">Service Name</th>
+              <th scope="col" className="px-6 py-3 w-[16%]">Category</th>
+              <th scope="col" className="px-6 py-3 w-[16%]">Duration</th>
+              <th scope="col" className="px-6 py-3 w-[16%]">Price</th>
+              <th scope="col" className="px-6 py-3 w-[12%]">Status</th>
+              <th scope="col" className="px-6 py-3 text-center w-[12%]">Actions</th>
             </tr>
           </thead>
           <tbody>
             {services.map((service) => (
               <tr key={service.id} className="bg-white border-b hover:bg-gray-50">
-                <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis">
                   {service.name}
                 </td>
                 <td className="px-6 py-4">
@@ -40,11 +40,11 @@ export default function ServiceTable({ services, onEdit, onDelete, onToggleStatu
                     {service.category}
                   </span>
                 </td>
-                <td className="px-6 py-4">{service.duration}</td>
-                <td className="px-6 py-4 font-semibold text-pink-600">{formatPrice(service.price)}</td>
+                <td className="px-6 py-4 whitespace-nowrap overflow-hidden text-ellipsis">{service.duration}</td>
+                <td className="px-6 py-4 font-semibold text-pink-600 whitespace-nowrap">{formatPrice(service.price)}</td>
                 <td className="px-6 py-4">
                   <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${service.isActive
+                    className={`inline-flex items-center justify-center w-24 px-2.5 py-0.5 rounded-full text-xs font-medium ${service.isActive
                         ? 'bg-green-100 text-green-800'
                         : 'bg-red-100 text-red-800'
                       }`}>
