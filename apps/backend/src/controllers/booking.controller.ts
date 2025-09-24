@@ -14,12 +14,14 @@ import {
   getAvailableSlotsOfService,
   getAvailableMonthlySlots,
   getAvailableMuaServicesByDay,
-  createRedisPendingBooking
+  createRedisPendingBooking,
+  markBookingCompleted
 } from "../services/booking.service";
 import type { CreateBookingDTO, UpdateBookingDTO } from "../types/booking.dtos";
 import type { ApiResponseDTO } from "types";
 import { handleBalanceConfirmBooking } from "@services/transaction.service";
 import { BOOKING_STATUS } from "constants/index";
+import { MUA } from "@models/muas.models";
 
 export class BookingController {
 
@@ -487,6 +489,47 @@ export class BookingController {
         message: error instanceof Error ? error.message : "Failed to reject booking"
       };
       res.status(500).json(response);
+    }
+  }
+
+  // PATCH - Mark booking as COMPLETED (MUA ownership required)
+  async markCompleted(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const user: any = (req as any).user;
+      let muaIdFromReq: string | undefined = user?.muaId;
+
+      // If token doesn't carry muaId, resolve from userId -> MUA document
+      if (!muaIdFromReq) {
+        const userId = user?.userId || user?.id;
+        if (userId) {
+          const muaDoc = await MUA.findOne({ userId }).select("_id").lean();
+          if (muaDoc?._id) {
+            muaIdFromReq = String(muaDoc._id);
+          }
+        }
+      }
+
+      if (!muaIdFromReq) {
+        res.status(401).json({ code: "unauthorized", message: "Unauthorized" });
+        return;
+      }
+
+      const data = await markBookingCompleted(id, String(muaIdFromReq));
+
+      const response: ApiResponseDTO = {
+        status: 200,
+        success: true,
+        message: "Booking marked as completed",
+        data
+      };
+      res.status(200).json(response);
+    } catch (e: any) {
+      const status = e?.status || 500;
+      const code = e?.code || "internal_error";
+      const message = e?.message || "Internal server error";
+      const details = e?.details;
+      res.status(status).json({ code, message, ...(details ? { details } : {}) });
     }
   }
 
