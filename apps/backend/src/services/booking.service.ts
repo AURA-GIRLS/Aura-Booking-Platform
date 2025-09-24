@@ -1,7 +1,7 @@
 import type {ISlot } from "types/schedule.interfaces";
 import { getMondayOfWeek } from "utils/calendarUtils";
 import { getFinalSlots } from "./schedule.service";
-import { fromUTC } from "utils/timeUtils";
+import { fromUTC, toUTC } from "utils/timeUtils";
 import { SLOT_TYPES, BOOKING_STATUS, BOOKING_TYPES, TRANSACTION_STATUS } from "constants/index";
 import { Booking } from "models/bookings.models";
 import type { CreateBookingDTO, UpdateBookingDTO, BookingResponseDTO, IBookingSlot, IAvailableMuaServices, PendingBookingResponseDTO } from "types/booking.dtos";
@@ -351,6 +351,10 @@ async function checkBookingConflict(
         const dayStart = bookingStart.startOf('day').toDate();
         const dayEnd = bookingStart.endOf('day').toDate();
 
+        console.log("booking start" + bookingStart.toDate());
+        console.log("booking end" + bookingEnd.toDate());
+        console.log("day start" + dayStart);
+        console.log("day end" + dayEnd);
         // Find existing bookings for the same MUA on the same day
         const filter: any = {
             muaId,
@@ -358,7 +362,7 @@ async function checkBookingConflict(
                 $gte: dayStart,
                 $lte: dayEnd
             },
-            status: { $nin: [BOOKING_STATUS.CANCELLED] } // Exclude cancelled bookings
+            status: { $nin: [BOOKING_STATUS.CANCELLED, BOOKING_STATUS.REJECTED] } // Exclude cancelled bookings
         };
 
         // Exclude current booking if updating
@@ -372,7 +376,8 @@ async function checkBookingConflict(
         for (const existingBooking of existingBookings) {
             const existingStart = dayjs(existingBooking.bookingDate);
             const existingEnd = existingStart.add(existingBooking.duration || 0, 'minute');
-
+            console.log("existing start" + existingStart.toDate());
+            console.log("existing end " + existingEnd.toDate());
             if (checkBookingOverlap(
                 bookingStart.toDate(),
                 bookingEnd.toDate(),
@@ -447,6 +452,7 @@ export async function createBooking(bookingData: CreateBookingDTO): Promise<Book
 export async function createRedisPendingBooking(bookingData: CreateBookingDTO): Promise<null | PendingBookingResponseDTO> {
     try {
         // Check for booking conflicts before creating
+        console.log("booking date in create redis pending booking: " + bookingData.bookingDate);
         const conflictCheck = await checkBookingConflict(
             bookingData.muaId,
             bookingData.bookingDate,

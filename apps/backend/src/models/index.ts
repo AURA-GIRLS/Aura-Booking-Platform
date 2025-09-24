@@ -11,8 +11,11 @@ export {
 
 // bookings
 export {
-  Booking,
   Feedback
+} from "./feedbacks.models";
+
+export {
+  Booking,
 } from "./bookings.models";
 
 // services

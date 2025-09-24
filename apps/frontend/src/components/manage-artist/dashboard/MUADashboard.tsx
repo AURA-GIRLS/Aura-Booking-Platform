@@ -12,6 +12,7 @@ import RecentFeedback from "./components/RecentFeedback";
 import RecentBookings from "./components/RecentBookings";
 import ServiceInsights from "./components/ServiceInsights";
 
+
 interface Props {
   muaId?: string;
 }
@@ -39,6 +40,7 @@ export default function MUADashboard({ muaId }: Props) {
   const [services, setServices] = useState<MuaService[]>([]);
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
   const [recentFeedback, setRecentFeedback] = useState<FeedbackItem[]>([]);
+
   const [serviceInsights, setServiceInsights] = useState<ServiceInsightItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -81,7 +83,7 @@ export default function MUADashboard({ muaId }: Props) {
           DashboardService.getMuaServices(effectiveMuaId),
           DashboardService.getMuaCalendarEvents(effectiveMuaId, year, month),
           DashboardService.getRecentFeedback(effectiveMuaId, 5),
-          DashboardService.getServiceInsights(effectiveMuaId, 3),
+         DashboardService.getServiceInsights(effectiveMuaId, 3),
         ]);
 
         if (summaryRes.success && summaryRes.data) setStats(summaryRes.data);
@@ -90,6 +92,7 @@ export default function MUADashboard({ muaId }: Props) {
         if (calendarRes.success && calendarRes.data) setCalendarEvents(calendarRes.data);
         if (feedbackRes.success && feedbackRes.data) setRecentFeedback(feedbackRes.data);
         if (insightsRes.success && insightsRes.data) setServiceInsights(insightsRes.data);
+
       } catch (error) {
         console.error('Failed to load dashboard data:', error);
       } finally {
@@ -210,9 +213,8 @@ export default function MUADashboard({ muaId }: Props) {
             formatCurrency={formatCurrency}
           />
         </div>
-
-        {/* Insights at the very bottom */}
         <ServiceInsights items={serviceInsights} />
+
       </div>
     </div>
   );

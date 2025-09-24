@@ -252,3 +252,4 @@ export async function getServiceInsights(muaId: string, limit: number = 5): Prom
     throw new Error(`Failed to get service insights: ${error}`);
   }
 }
+

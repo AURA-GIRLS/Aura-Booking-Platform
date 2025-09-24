@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import type { ApiResponseDTO } from "types";
 import { getMuaDashboardSummary, getRecentBookingsByMUA, getMuaServices, getMuaCalendarEvents, setServiceAvailability, getServiceInsights } from "@services/dashboard.service";
 
+
 export class DashboardController {
   // GET /dashboard/mua/:muaId/summary
   async getMuaSummary(req: Request, res: Response): Promise<void> {

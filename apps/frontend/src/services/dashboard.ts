@@ -49,6 +49,7 @@ export interface ServiceInsightItem {
   name: string;
   category: string;
   bookings: number;
+
 }
 
 export const DashboardService = {

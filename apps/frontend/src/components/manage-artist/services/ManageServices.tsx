@@ -140,7 +140,6 @@ export default function ManageServices({ muaId }: Props) {
       alert('Failed to update service status. Please try again.');
     }
   };
-
   if (loading) {
     return <div className="text-center py-10">Loading services...</div>;
   }

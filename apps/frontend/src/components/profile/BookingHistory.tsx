@@ -394,6 +394,7 @@ const BookingHistory: React.FC = () => {
                             ? 'border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed hover:bg-gray-100'
                             : 'border border-pink-200 bg-white text-pink-700 hover:bg-pink-50'}`}
                       >
+
                         <RefreshCcw size={16} /> Book Again
                       </button>
                     </div>
