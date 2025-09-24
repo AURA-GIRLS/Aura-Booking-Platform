@@ -508,6 +508,13 @@ export default function DetailModal({
                                 <span className="text-white text-xs font-semibold">{getInitials(_currentUser.fullName)}</span>
                             </div>
                         )}
+                        {_currentUser.avatarUrl ? (
+                            <img src={_currentUser.avatarUrl} alt="avatar" className="w-8 h-8 rounded-full object-cover" />
+                        ) : (
+                            <div className="w-8 h-8 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full flex items-center justify-center">
+                                <span className="text-white text-xs font-semibold">{getInitials(_currentUser.fullName)}</span>
+                            </div>
+                        )}
                         <div className="flex-1">
                             <div className="flex items-center border border-gray-200 rounded-lg px-3">
                                 <input
@@ -535,43 +542,6 @@ export default function DetailModal({
                             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-rose-600 mx-auto"></div>
                         </div>
                     )}
-<<<<<<< HEAD
-                    <div className="space-y-3">
-                        {(comments || []).map((c) => (
-                            <div key={c._id} className="flex items-start space-x-3">
-                                {c.authorAvatarUrl ? (
-                                    <img src={c.authorAvatarUrl} alt="avatar" className="w-8 h-8 rounded-full object-cover" />
-                                ) : (
-                                    <div className="w-8 h-8 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full flex items-center justify-center">
-                                        <span className="text-white text-xs font-semibold">{getInitials(_currentUser.fullName)}</span>
-                                    </div>
-                                )}
-                                <div className="flex-1">
-                                    <div className="bg-gray-50 rounded-lg px-3 py-2">
-                                        <div className="text-sm font-medium text-gray-900">{c.authorName}
-                                            {c.authorRole && c.authorRole.toUpperCase() === USER_ROLES.ARTIST && (
-                                                <span className="relative group ml-1 cursor-pointer">
-                                                    <TooltipProvider>
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <span
-                                                                    className="inline-flex items-center justify-center rounded-full bg-rose-600 p-[0.1rem]"
-                                                                    aria-describedby={`artist-tip-${c._id}`}
-                                                                >
-                                                                    <Check className="w-2 h-2 text-white font-semibold" aria-hidden="true" />
-                                                                </span>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent className="bg-gray-900 text-white text-xs">
-                                                                <p>Verified Artist badge</p>
-                                                            </TooltipContent>
-                                                        </Tooltip>
-                                                    </TooltipProvider>
-                                                </span>
-                                            )}
-                                            {c.authorId === post.authorId && (
-                                                <span className="ml-2 inline-block bg-rose-100 text-rose-600 text-xs px-2 py-0.5 rounded-full">Author</span>
-                                            )}
-=======
 
                     {/* Comment List */}
                     {!loading && comments.length === 0 && (
@@ -588,7 +558,6 @@ export default function DetailModal({
                                     ) : (
                                         <div className="w-8 h-8 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full flex items-center justify-center">
                                             <span className="text-white text-xs font-semibold">{getInitials(comment.authorName)}</span>
->>>>>>> origin/dev
                                         </div>
                                     )}
                                     <div className="flex-1">
