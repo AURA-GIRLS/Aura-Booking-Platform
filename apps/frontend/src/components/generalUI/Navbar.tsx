@@ -36,7 +36,7 @@ export default function Navbar({ user, setUser }: Readonly<NavbarProps>)  {
           <li><Link href="/user/artists/makeup-artist-list">Makeup Artist</Link></li>
           {/* <li><Link href="/booking">Booking</Link></li> */}
           <li><Link href="/user/community">Community</Link></li>
-          <li><Link href="/user/about">About Us</Link></li>
+          <li><Link href={{ pathname: "/user/about" }}>About Us</Link></li>
         </ul>
 
         {/* Right: Icons */}
@@ -61,6 +61,12 @@ export default function Navbar({ user, setUser }: Readonly<NavbarProps>)  {
                 <DropdownMenuItem asChild>
                   <Link href="/user/profile">My Profile</Link>
                 </DropdownMenuItem>
+<<<<<<< HEAD
+=======
+                  <DropdownMenuItem asChild>
+                  <Link href={{ pathname: "/user/profile/booking-history" }}>Booking History</Link>
+                </DropdownMenuItem>
+>>>>>>> origin/dev
                 <DropdownMenuItem onClick={handleLogout} className="px-2 py-2 text-red-500 cursor-pointer">Logout</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -79,7 +85,7 @@ export default function Navbar({ user, setUser }: Readonly<NavbarProps>)  {
           <li><Link href="/user/artists/makeup-artist-list">Makeup Artist</Link></li>
           {/* <li><Link href="/booking">Booking</Link></li> */}
           <li><Link href={{ pathname: "/user/blog" }}>Blog</Link></li>
-          <li><Link href="/user/about">About Us</Link></li>
+          <li><Link href={{ pathname: "/user/about" }}>About Us</Link></li>
           </ul>
           <div className="mt-3 flex items-center gap-3">
             <button aria-label="Cart" className="p-2 hover:bg-gray-100 rounded">🛒</button>
@@ -102,6 +108,12 @@ export default function Navbar({ user, setUser }: Readonly<NavbarProps>)  {
                 <DropdownMenuItem asChild>
                   <Link href="/user/profile">My Profile</Link>
                 </DropdownMenuItem>
+<<<<<<< HEAD
+=======
+                   <DropdownMenuItem asChild>
+                  <Link href={{ pathname: "/user/profile/booking-history" }}>Booking History</Link>
+                </DropdownMenuItem>
+>>>>>>> origin/dev
                 <DropdownMenuItem onClick={handleLogout} className="px-2 py-2 text-red-500 cursor-pointer">Logout</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

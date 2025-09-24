@@ -321,7 +321,6 @@ export default function MainContent() {
             setActiveFilter={setActiveFilter}
           />
         <div className="flex-1 w-full max-w-2xl mx-auto my-4">{renderCenter()}</div>
-        <div className="hidden lg:block lg:w-72 xl:w-80 flex-shrink-0">
           <RightSidebar
             selectedTab={selectedTab}
             setSelectedTab={setSelectedTab}
@@ -329,7 +328,6 @@ export default function MainContent() {
             currentUser={(currentUser as any) ?? (mockUser as any)}
             events={events}
           />
-        </div>
       </div>
     </div>
   )

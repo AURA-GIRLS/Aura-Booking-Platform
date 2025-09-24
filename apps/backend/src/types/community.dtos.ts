@@ -31,14 +31,25 @@ export interface PostResponseDTO {
     createdAt: Date;
     updatedAt: Date;
 }
+export interface CreateCommentDTO {
+  postId: string;
+  parentId?: string; // null = comment gốc
+  content: string;
+}
+export interface UpdateCommentDTO {
+  content: string;
+}
 export interface CommentResponseDTO {
     _id: string;
+    postId: string;
+    parentId?: string;
     authorId: string;
     authorName:string;
     authorRole:string;
     authorAvatarUrl?:string;
     content: string;
     likesCount: number;
+    repliesCount: number;
     createdAt: Date;
     updatedAt: Date;
 }

@@ -22,6 +22,7 @@ const CommentSchema = new Schema({
   parentId: { type: Types.ObjectId, ref: "Comment", default: null }, // null = comment gốc
   content:  { type: String, required: true },
   likesCount: { type: Number, default: 0 },
+  repliesCount: { type: Number, default: 0 },
 }, { timestamps: true });
 
 const ReactionSchema = new Schema({

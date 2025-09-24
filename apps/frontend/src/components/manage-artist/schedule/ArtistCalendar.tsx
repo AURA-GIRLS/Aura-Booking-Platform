@@ -906,14 +906,9 @@ if(loading && scheduleLoading && pendingBookingsLoading){
                         <Button
                           variant="outline"
                           className="flex-1 border-[#EC5A86] text-[#111] hover:bg-[#EC5A86]/10 focus-visible:ring-2 focus-visible:ring-[#EC5A86]/40 hover:scale-105 transition-all duration-200"
-                          onClick={() => {
+                          onClick={() =>{
                             console.log("Editing event:", selectedEvent);
-                            handleOpenEditEvent(
-                              selectedEvent,
-                              setNewEventForm,
-                              setModalSlotInfo,
-                              setShowAddEventModal
-                            );
+                            handleOpenEditEvent(selectedEvent, setNewEventForm, setModalSlotInfo, setShowAddEventModal);
                           }}
                         >
                           <Icon icon="lucide:edit" className="mr-2 h-4 w-4" />
