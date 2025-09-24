@@ -17,6 +17,13 @@ export interface MuaResponseDTO {
   feedbackCount?: number;
   bookingCount?: number;
   isVerified?: boolean;
+  // Optional populated user object when available
+  user?: {
+    _id: string;
+    fullName?: string;
+    avatarUrl?: string;
+    email?: string;
+  };
 }
 
 import { 

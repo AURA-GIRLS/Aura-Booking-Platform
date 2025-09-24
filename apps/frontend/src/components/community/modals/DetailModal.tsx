@@ -508,6 +508,13 @@ export default function DetailModal({
                                 <span className="text-white text-xs font-semibold">{getInitials(_currentUser.fullName)}</span>
                             </div>
                         )}
+                        {_currentUser.avatarUrl ? (
+                            <img src={_currentUser.avatarUrl} alt="avatar" className="w-8 h-8 rounded-full object-cover" />
+                        ) : (
+                            <div className="w-8 h-8 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full flex items-center justify-center">
+                                <span className="text-white text-xs font-semibold">{getInitials(_currentUser.fullName)}</span>
+                            </div>
+                        )}
                         <div className="flex-1">
                             <div className="flex items-center border border-gray-200 rounded-lg px-3">
                                 <input

@@ -42,6 +42,9 @@ router.patch("/:id/accept", authenticateToken, (req, res) => ctrl.acceptBooking(
 // UPDATE - Reject booking request (MUA calendar)
 router.patch("/:id/reject", authenticateToken, (req, res) => ctrl.rejectBooking(req, res));
 
+// PATCH - Mark booking as COMPLETED
+router.patch("/:id/complete", authenticateToken, (req, res) => ctrl.markCompleted(req, res));
+
 // DELETE - Cancel booking (soft delete)
 router.patch("/:id/cancel", authenticateToken, (req, res) => ctrl.cancel(req, res));
 
