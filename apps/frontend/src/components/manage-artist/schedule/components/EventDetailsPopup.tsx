@@ -10,6 +10,8 @@ import { useEffect, useRef, useState } from 'react';
 interface EventDetailsPopupProps {
   selectedEvent: any;
   loading: boolean;
+  isCompleting?: boolean;
+  handleMarkCompleted?: () => void;
   onEditEvent: (event: any) => void;
   onDeleteEvent: (event: any) => void;
   onClose: () => void;
@@ -19,6 +21,8 @@ interface EventDetailsPopupProps {
 export function EventDetailsPopup({ 
   selectedEvent, 
   loading, 
+  isCompleting = false,
+  handleMarkCompleted,
   onEditEvent, 
   onDeleteEvent, 
   onClose,
@@ -117,7 +121,7 @@ export function EventDetailsPopup({
                     </div>
                     <div>
                       <h3 className="font-semibold text-[#111] text-base">{selectedEvent.slotData?.serviceName || 'Service'}</h3>
-                      <p className="text-xs text-neutral-500">#{selectedEvent.id?.slice(-6) || '456789'}</p>
+                      <p className="text-xs text-neutral-500">#{selectedEvent.id?.slice(0,6) || '456789'}</p>
                     </div>
                   </div>
                   {selectedEvent.slotData?.status && (() => {
@@ -279,7 +283,7 @@ export function EventDetailsPopup({
               {selectedEvent.type === 'BOOKING' ? (
                 /* Booking Actions - Reschedule/Cancel */
                 <>
-                  <Button
+                  {/* <Button
                     variant="outline" 
                     disabled={true}
                     className="flex-1 border-neutral-300 text-[#111] hover:bg-neutral-50 focus-visible:ring-2 focus-visible:ring-neutral-300 transition-all duration-200"
@@ -296,7 +300,7 @@ export function EventDetailsPopup({
                   >
                     <Icon icon="lucide:x" className="mr-2 h-4 w-4" />
                     {loading ? 'Canceling...' : 'Cancel'}
-                  </Button>
+                  </Button> */}
                 </>
               ) : selectedEvent.canUpdate ? (
                 /* Other Event Actions - Edit/Delete */
@@ -325,6 +329,21 @@ export function EventDetailsPopup({
                 </div>
               )}
             </div>
+             {/* Mark as Completed Button - Chỉ hiển thị khi booking đã CONFIRMED và đã kết thúc */}
+        {selectedEvent.type === "BOOKING" &&
+          selectedEvent.slotData?.status === "CONFIRMED" &&
+          dayjs().isAfter(dayjs(selectedEvent.end)) && handleMarkCompleted && (
+            <div className="mt-3 w-full">
+              <Button
+                aria-label="Mark booking as completed"
+                disabled={isCompleting}
+                onClick={handleMarkCompleted}
+                className="w-full bg-[#EC5A86] hover:bg-[#d54e77] text-white h-9 text-sm rounded"
+              >
+                {isCompleting ? "Completing..." : "Mark as Completed"}
+              </Button>
+            </div>
+          )}
           </CardFooter>
         </Card>
       </div>

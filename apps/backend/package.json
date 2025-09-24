@@ -11,6 +11,7 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@types/node": "^20.19.17",
     "@payos/node": "^2.0.3",
     "@redis/entraid": "^5.8.2",
     "@types/node": "^20.19.17",

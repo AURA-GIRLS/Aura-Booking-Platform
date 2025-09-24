@@ -97,3 +97,10 @@ export interface IAvailableMuaServices{
     mua:MuaResponseDTO; 
     services:ServiceResponseDTO[]
 }
+
+// Response DTO for mark-completed endpoint
+export interface CompleteBookingResponseDTO {
+  _id: string;
+  status: BookingStatus;
+  completedAt: Date | null;
+}

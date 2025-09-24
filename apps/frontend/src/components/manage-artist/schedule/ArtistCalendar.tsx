@@ -52,6 +52,7 @@ export function ArtistCalendar({
   const [scheduleLoading, setScheduleLoading] = useState(false);
   const [pendingBookingsLoading, setPendingBookingsLoading] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [isCompleting, setIsCompleting] = useState(false);
   const [popupPosition, setPopupPosition] = useState<{ x: number; y: number } | null>(null);
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [modalSlotInfo, setModalSlotInfo] = useState<any>(null);
@@ -175,6 +176,39 @@ export function ArtistCalendar({
       setLoading(false);
     }
   }, [fetchPendingBookings, fetchSchedule, showSuccess, showError]);
+
+  // Handle mark booking as COMPLETED
+  const handleMarkCompleted = useCallback(async () => {
+    if (!selectedEvent) return;
+    try {
+      setIsCompleting(true);
+      // Use the real Booking _id mapped into slotData.slotId
+      const bookingId = selectedEvent?.slotData?.slotId;
+      if (!bookingId) throw { code: 'invalid_request', message: 'Missing booking id' };
+      const res = await BookingService.completeBooking(String(bookingId));
+      // Success: update local state and notify
+      const newSelected = {
+        ...selectedEvent,
+        slotData: {
+          ...selectedEvent.slotData,
+          status: 'COMPLETED'
+        }
+      };
+      setSelectedEvent(newSelected);
+      // Keep calendar data in sync: update slotData list so future selections reflect COMPLETED
+      setSlotData(prev => prev.map(s => s.slotId === bookingId ? { ...s, status: 'COMPLETED' } : s));
+      showSuccess('Booking marked as completed');
+    } catch (err: any) {
+      const code = err?.code;
+      if (code === 'not_owner') showError('You are not the owner of this booking');
+      else if (code === 'invalid_status') showError('Only CONFIRMED bookings can be completed');
+      else if (code === 'too_early') showError('This booking has not ended yet');
+      else if (code === 'booking_not_found') showError('Booking not found');
+      else showError(err?.message || 'Failed to mark booking completed');
+    } finally {
+      setIsCompleting(false);
+    }
+  }, [selectedEvent, showError, showSuccess]);
 
   // Initialize calendar event handlers
   const { handleEventDrop, handleEventResize } = useCalendarEvents({
@@ -891,25 +925,26 @@ if(loading && scheduleLoading && pendingBookingsLoading){
        
       </div>
       
-      {/* Event Details Popup */}
-      {selectedEvent && popupPosition && (
-        <EventDetailsPopup
-          selectedEvent={selectedEvent}
-          loading={loading}
-          onEditEvent={(event) => {
-            console.log("Editing event:", event);
-            // Lưu selectedEvent data trước khi popup đóng
-            const eventToEdit = { ...event };
-            handleOpenEditEvent(eventToEdit, setNewEventForm, setModalSlotInfo, setShowAddEventModal);
-          }}
-          onDeleteEvent={handleDeleteEvent}
-          onClose={() => {
-            setSelectedEvent(null);
-            setPopupPosition(null);
-          }}
-          position={popupPosition}
-        />
-      )}
+        {/* Event Details Popup */}
+    {selectedEvent && popupPosition && (
+      <EventDetailsPopup
+        selectedEvent={selectedEvent}
+        loading={loading}
+        isCompleting={isCompleting}
+        handleMarkCompleted={handleMarkCompleted}
+        onEditEvent={(event) => {
+          console.log("Editing event:", event);
+          const eventToEdit = { ...event };
+          handleOpenEditEvent(eventToEdit, setNewEventForm, setModalSlotInfo, setShowAddEventModal);
+        }}
+        onDeleteEvent={handleDeleteEvent}
+        onClose={() => {
+          setSelectedEvent(null);
+          setPopupPosition(null);
+        }}
+        position={popupPosition}
+      />
+    )}
       
       {/* Event Modal */}
       <EventModal
