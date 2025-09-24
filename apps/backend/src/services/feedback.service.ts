@@ -1,6 +1,7 @@
 import { Types } from 'mongoose'; 
 import { Booking } from '../models/bookings.models'; 
 import { Feedback } from '../models/feedbacks.models'; 
+import { ServicePackage } from '../models/services.models'; 
 
 
 const allowedStatuses = new Set(['COMPLETED', 'DONE', 'FINISHED']); 
@@ -125,4 +126,124 @@ export class FeedbackService {
 
     await Feedback.deleteOne({ _id: feedback._id }); 
   } 
-} 
+
+  async getFeedbackSummaryByMua(muaId: string) {
+    if (!Types.ObjectId.isValid(muaId)) {
+      throw httpError(400, 'invalid_mua_id', 'Invalid MUA ID');
+    }
+
+    // Step 1: Lấy tất cả các dịch vụ của MUA
+    const services = await ServicePackage.find({ muaId: new Types.ObjectId(muaId) }).lean();
+    
+    // Step 2: Lấy tất cả feedback của MUA
+    const feedbacks = await Feedback.aggregate([
+      { $match: { muaId: new Types.ObjectId(muaId) } },
+      { $sort: { createdAt: -1 } },
+      {
+        $lookup: {
+          from: 'bookings',
+          localField: 'bookingId',
+          foreignField: '_id',
+          as: 'bookingInfo',
+        },
+      },
+      { $unwind: '$bookingInfo' },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'userInfo',
+        },
+      },
+      { $unwind: { path: '$userInfo', preserveNullAndEmptyArrays: true } },
+      {
+        $group: {
+          _id: '$bookingInfo.serviceId',
+          serviceId: { $first: '$bookingInfo.serviceId' },
+          averageRating: { $avg: '$rating' },
+          reviewCount: { $sum: 1 },
+          reviews: {
+            $push: {
+              _id: '$_id',
+              rating: '$rating',
+              comment: '$comment',
+              createdAt: '$createdAt',
+              reviewerName: { $ifNull: ['$userInfo.fullName', 'Anonymous'] },
+              reviewerAvatarUrl: { $ifNull: ['$userInfo.avatarUrl', ''] },
+            },
+          },
+        },
+      },
+    ]);
+
+    // Tạo một bản đồ để dễ dàng tra cứu feedback theo serviceId
+    const feedbackMap = new Map();
+    feedbacks.forEach(fb => {
+      feedbackMap.set(fb._id.toString(), {
+        averageRating: fb.averageRating,
+        reviewCount: fb.reviewCount,
+        reviews: fb.reviews.slice(0, 2), // Chỉ lấy 2 đánh giá gần nhất
+      });
+    });
+
+    // Kết hợp thông tin dịch vụ với feedback (nếu có)
+    const result = services.map(service => {
+      const feedback = feedbackMap.get(service._id.toString());
+      return {
+        serviceId: service._id,
+        serviceName: service.name,
+        serviceImageUrl: service.imageUrl,
+        averageRating: feedback ? Math.round(feedback.averageRating * 10) / 10 : 0,
+        reviewCount: feedback ? feedback.reviewCount : 0,
+        reviews: feedback ? feedback.reviews : [],
+      };
+    });
+
+    // Sắp xếp theo số lượng đánh giá giảm dần
+    return result.sort((a, b) => b.reviewCount - a.reviewCount);
+  }
+
+  async getFeedbackForService(muaId: string, serviceId: string, page = 1, limit = 5) {
+    if (!Types.ObjectId.isValid(muaId)) {
+      throw httpError(400, 'invalid_mua_id', 'Invalid MUA ID');
+    }
+    if (!Types.ObjectId.isValid(serviceId)) {
+      throw httpError(400, 'invalid_service_id', 'Invalid Service ID');
+    }
+
+    // Find bookings for the specific service and MUA
+    const bookings = await Booking.find({
+      muaId: new Types.ObjectId(muaId),
+      serviceId: new Types.ObjectId(serviceId),
+    }).select('_id');
+
+    const bookingIds = bookings.map(b => b._id);
+
+    if (bookingIds.length === 0) {
+      return { data: [], total: 0, page, limit };
+    }
+
+    const skip = (page - 1) * limit;
+    const total = await Feedback.countDocuments({ bookingId: { $in: bookingIds } });
+
+    const feedbacks = await Feedback.find({ bookingId: { $in: bookingIds } })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate({ path: 'userId', select: 'fullName avatarUrl' })
+      .lean();
+
+    // Map to a flatter shape for frontend convenience
+    const data = feedbacks.map((it: any) => ({
+      _id: it._id,
+      rating: it.rating,
+      comment: it.comment,
+      createdAt: it.createdAt,
+      reviewerName: it.userId?.fullName || 'Anonymous Customer',
+      reviewerAvatarUrl: it.userId?.avatarUrl || '',
+    }));
+
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+}
