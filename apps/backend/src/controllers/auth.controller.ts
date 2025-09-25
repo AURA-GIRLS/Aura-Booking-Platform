@@ -16,6 +16,24 @@ import { getCookieDomain } from 'utils/auth.utils';
 const authService = new AuthService();
 
 export class AuthController {
+  // Helper method để tạo và set refresh token cookie
+  private setRefreshTokenCookie(res: Response, userId: string): void {
+    const refreshToken = authService.createRefreshToken(userId);
+    console.log("is production:", config.isProduction);
+    console.log("client origin:", config.clientOrigin);
+    console.log("cookie domain:", getCookieDomain());
+    
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: config.isProduction,
+      sameSite: config.isProduction ? 'none' : 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      path: '/',
+      ...(config.isProduction && { 
+        domain: getCookieDomain() // Chỉ định domain cookie trong production
+      })
+    });
+  }
   // Register new user
   async register(req: Request, res: Response): Promise<void> {
     try {
@@ -34,15 +52,8 @@ export class AuthController {
 
       const result = await authService.register(userData);
 
-      // Thêm refresh token cookie
-      const refreshToken = authService.createRefreshToken(result.user._id);
-      res.cookie('refreshToken', refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày
-        path: '/'
-      });
+      // Set refresh token cookie
+      this.setRefreshTokenCookie(res, result.user._id);
       
       const response: ApiResponseDTO = {
         status: 201,
@@ -78,15 +89,8 @@ export class AuthController {
 
       const result = await authService.registerAsMua(userData);
 
-      // Thêm refresh token cookie
-      const refreshToken = authService.createRefreshToken(result.user._id);
-      res.cookie('refreshToken', refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày
-        path: '/'
-      });
+      // Set refresh token cookie
+      this.setRefreshTokenCookie(res, result.user._id);
 
       const response: ApiResponseDTO = {
         status: 201,
@@ -125,15 +129,8 @@ export class AuthController {
 
       const result = await authService.login(loginData);
       
-      // Thêm refresh token cookie
-        const refreshToken = authService.createRefreshToken(result.user._id);
-        res.cookie('refreshToken', refreshToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày
-          path: '/'
-      });
+      // Set refresh token cookie
+      this.setRefreshTokenCookie(res, result.user._id);
 
       const response: ApiResponseDTO = {
         status: 200,
@@ -171,15 +168,8 @@ async googleLogin(req: Request, res: Response): Promise<void> {
 
       const result = await authService.loginWithGoogle({ credential });
 
-      // Thêm refresh token cookie
-      const refreshToken = authService.createRefreshToken(result.user._id);
-      res.cookie('refreshToken', refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày
-        path: '/'
-      });
+      // Set refresh token cookie
+      this.setRefreshTokenCookie(res, result.user._id);
 
       const response: ApiResponseDTO = {
         status: 200,
@@ -578,20 +568,8 @@ async googleLogin(req: Request, res: Response): Promise<void> {
       const payload = authService.verifyRefreshToken(refreshToken);
       const newAccessToken = authService.createAccessToken(payload.userId);
 
-      // Cập nhật refresh token mới (tuỳ chọn)
-      try {
-        const newRefreshToken = authService.createRefreshToken(payload.userId);
-        res.cookie('refreshToken', newRefreshToken, {
-          httpOnly: true,
-          secure: config.isProduction,
-          sameSite: config.isProduction ? 'none' :'lax',
-          maxAge: 30 * 24 * 60 * 60 * 1000,
-          path: '/',
-          ...(config.isProduction && { 
-          domain: getCookieDomain() // Chỉ định domain cookie trong production
-          })
-        });
-      } catch (_) {}
+      // Set new refresh token cookie (token rotation)
+      this.setRefreshTokenCookie(res, payload.userId);
 
       const response: ApiResponseDTO = {
         status: 200,
