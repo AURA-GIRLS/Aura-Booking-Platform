@@ -1,7 +1,16 @@
 import { config } from "config";
 
 export function getCookieDomain(): string | undefined {
+  console.log("🍪 getCookieDomain called");
+  console.log("config.isProduction:", config.isProduction);
+  console.log("config.clientOrigin:", config.clientOrigin);
+  
   if (!config.isProduction) return undefined;
+  
+  if (!config.clientOrigin) {
+    console.error("❌ CLIENT_ORIGIN is not set!");
+    return undefined;
+  }
   
   try {
     const url = new URL(config.clientOrigin);

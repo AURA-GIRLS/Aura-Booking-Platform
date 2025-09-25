@@ -17,20 +17,34 @@ const authService = new AuthService();
 
 export class AuthController {
   // Helper method để tạo và set refresh token cookie
-  private setRefreshTokenCookie(res: Response, userId: string): void {
+  private setRefreshTokenCookie(res: Response, userId: string, req?: Request): void {
     const refreshToken = authService.createRefreshToken(userId);
-    console.log("cookie domain:", getCookieDomain());
+    const cookieDomain = getCookieDomain();
     
-    res.cookie('refreshToken', refreshToken, {
+    // Debug logs
+    console.log("🍪 Setting refresh token cookie");
+    console.log("Request origin:", req?.headers.origin);
+    console.log("Request host:", req?.headers.host);
+    console.log("Cookie domain:", cookieDomain);
+    
+    const cookieOptions: any = {
       httpOnly: true,
       secure: config.isProduction,
       sameSite: config.isProduction ? 'none' : 'lax',
       maxAge: 30 * 24 * 60 * 60 * 1000,
-      path: '/',
-      ...(config.isProduction && { 
-        domain: getCookieDomain() // Chỉ định domain cookie trong production
-      })
-    });
+      path: '/'
+    };
+    
+    // Chỉ set domain nếu có giá trị hợp lệ
+    if (config.isProduction && cookieDomain) {
+      cookieOptions.domain = cookieDomain;
+      console.log("✅ Setting domain:", cookieDomain);
+    } else {
+      console.log("⚠️ Not setting domain - will use request host");
+    }
+    
+    res.cookie('refreshToken', refreshToken, cookieOptions);
+  
   }
   // Register new user
   async register(req: Request, res: Response): Promise<void> {
@@ -51,8 +65,8 @@ export class AuthController {
       const result = await authService.register(userData);
 
       // Set refresh token cookie
-      this.setRefreshTokenCookie(res, result.user._id);
-      
+      this.setRefreshTokenCookie(res, result.user._id, req);
+ 
       const response: ApiResponseDTO = {
         status: 201,
         success: true,
@@ -88,7 +102,7 @@ export class AuthController {
       const result = await authService.registerAsMua(userData);
 
       // Set refresh token cookie
-      this.setRefreshTokenCookie(res, result.user._id);
+      this.setRefreshTokenCookie(res, result.user._id, req);
 
       const response: ApiResponseDTO = {
         status: 201,
@@ -128,8 +142,7 @@ export class AuthController {
       const result = await authService.login(loginData);
       
       // Set refresh token cookie
-      this.setRefreshTokenCookie(res, result.user._id);
-
+      this.setRefreshTokenCookie(res, result.user._id, req);
       const response: ApiResponseDTO = {
         status: 200,
         success: true,
@@ -167,7 +180,7 @@ async googleLogin(req: Request, res: Response): Promise<void> {
       const result = await authService.loginWithGoogle({ credential });
 
       // Set refresh token cookie
-      this.setRefreshTokenCookie(res, result.user._id);
+      this.setRefreshTokenCookie(res, result.user._id, req);
 
       const response: ApiResponseDTO = {
         status: 200,
@@ -567,7 +580,7 @@ async googleLogin(req: Request, res: Response): Promise<void> {
       const newAccessToken = authService.createAccessToken(payload.userId);
 
       // Set new refresh token cookie (token rotation)
-      this.setRefreshTokenCookie(res, payload.userId);
+      this.setRefreshTokenCookie(res, payload.userId, req);
 
       const response: ApiResponseDTO = {
         status: 200,
