@@ -83,11 +83,13 @@ api.interceptors.response.use(
     
     // Không auto-refresh nếu:
     // 1. Không phải lỗi 401
-    // 2. Là auth endpoint (login, register, etc.)  
-    // 3. User chưa login (không có token)
-    if (status !== 401 || isAuthEndpoint || !hasToken) {
+    // 2. Là auth endpoint (login, register, etc.)
+    // 3. Có lỗi 401 nhưng không có token (user chưa login)
+    if (status !== 401 || isAuthEndpoint || (status === 401 && !hasToken)) {
       return Promise.reject(error);
     }
+    
+    // Chỉ refresh khi: có token + 401 (token hết hạn)
 
     // Tránh lặp vô hạn
     if ((originalRequest as any)._retry) {
