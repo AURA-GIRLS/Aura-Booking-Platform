@@ -29,19 +29,27 @@ export class AuthController {
     
     const cookieOptions: any = {
       httpOnly: true,
-      secure: config.isProduction,
-      sameSite: config.isProduction ? 'none' : 'lax',
+      secure: true, // Always true for production
+      sameSite: 'none', // Required for cross-domain
       maxAge: 30 * 24 * 60 * 60 * 1000,
       path: '/'
     };
     
-    // Chỉ set domain nếu có giá trị hợp lệ
-    if (config.isProduction && cookieDomain) {
-      cookieOptions.domain = cookieDomain;
-      console.log("✅ Setting domain:", cookieDomain);
-    } else {
-      console.log("⚠️ Not setting domain - will use request host");
+    // For development, use lax sameSite
+    if (!config.isProduction) {
+      cookieOptions.secure = false;
+      cookieOptions.sameSite = 'lax';
     }
+    
+    // TEST: Thử không set domain để xem có hoạt động không
+    // if (config.isProduction && cookieDomain) {
+    //   cookieOptions.domain = cookieDomain;
+    //   console.log("✅ Setting domain:", cookieDomain);
+    // } else {
+    //   console.log("⚠️ Not setting domain - will use request host");
+    // }
+    
+    console.log("🔧 Cookie options:", JSON.stringify(cookieOptions, null, 2));
     
     res.cookie('refreshToken', refreshToken, cookieOptions);
   
@@ -562,11 +570,24 @@ async googleLogin(req: Request, res: Response): Promise<void> {
   // Refresh access token
   async refresh(req: Request, res: Response): Promise<void> {
     try {
+      console.log("🔄 Refresh endpoint called");
+      console.log("Request cookies:", req.cookies);
+      console.log("Request headers cookie:", req.headers.cookie);
+      console.log("Request origin:", req.headers.origin);
+      console.log("Request host:", req.headers.host);
+      console.log("Request referer:", req.headers.referer);
+      
       const authHeader = req.headers['authorization'];
       const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined;
       const refreshToken = (req as any).cookies?.refreshToken || req.body?.refreshToken || bearerToken;
 
+      console.log("Found refresh token:", refreshToken ? "YES" : "NO");
+      console.log("Cookie refreshToken:", (req as any).cookies?.refreshToken ? "EXISTS" : "NOT_FOUND");
+      console.log("Body refreshToken:", req.body?.refreshToken ? "EXISTS" : "NOT_FOUND");
+      console.log("Bearer token:", bearerToken ? "EXISTS" : "NOT_FOUND");
+      
       if (!refreshToken) {
+        console.log("❌ No refresh token found anywhere");
         const response: ApiResponseDTO = {
           status: 401,
           success: false,
