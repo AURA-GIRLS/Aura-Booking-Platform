@@ -11,6 +11,7 @@ import type {
 } from '../types/user.dtos';
 import type { ApiResponseDTO } from '../types/common.dtos';
 import { config } from 'config';
+import { getCookieDomain } from 'utils/auth.utils';
 
 const authService = new AuthService();
 
@@ -587,7 +588,7 @@ async googleLogin(req: Request, res: Response): Promise<void> {
           maxAge: 30 * 24 * 60 * 60 * 1000,
           path: '/',
           ...(config.isProduction && { 
-          domain: config.clientOrigin.replace(/^https?:\/\//, '')  // Chỉ định domain cookie trong production
+          domain: getCookieDomain() // Chỉ định domain cookie trong production
           })
         });
       } catch (_) {}
