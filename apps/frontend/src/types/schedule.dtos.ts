@@ -13,4 +13,6 @@ export interface ISlot {
   endTime: string;
   type: string;
   note?: string;
+  updatedAt?: string;
+  createdAt?: string;
 }
