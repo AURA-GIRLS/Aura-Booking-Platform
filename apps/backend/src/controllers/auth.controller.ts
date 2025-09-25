@@ -585,7 +585,10 @@ async googleLogin(req: Request, res: Response): Promise<void> {
           secure: config.isProduction,
           sameSite: config.isProduction ? 'none' :'lax',
           maxAge: 30 * 24 * 60 * 60 * 1000,
-          path: '/'
+          path: '/',
+          ...(config.isProduction && { 
+          domain: config.clientOrigin.replace(/^https?:\/\//, '')  // Chỉ định domain cookie trong production
+          })
         });
       } catch (_) {}
 
