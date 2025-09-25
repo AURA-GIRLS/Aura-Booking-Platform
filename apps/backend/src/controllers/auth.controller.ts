@@ -19,8 +19,6 @@ export class AuthController {
   // Helper method để tạo và set refresh token cookie
   private setRefreshTokenCookie(res: Response, userId: string): void {
     const refreshToken = authService.createRefreshToken(userId);
-    console.log("is production:", config.isProduction);
-    console.log("client origin:", config.clientOrigin);
     console.log("cookie domain:", getCookieDomain());
     
     res.cookie('refreshToken', refreshToken, {
