@@ -10,6 +10,7 @@ import type {
   CreateMuaDTO
 } from '../types/user.dtos';
 import type { ApiResponseDTO } from '../types/common.dtos';
+import { config } from 'config';
 
 const authService = new AuthService();
 
@@ -581,8 +582,8 @@ async googleLogin(req: Request, res: Response): Promise<void> {
         const newRefreshToken = authService.createRefreshToken(payload.userId);
         res.cookie('refreshToken', newRefreshToken, {
           httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
+          secure: config.isProduction,
+          sameSite: config.isProduction ? 'none' :'lax',
           maxAge: 30 * 24 * 60 * 60 * 1000,
           path: '/'
         });
