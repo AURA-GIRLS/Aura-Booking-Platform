@@ -11,7 +11,8 @@ export function getCookieDomain(): string | undefined {
     if (hostname === 'localhost' || hostname.startsWith('127.0.0.1')) {
       return undefined;
     }
-    
+    console.log("is production:", config.isProduction);
+    console.log('Determined cookie domain:', `.${hostname}`);
     return `.${hostname}`;
   } catch {
     return undefined;
