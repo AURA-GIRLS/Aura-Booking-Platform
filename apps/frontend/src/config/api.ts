@@ -78,10 +78,14 @@ api.interceptors.response.use(
     const requestUrl: string = originalRequest?.url || '';
     const isAuthEndpoint = authEndpoints.some(endpoint => requestUrl.includes(endpoint));
     
+    // Kiểm tra xem user có token không (đã login chưa)
+    const hasToken = typeof window !== 'undefined' && localStorage.getItem('token');
+    
     // Không auto-refresh nếu:
     // 1. Không phải lỗi 401
-    // 2. Là auth endpoint (login, register, etc.)
-    if (status !== 401 || isAuthEndpoint) {
+    // 2. Là auth endpoint (login, register, etc.)  
+    // 3. User chưa login (không có token)
+    if (status !== 401 || isAuthEndpoint || !hasToken) {
       return Promise.reject(error);
     }
 
@@ -108,8 +112,8 @@ api.interceptors.response.use(
 
     isRefreshing = true;
     try {
-      // Gọi refresh endpoint
-      console.log("🔄 Attempting token refresh...");
+      // Gọi refresh endpoint (chỉ khi user đã login)
+      console.log("🔄 Attempting token refresh for logged user...");
       const res = await refreshClient.post('/auth/refresh');
       const newToken: string | undefined = res?.data?.data?.token;
       

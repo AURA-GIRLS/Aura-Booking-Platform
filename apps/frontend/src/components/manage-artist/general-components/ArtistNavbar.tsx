@@ -10,6 +10,7 @@ export default function ArtistNavbar({ mua, setMua }:  Readonly<ArtistNavbarProp
   const [id, setId] = useState<string | null>(null);
   // Defer reading from localStorage until client-side to avoid SSR ReferenceError
   const [user, setUser] = useState<any>(null);
+  const [isUserLoaded, setIsUserLoaded] = useState(false);
   // Helper: convert full name to `A+B+C` format for query param `wn`
   const toPlusSeparated = (name?: string) => (name || "").trim().split(/\s+/).filter(Boolean).join("+");
   useEffect(() => {
@@ -21,6 +22,9 @@ export default function ArtistNavbar({ mua, setMua }:  Readonly<ArtistNavbarProp
         }
       } catch (e) {
         console.warn('Failed to parse currentUser from localStorage', e);
+      } finally {
+        // Set loaded to true after attempting to load user
+        setIsUserLoaded(true);
       }
     }
   }, []);
@@ -38,6 +42,37 @@ export default function ArtistNavbar({ mua, setMua }:  Readonly<ArtistNavbarProp
   };
 
   const avatarUrl = user?.avatarUrl || '/images/danang.jpg';
+
+  if (!isUserLoaded) {
+    return (
+      <nav className="sticky top-0 z-50 w-full bg-white shadow-sm">
+        <div className="w-full px-6 py-4 flex items-center justify-between">
+          {/* Logo skeleton */}
+          <div className="h-12 w-24 bg-rose-100 rounded animate-pulse"></div>
+          
+          {/* Menu skeleton */}
+          <div className="hidden md:flex items-center gap-6">
+            <div className="h-4 w-16 bg-rose-100 rounded animate-pulse"></div>
+            <div className="h-4 w-20 bg-rose-100 rounded animate-pulse"></div>
+            <div className="h-4 w-18 bg-rose-100 rounded animate-pulse"></div>
+            <div className="h-4 w-20 bg-rose-100 rounded animate-pulse"></div>
+            <div className="h-4 w-16 bg-rose-100 rounded animate-pulse"></div>
+            <div className="h-4 w-14 bg-rose-100 rounded animate-pulse"></div>
+          </div>
+          
+          {/* Right icons skeleton */}
+          <div className="hidden md:flex items-center gap-3">
+            <div className="h-8 w-8 bg-rose-100 rounded animate-pulse"></div>
+            <div className="h-8 w-8 bg-rose-100 rounded animate-pulse"></div>
+            <div className="h-8 w-16 bg-rose-100 rounded-full animate-pulse"></div>
+          </div>
+          
+          {/* Mobile toggle skeleton */}
+          <div className="md:hidden h-6 w-6 bg-rose-100 rounded animate-pulse"></div>
+        </div>
+      </nav>
+    );
+  }
 
   return (
     <nav className="sticky top-0 z-50 w-full bg-white shadow-sm">

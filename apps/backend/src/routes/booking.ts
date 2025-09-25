@@ -29,7 +29,7 @@ router.get("/available-slots", authenticateToken, (req, res) => ctrl.getAvailabl
 // READ - Lấy available time slots theo tháng
 router.get("/available-slots/monthly", authenticateToken, (req, res) => ctrl.getMonthlyAvailable(req, res));
 //Read
-router.get("/available-mua/:day", authenticateToken, (req, res) => ctrl.getAvailableMuaServicesByDay(req, res));
+router.get("/available-mua/:day", (req, res) => ctrl.getAvailableMuaServicesByDay(req, res));
 // UPDATE - Cập nhật booking
 router.put("/:id", authenticateToken, (req, res) => ctrl.update(req, res));
 
