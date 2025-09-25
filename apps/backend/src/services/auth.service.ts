@@ -127,7 +127,7 @@ export class AuthService {
     return jwt.sign(
       { userId },
       config.jwtSecret,
-      { expiresIn: '5m' }
+      { expiresIn: '2m' }
     );
   }
 
