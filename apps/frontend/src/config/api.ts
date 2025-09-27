@@ -61,12 +61,35 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Nếu không phải lỗi 401 hoặc request tới /auth/refresh thì trả về lỗi
+    // Danh sách endpoints không cần auto-refresh
+    const authEndpoints = [
+      '/auth/login', 
+      '/auth/register', 
+      '/auth/register-mua', 
+      '/auth/google-login', 
+      '/auth/send-verification', 
+      '/auth/verify-email', 
+      '/auth/forgot-password', 
+      '/auth/reset-password', 
+      '/auth/refresh'
+    ];
+
     const status = error?.response?.status;
     const requestUrl: string = originalRequest?.url || '';
-    if (status !== 401 || requestUrl.includes('/auth/refresh')) {
+    const isAuthEndpoint = authEndpoints.some(endpoint => requestUrl.includes(endpoint));
+    
+    // Kiểm tra xem user có token không (đã login chưa)
+    const hasToken = typeof window !== 'undefined' && localStorage.getItem('token');
+    
+    // Không auto-refresh nếu:
+    // 1. Không phải lỗi 401
+    // 2. Là auth endpoint (login, register, etc.)
+    // 3. Có lỗi 401 nhưng không có token (user chưa login)
+    if (status !== 401 || isAuthEndpoint || (status === 401 && !hasToken)) {
       return Promise.reject(error);
     }
+    
+    // Chỉ refresh khi: có token + 401 (token hết hạn)
 
     // Tránh lặp vô hạn
     if ((originalRequest as any)._retry) {
@@ -91,12 +114,17 @@ api.interceptors.response.use(
 
     isRefreshing = true;
     try {
-      // Gọi refresh endpoint
+      // Gọi refresh endpoint (chỉ khi user đã login)
+      console.log("🔄 Attempting token refresh for logged user...");
       const res = await refreshClient.post('/auth/refresh');
       const newToken: string | undefined = res?.data?.data?.token;
+      
       if (!newToken) {
+        console.error("❌ No token received from refresh");
         throw new Error('No token received from refresh');
       }
+      
+      console.log("✅ Token refreshed successfully");
       
       // Cập nhật token mới
       if (typeof window !== 'undefined') {
@@ -110,10 +138,18 @@ api.interceptors.response.use(
       originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
       return api(originalRequest);
     } catch (refreshErr) {
+      console.error("❌ Token refresh failed:", refreshErr);
+      
       // Nếu refresh thất bại, xóa token và đăng xuất
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token');
+        delete api.defaults.headers.common['Authorization'];
       }
+      
+      // Notify all waiting requests
+      refreshSubscribers.forEach(callback => callback(''));
+      refreshSubscribers = [];
+      
       return Promise.reject(refreshErr);
     } finally {
       isRefreshing = false;

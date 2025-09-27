@@ -10,10 +10,50 @@ import type {
   CreateMuaDTO
 } from '../types/user.dtos';
 import type { ApiResponseDTO } from '../types/common.dtos';
+import { config } from 'config';
+import { getCookieDomain } from 'utils/auth.utils';
 
 const authService = new AuthService();
 
 export class AuthController {
+  // Helper method để tạo và set refresh token cookie
+  private setRefreshTokenCookie(res: Response, userId: string, req?: Request): void {
+    const refreshToken = authService.createRefreshToken(userId);
+    const cookieDomain = getCookieDomain();
+    
+    // Debug logs
+    console.log("🍪 Setting refresh token cookie");
+    console.log("Request origin:", req?.headers.origin);
+    console.log("Request host:", req?.headers.host);
+    console.log("Cookie domain:", cookieDomain);
+    
+    const cookieOptions: any = {
+      httpOnly: true,
+      secure: true, // Always true for production
+      sameSite: 'none', // Required for cross-domain
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      path: '/'
+    };
+    
+    // For development, use lax sameSite
+    if (!config.isProduction) {
+      cookieOptions.secure = false;
+      cookieOptions.sameSite = 'lax';
+    }
+    
+    // TEST: Thử không set domain để xem có hoạt động không
+    // if (config.isProduction && cookieDomain) {
+    //   cookieOptions.domain = cookieDomain;
+    //   console.log("✅ Setting domain:", cookieDomain);
+    // } else {
+    //   console.log("⚠️ Not setting domain - will use request host");
+    // }
+    
+    console.log("🔧 Cookie options:", JSON.stringify(cookieOptions, null, 2));
+    
+    res.cookie('refreshToken', refreshToken, cookieOptions);
+  
+  }
   // Register new user
   async register(req: Request, res: Response): Promise<void> {
     try {
@@ -32,16 +72,9 @@ export class AuthController {
 
       const result = await authService.register(userData);
 
-      // Thêm refresh token cookie
-      const refreshToken = authService.createRefreshToken(result.user._id);
-      res.cookie('refreshToken', refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày
-        path: '/'
-      });
-      
+      // Set refresh token cookie
+      this.setRefreshTokenCookie(res, result.user._id, req);
+ 
       const response: ApiResponseDTO = {
         status: 201,
         success: true,
@@ -76,15 +109,8 @@ export class AuthController {
 
       const result = await authService.registerAsMua(userData);
 
-      // Thêm refresh token cookie
-      const refreshToken = authService.createRefreshToken(result.user._id);
-      res.cookie('refreshToken', refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày
-        path: '/'
-      });
+      // Set refresh token cookie
+      this.setRefreshTokenCookie(res, result.user._id, req);
 
       const response: ApiResponseDTO = {
         status: 201,
@@ -123,16 +149,8 @@ export class AuthController {
 
       const result = await authService.login(loginData);
       
-      // Thêm refresh token cookie
-        const refreshToken = authService.createRefreshToken(result.user._id);
-        res.cookie('refreshToken', refreshToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày
-          path: '/'
-      });
-
+      // Set refresh token cookie
+      this.setRefreshTokenCookie(res, result.user._id, req);
       const response: ApiResponseDTO = {
         status: 200,
         success: true,
@@ -169,15 +187,8 @@ async googleLogin(req: Request, res: Response): Promise<void> {
 
       const result = await authService.loginWithGoogle({ credential });
 
-      // Thêm refresh token cookie
-      const refreshToken = authService.createRefreshToken(result.user._id);
-      res.cookie('refreshToken', refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày
-        path: '/'
-      });
+      // Set refresh token cookie
+      this.setRefreshTokenCookie(res, result.user._id, req);
 
       const response: ApiResponseDTO = {
         status: 200,
@@ -559,11 +570,24 @@ async googleLogin(req: Request, res: Response): Promise<void> {
   // Refresh access token
   async refresh(req: Request, res: Response): Promise<void> {
     try {
+      console.log("🔄 Refresh endpoint called");
+      console.log("Request cookies:", req.cookies);
+      console.log("Request headers cookie:", req.headers.cookie);
+      console.log("Request origin:", req.headers.origin);
+      console.log("Request host:", req.headers.host);
+      console.log("Request referer:", req.headers.referer);
+      
       const authHeader = req.headers['authorization'];
       const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined;
       const refreshToken = (req as any).cookies?.refreshToken || req.body?.refreshToken || bearerToken;
 
+      console.log("Found refresh token:", refreshToken ? "YES" : "NO");
+      console.log("Cookie refreshToken:", (req as any).cookies?.refreshToken ? "EXISTS" : "NOT_FOUND");
+      console.log("Body refreshToken:", req.body?.refreshToken ? "EXISTS" : "NOT_FOUND");
+      console.log("Bearer token:", bearerToken ? "EXISTS" : "NOT_FOUND");
+      
       if (!refreshToken) {
+        console.log("❌ No refresh token found anywhere");
         const response: ApiResponseDTO = {
           status: 401,
           success: false,
@@ -576,17 +600,8 @@ async googleLogin(req: Request, res: Response): Promise<void> {
       const payload = authService.verifyRefreshToken(refreshToken);
       const newAccessToken = authService.createAccessToken(payload.userId);
 
-      // Cập nhật refresh token mới (tuỳ chọn)
-      try {
-        const newRefreshToken = authService.createRefreshToken(payload.userId);
-        res.cookie('refreshToken', newRefreshToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          maxAge: 30 * 24 * 60 * 60 * 1000,
-          path: '/'
-        });
-      } catch (_) {}
+      // Set new refresh token cookie (token rotation)
+      this.setRefreshTokenCookie(res, payload.userId, req);
 
       const response: ApiResponseDTO = {
         status: 200,

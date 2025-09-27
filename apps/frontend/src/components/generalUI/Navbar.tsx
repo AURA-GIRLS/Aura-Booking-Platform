@@ -1,12 +1,22 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/lib/ui/dropdown-menu';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/lib/ui/avatar';
 import { NavbarProps } from '@/types/user.dtos';
 
 export default function Navbar({ user, setUser }: Readonly<NavbarProps>)  {
   const [isOpen, setIsOpen] = useState(false);
+  const [isUserLoaded, setIsUserLoaded] = useState(false);
+
+  useEffect(() => {
+    // Simulate checking for user from localStorage or other async source
+    const timer = setTimeout(() => {
+      setIsUserLoaded(true);
+    }, 100); // Short delay to ensure user state is properly loaded
+
+    return () => clearTimeout(timer);
+  }, [user]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -18,13 +28,39 @@ export default function Navbar({ user, setUser }: Readonly<NavbarProps>)  {
 
   const avatarUrl = user?.avatarUrl || '/images/danang.jpg';
 
+  if (!isUserLoaded) {
+    return (
+      <nav className="sticky top-0 z-50 w-full bg-white shadow-sm">
+        <div className="w-full px-6 py-4 flex items-center justify-between">
+          {/* Logo skeleton */}
+          <div className="h-12 w-24 bg-rose-100 rounded animate-pulse"></div>
+          
+          {/* Menu skeleton */}
+          <div className="hidden md:flex items-center gap-6">
+            <div className="h-4 w-12 bg-rose-100 rounded animate-pulse"></div>
+            <div className="h-4 w-20 bg-rose-100 rounded animate-pulse"></div>
+            <div className="h-4 w-16 bg-rose-100 rounded animate-pulse"></div>
+            <div className="h-4 w-14 bg-rose-100 rounded animate-pulse"></div>
+          </div>
+          
+          {/* Right icons skeleton */}
+          <div className="hidden md:flex items-center gap-3">
+            <div className="h-8 w-8 bg-rose-100 rounded animate-pulse"></div>
+            <div className="h-8 w-8 bg-rose-100 rounded animate-pulse"></div>
+            <div className="h-8 w-16 bg-rose-100 rounded-full animate-pulse"></div>
+          </div>
+          
+          {/* Mobile toggle skeleton */}
+          <div className="md:hidden h-6 w-6 bg-rose-100 rounded animate-pulse"></div>
+        </div>
+      </nav>
+    );
+  }
+
   return (
     <nav className="sticky top-0 z-50 w-full bg-white shadow-sm">
       <div className="w-full px-6 py-4 flex items-center justify-between">
         {/* Left: Logo + Site name */}
-        {/* <div className="flex items-center gap-3">
-          <img alt="AURA" src="/images/LOGO_pink.png" onClick={()=>window.location.href="/"} className="h-10 w-full cursor-pointer"/>
-        </div> */}
         <button type="button" onClick={() => { window.location.href = "/"; }} className="h-12 w-24 focus:outline-none">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img alt="AURA" src="/images/LOGO_black.png" className="h-12 w-24" />
@@ -81,7 +117,7 @@ export default function Navbar({ user, setUser }: Readonly<NavbarProps>)  {
           <li><Link href="/">Home</Link></li>
           <li><Link href="/user/artists/makeup-artist-list">Makeup Artist</Link></li>
           {/* <li><Link href="/booking">Booking</Link></li> */}
-          <li><Link href={{ pathname: "/user/blog" }}>Blog</Link></li>
+          <li><Link href="/user/community">Community</Link></li>
           <li><Link href={{ pathname: "/user/about" }}>About Us</Link></li>
           </ul>
           <div className="mt-3 flex items-center gap-3">
