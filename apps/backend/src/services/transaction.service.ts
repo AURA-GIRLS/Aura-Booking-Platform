@@ -1,10 +1,7 @@
-import { BankAccount, Transaction, Wallet } from "models/transactions.model";
-import type { CreateTransactionDTO, UpdateTransactionDTO, TransactionResponseDTO, PayOSCreateLinkInput, PayOSCreateLinkResult, PaymentWebhookResponse, PayoutInput, PayoutResponseDTO, WalletResponseDTO } from "types/transaction.dto";
-import { config } from "config";
-import { createPayOSSignedHttp, payosHttp } from "utils/payosHttp";
-import crypto from "crypto";
+import { BankAccount, Transaction, Wallet, Withdraw } from "models/transactions.model";
+import type { CreateTransactionDTO, UpdateTransactionDTO, TransactionResponseDTO, PayOSCreateLinkInput, PayOSCreateLinkResult, PaymentWebhookResponse, WalletResponseDTO, WithdrawResponseDTO } from "types/transaction.dto";
 import { createBooking, deleteRedisPendingBooking, getBookingById, getRedisPendingBooking } from "./booking.service";
-import { PAYMENT_METHODS,PAYOUT_CATEGORIES,TRANSACTION_STATUS, type TransactionStatus } from "constants/index";
+import { BOOKING_STATUS, PAYMENT_METHODS, TRANSACTION_STATUS, WITHDRAW_STATUS, type TransactionStatus } from "constants/index";
 import type { BookingResponseDTO } from "types";
 import type { CreateBookingDTO, PendingBookingResponseDTO } from "types/booking.dtos";
 import mongoose from "mongoose";
@@ -12,12 +9,31 @@ import { ServicePackage } from "@models/services.models";
 import { User } from "@models/users.models";
 import { fromUTC } from "utils/timeUtils";
 import { Booking } from "@models/bookings.models";
+import { createPayOSPaymentLink, makeRefund, makeWithdrawal } from "./payos.service";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 dayjs.extend(utc);
 dayjs.extend(timezone);
+
+// ==================== PayOS Integration ====================
+// PayOS functions moved to payos.service.ts
+// Re-export for backward compatibility
+export { createPayOSPaymentLink, makeRefund,makeWithdrawal, generateOrderCode, getPayoutDetail, getPayoutList, buildPayoutListQuery } from "./payos.service";
 // UTIL - map mongoose doc to DTO
+function formatWithdrawResponse(withdraw: any): WithdrawResponseDTO {
+  const withdrawTime = dayjs(withdraw.createdAt).tz("Asia/Ho_Chi_Minh");
+  return {
+    _id: String(withdraw._id),
+    muaId: String(withdraw.muaId),
+    amount: withdraw.amount || 0,
+    currency: withdraw.currency || "VND",
+    status: withdraw.status,
+    withdrawTime: withdrawTime.format("HH:mm"),
+    withdrawDate: withdrawTime.format("YYYY-MM-DD"),
+  };
+}
+
 async function formatTransactionResponse(tx: any): Promise<TransactionResponseDTO> {
   // Attempt to extract friendly names from joined docs when available
   const booking =  await Booking.findById(tx.bookingId).exec();
@@ -33,6 +49,7 @@ async function formatTransactionResponse(tx: any): Promise<TransactionResponseDT
   const bookingTime = `${startTime} - ${endTime}`;
   return {
     _id: String(tx._id),
+    payoutId: tx.payoutId ? String(tx.payoutId) : '',   // id của lệnh payout nếu có
     bookingId: tx.bookingId ? String(tx.bookingId) : "",
     customerId: tx.customerId ? String(tx.customerId) : "",
     amount: typeof tx.amount === "number" ? tx.amount : 0,
@@ -80,95 +97,9 @@ export async function createTransaction(data: CreateTransactionDTO): Promise<Tra
   }
 }
 
-// ==================== PayOS Payment Link ====================
-
-export function generateOrderCode(): number {
-  const random = crypto.randomInt(100000, 999999); // random 6 số
-  return random;
-}
-
-function createPayOSPaymentSignature({ amount, cancelUrl, description, orderCode, returnUrl }: Required<Omit<PayOSCreateLinkInput, 'orderCode'>> & { orderCode: number }): string {
-  // Alphabetical concatenation required by PayOS
-  const dataString = `amount=${amount}&cancelUrl=${cancelUrl}&description=${description}&orderCode=${orderCode}&returnUrl=${returnUrl}`;
-  const hmac = crypto.createHmac("sha256", config.payosChecksumKey);
-  hmac.update(dataString);
-  return hmac.digest("hex");
-}
-function createPayOSOutSignature({
-  amount,
-  category,
-  description,
-  referenceId,
-  toAccountNumber,
-  toBin,
-}: Required<PayoutInput>): string {
-  // Alphabetical concatenation required by PayOS
-  const dataString = `amount=${amount}&category=${Array.isArray(category) ? category.join(",") : category}&description=${description}&referenceId=${referenceId}&toAccountNumber=${toAccountNumber}&toBin=${toBin}`;
-  
-  const hmac = crypto.createHmac("sha256", config.payosChecksumKey);
-  hmac.update(dataString);
-  return hmac.digest("hex");
-}
-
-export async function createPayOSPaymentLink(input: PayOSCreateLinkInput): Promise<PayOSCreateLinkResult> {
-    if (!config.payosClientId || !config.payosApiKey || !config.payosChecksumKey) {
-      throw new Error("Missing PayOS credentials (clientId/apiKey/checksumKey)");
-    }
-    // Generate a simple 6-digit order code (similar to PayOS sample). Allow override via input.
-    const orderCode = input.orderCode || generateOrderCode();
-    const signature = createPayOSPaymentSignature({
-      amount: input.amount,
-      cancelUrl: input.cancelUrl,
-      description: input.description,
-      orderCode,
-      returnUrl: input.returnUrl,
-    });
-
-    const payload = {
-      orderCode,
-      amount: input.amount,
-      description: input.description,
-      returnUrl: input.returnUrl,
-      cancelUrl: input.cancelUrl,
-      signature,
-    };
-
-    const response = await payosHttp.post("/v2/payment-requests", payload);
-    const checkoutUrl = (response.data && (response.data.checkoutUrl || response.data.data?.checkoutUrl)) || "";
-    return { checkoutUrl, orderCode, signature, raw: response.data };
-  
-}
-export async function makeRefund(bookingId:string ): Promise<PayoutResponseDTO> {
-   if (!config.payosClientId || !config.payosApiKey || !config.payosChecksumKey) {
-      throw new Error("Missing PayOS credentials (clientId/apiKey/checksumKey)");
-    }
-    const bookingData = await getBookingById(bookingId);
-    if(!bookingData){
-      throw new Error(`Booking with ID ${bookingId} not found.`);
-    }
-    const bankAccount = await BankAccount.findOne({ userId: bookingData.customerId }).exec();
-    const transaction = await Transaction.findOne({ bookingId: bookingId }).exec();
-    if(!transaction){
-      throw new Error(`Transaction with bookingId ${bookingId} not found.`);
-    }
-    const payload: PayoutInput = {
-      referenceId: transaction.paymentReference || '',
-      amount: transaction.amount || 0,
-      description: `Refund for booking ${bookingId}`,
-      toBin: bankAccount?.bankBin || '',
-      toAccountNumber: bankAccount?.accountNumber || '',
-      category: [PAYOUT_CATEGORIES.REFUND]
-    };
-
-    console.info("makePayout called", {payload});
-    const signedHttp = createPayOSSignedHttp(
-      crypto.randomUUID(),
-      createPayOSOutSignature({ ...payload })
-    );
-    const response = await signedHttp.post("/v1/payouts", payload);
-    console.info("makePayout response", {responseData: response.data});
-    return response.data;
-}
+// ==================== PayOS Integration ====================
+// PayOS functions moved to payos.service.ts
+// Re-export for backward compatibility
 
 export async function handlePayOSWebhook(data: PaymentWebhookResponse): Promise<TransactionResponseDTO | null> {
   // tìm booking và tạo booking
@@ -237,15 +168,50 @@ if(transaction && transaction.status===TRANSACTION_STATUS.HOLD && muaWallet){
   await transaction.save();
 }
 }
-export async function handleRefundBooking(bookingId:string):Promise<void>{
+//haven't capture money to mua yet(mua cancel, user cancel)
+export async function handleRefundBookingBeforeConfirm(bookingId:string, bookingStatus:any):Promise<void>{
 //payout(tim customer, lay bank account tu user)
 //update transaction
- await makeRefund(bookingId);
+ const refundResponse = await makeRefund(bookingId);
+ if(refundResponse.code !== '00'){
+  throw new Error(`Payout failed: ${refundResponse.desc} (code: ${refundResponse.code})`);
+ }
  const transaction = await Transaction.findOne({ bookingId: bookingId }).exec();
- if(transaction){
+ const booking = await Booking.findById(bookingId).exec();
+ if(transaction && transaction.status===TRANSACTION_STATUS.HOLD){
   transaction.status = TRANSACTION_STATUS.REFUNDED;
+  transaction.payoutId = refundResponse.data.id;
   await transaction.save();
  }
+ if(booking && booking.status === BOOKING_STATUS.PENDING){
+  booking.status = bookingStatus;
+  await booking.save();
+ }
+}
+export async function handleWithdrawalMUA(muaId:string):Promise<void>{
+  const wallet = await Wallet.findOne({ muaId }).exec();
+  if(!wallet){
+    throw new Error(`Wallet for MUA ${muaId} not found`);
+  }
+  if(wallet.balance <=0){
+    throw new Error(`Wallet for MUA ${muaId} has insufficient balance`);
+  }
+  const payoutResponse = await makeWithdrawal(muaId);
+  if(payoutResponse.code !== '00'){
+    throw new Error(`Payout failed: ${payoutResponse.desc} (code: ${payoutResponse.code})`);
+  }
+   const withdrawRecord = new Withdraw({
+    muaId: new mongoose.Types.ObjectId(muaId),
+    amount: wallet.balance,
+    currency: wallet.currency,
+    status: WITHDRAW_STATUS.SUCCESS,
+    reference: payoutResponse.data.id,
+  });
+  await withdrawRecord.save();
+  //reset balance
+  wallet.balance = 0;
+  await wallet.save();
+
 }
 // READ - by id
 export async function getTransactionById(id: string): Promise<TransactionResponseDTO | null> {
@@ -372,6 +338,39 @@ export async function deleteTransaction(id: string): Promise<boolean> {
   }
 }
 
+// READ - list withdrawals by muaId with pagination
+export async function getWithdrawalsByMuaId(
+  muaId: string,
+  page: number = 1,
+  pageSize: number = 10,
+  status?: string
+): Promise<{ withdrawals: WithdrawResponseDTO[]; total: number; page: number; totalPages: number }> {
+    const skip = (page - 1) * pageSize;
+    const query: any = { muaId: new mongoose.Types.ObjectId(muaId) };
+    
+    // Add status filter if provided
+    if (status) {
+      query.status = status;
+    }
+
+    const [docs, total] = await Promise.all([
+      Withdraw.find(query)
+        .skip(skip)
+        .limit(pageSize)
+        .sort({ createdAt: -1 })
+        .exec(),
+      Withdraw.countDocuments(query),
+    ]);
+
+    const withdrawals = docs.map(formatWithdrawResponse);
+
+    return {
+      withdrawals,
+      total,
+      page,
+      totalPages: Math.ceil(total / pageSize),
+    };
+}
 
 
 

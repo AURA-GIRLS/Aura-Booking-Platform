@@ -21,6 +21,9 @@ export interface IUserDocument extends Document {
   followingCount?: number;
   createdAt: Date;
   updatedAt: Date;
+  lastLogin?: Date;
+  banReason?: string;
+  bannedAt?: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 

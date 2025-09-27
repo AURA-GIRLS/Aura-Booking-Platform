@@ -30,6 +30,10 @@ export interface Config {
   payosClientId: string;
   payosApiKey: string;
   payosChecksumKey: string;
+
+  payosPOClientId: string;
+  payosPOApiKey: string;
+  payosPOChecksumKey: string;
   payosApiUrl: string;
 
   //Cloudinary

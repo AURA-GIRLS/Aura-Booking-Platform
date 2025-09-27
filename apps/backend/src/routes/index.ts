@@ -10,6 +10,8 @@ import dashboardRoutes from "./dashboard";
 import profileRoutes from "./profile";
 import feedbackRoutes from "./feedback"; 
 import serviceRoutes from "./services";
+import adminTransactionRoutes from "./admin.transaction";
+import adminUserRoutes from "./admin.user";
 
 const router = Router();
 
@@ -37,5 +39,7 @@ router.use('/dashboard', dashboardRoutes);
 router.use('/profile', profileRoutes);
 router.use('/feedback', feedbackRoutes); 
 router.use("/services", serviceRoutes);
+router.use('/admin/transactions', adminTransactionRoutes);
+router.use('/admin', adminUserRoutes);
 
 export default router;

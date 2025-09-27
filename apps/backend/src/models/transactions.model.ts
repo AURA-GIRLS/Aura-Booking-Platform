@@ -25,10 +25,11 @@ const TransactionSchema = new Schema({
   status: { type: String, enum: Object.values(TRANSACTION_STATUS), default: TRANSACTION_STATUS.HOLD },
   paymentMethod: String,
   paymentReference: String,
+  payoutId: String,       // id của lệnh payout nếu có
 }, { timestamps: true });
 
 const WithdrawSchema = new Schema({
-  userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  muaId: { type: Schema.Types.ObjectId, ref: 'MUA', required: true },
   amount: { type: Number, required: true },
   currency: { type: String, default: 'VND' },
   status: { type: String, enum: Object.values(WITHDRAW_STATUS), default: WITHDRAW_STATUS.PENDING },

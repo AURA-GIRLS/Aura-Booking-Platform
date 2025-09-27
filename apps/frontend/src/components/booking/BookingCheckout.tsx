@@ -84,7 +84,7 @@ export function BookingCheckout({customer, onPrev, bookingData }: Readonly<Booki
       const effectiveOrderCode = typeof oc === 'number' && oc > 0 ? oc : orderCode;
       const payload: PayOSCreateLinkInput = {
         amount: bookingData.totalPrice,
-        description: `${bookingData.customerId}`,
+        description: `AURA: BOOKING FOR ${bookingData.customerId.slice(0, 6)}`,
         returnUrl: window.location.origin,
         cancelUrl: window.location.origin,
         orderCode: effectiveOrderCode || 0,

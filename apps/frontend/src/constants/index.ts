@@ -8,13 +8,19 @@ export const USER_ROLES = {
 // User Status
 export const USER_STATUS = {
   ACTIVE: 'ACTIVE',
-  INACTIVE: 'INACTIVE'
+  INACTIVE: 'INACTIVE',
+  BANNED: 'BANNED'
 } as const;
-
+export const MUA_STATUS = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED', 
+  REJECTED: 'REJECTED'
+} as const;
 // Booking Status
 export const BOOKING_STATUS = {
   PENDING: 'PENDING',
   CONFIRMED: 'CONFIRMED',
+  REJECTED: 'REJECTED',
   CANCELLED: 'CANCELLED',
   COMPLETED: 'COMPLETED'
 } as const;
@@ -121,6 +127,7 @@ export const TARGET_TYPES = {
 // Type definitions derived from constants
 export type UserRole = typeof USER_ROLES[keyof typeof USER_ROLES];
 export type UserStatus = typeof USER_STATUS[keyof typeof USER_STATUS];
+export type MUAStatus = typeof MUA_STATUS[keyof typeof MUA_STATUS];
 export type BookingStatus = typeof BOOKING_STATUS[keyof typeof BOOKING_STATUS];
 export type BookingType = typeof BOOKING_TYPES[keyof typeof BOOKING_TYPES];
 export type ResourceType = typeof RESOURCE_TYPES[keyof typeof RESOURCE_TYPES];

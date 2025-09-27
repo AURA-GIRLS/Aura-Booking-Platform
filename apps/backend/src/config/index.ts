@@ -52,6 +52,10 @@ export const config = {
   payosClientId: process.env.PAYOS_CLIENT_ID || '',
   payosApiKey: process.env.PAYOS_API_KEY || '',
   payosChecksumKey: process.env.PAYOS_CHECKSUM_KEY || '',
+
+  payosPOClientId: process.env.PAYOS_PAYOUT_CLIENT_ID || '',
+  payosPOApiKey: process.env.PAYOS_PAYOUT_API_KEY || '',
+  payosPOChecksumKey: process.env.PAYOS_PAYOUT_CHECKSUM_KEY || '',
   payosApiUrl: process.env.PAYOS_API_URL || '',
   
   //Cloudinary
