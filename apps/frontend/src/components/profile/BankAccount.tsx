@@ -1,13 +1,20 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Plus, Edit, Trash2, CreditCard, Building, Hash, User, Code, Zap } from "lucide-react";
+import { Plus, Edit, Trash2, CreditCard, Building, Hash, User, Code, Zap, MoreVertical } from "lucide-react";
 import { BankAccountResponseDTO, UpdateBankAccountDTO } from "@/types/bankaccount.dtos";
 import { authService } from "@/services/auth";
 import Notification from "@/components/generalUI/Notification";
 import DeleteConfirmDialog from "../generalUI/DeleteConfirmDialog";
 import ProfileBankAccountService from "@/services/profile.bankaccount";
 import BankAccountModal from "./BankAccountModal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from "@/components/lib/ui/dropdown-menu";
+import { Button } from "@/components/lib/ui/button";
 
 interface NotificationState {
   type: "success" | "error";
@@ -16,7 +23,7 @@ interface NotificationState {
 }
 
 const BankAccount: React.FC = () => {
-  const [bankAccount, setBankAccount] = useState<BankAccountResponseDTO | null|undefined>(null);
+  const [bankAccount, setBankAccount] = useState<BankAccountResponseDTO | null | undefined>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [hasActiveBookings, setHasActiveBookings] = useState(false);
   const [notification, setNotification] = useState<NotificationState>({
@@ -77,7 +84,7 @@ const BankAccount: React.FC = () => {
     try {
       setIsLoading(true);
       let response;
-      
+
       if (bankAccount) {
         response = await ProfileBankAccountService.updateBankAccount(data);
         showNotification("success", "Bank account updated successfully!");
@@ -85,7 +92,7 @@ const BankAccount: React.FC = () => {
         response = await ProfileBankAccountService.createBankAccount(data);
         showNotification("success", "Bank account created successfully!");
       }
-      
+
       if (response.success) {
         setBankAccount(response.data);
         setModalOpen(false);
@@ -101,7 +108,7 @@ const BankAccount: React.FC = () => {
     try {
       setIsLoading(true);
       const response = await ProfileBankAccountService.deleteBankAccount();
-      
+
       if (response.success) {
         setBankAccount(null);
         showNotification("success", "Bank account deleted successfully!");
@@ -216,93 +223,68 @@ const BankAccount: React.FC = () => {
           ) : (
             // Bank Account Details
             <div>
-              <div className="flex items-start justify-between mb-6">
+              <div className="mb-6">
                 <h3 className="text-lg font-semibold text-gray-900">Account Information</h3>
-                <div className="flex gap-2">
-                  <button
-                    onClick={openEditModal}
-                    disabled={isLoading}
-                    className="inline-flex items-center gap-2 rounded-xl border border-pink-200 bg-white px-4 py-2 text-sm font-medium text-pink-700 hover:bg-pink-50 disabled:opacity-50"
-                  >
-                    <Edit size={16} />
-                    Edit
-                  </button>
-                  <button
-                    onClick={handleDeleteClick}
-                    disabled={isLoading || hasActiveBookings}
-                    title={hasActiveBookings ? "Cannot delete while you have active bookings" : "Delete bank account"}
-                    className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Trash2 size={16} />
-                    Delete
-                  </button>
-                </div>
               </div>
 
-              {/* Bank Account Details Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div className="flex items-start gap-3 p-4 rounded-xl bg-pink-50/50">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white shadow-sm">
-                    <User size={18} className="text-pink-600" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-xs text-gray-500 mb-1">Account Name</div>
-                    <div className="font-medium text-gray-900">{bankAccount.accountName}</div>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3 p-4 rounded-xl bg-pink-50/50">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white shadow-sm">
-                    <Hash size={18} className="text-pink-600" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-xs text-gray-500 mb-1">Account Number</div>
-                    <div className="font-medium text-gray-900 font-mono">{bankAccount.accountNumber}</div>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3 p-4 rounded-xl bg-pink-50/50">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white shadow-sm">
-                    <Building size={18} className="text-pink-600" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-xs text-gray-500 mb-1">Bank Name</div>
-                    <div className="font-medium text-gray-900">{bankAccount.bankName}</div>
-                  </div>
-                </div>
-              </div>                <div className="space-y-4">
-                  <div className="flex items-start gap-3 p-4 rounded-xl bg-pink-50/50">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white shadow-sm">
-                      <Code size={18} className="text-pink-600" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-xs text-gray-500 mb-1">Bank Code</div>
-                      <div className="font-medium text-gray-900 font-mono">{bankAccount.bankCode}</div>
-                    </div>
+              {/* Bank Account Card - Compact Format */}
+              <div className="inline-block mb-6">
+                <div className="relative p-6 bg-gradient-to-r from-white to-pink-50 border border-pink-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                  {/* More Options - Top Right Corner */}
+                  <div className="absolute top-4 right-4">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-pink-100">
+                          <MoreVertical className="w-4 h-4 text-gray-600" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" side="right" className="w-48 bg-white">
+                        <DropdownMenuItem
+                          onClick={openEditModal}
+                          disabled={isLoading}
+                          className="space-x-2 focus:bg-pink-100 cursor-pointer"
+                        >
+                          <Edit className="w-4 h-4" />
+                          <span>Edit Account</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={handleDeleteClick}
+                          disabled={isLoading || hasActiveBookings}
+                          className="space-x-2 text-red-600 focus:text-red-600 focus:bg-pink-100 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span>Delete Account</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
 
-                  <div className="flex items-start gap-3 p-4 rounded-xl bg-pink-50/50">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white shadow-sm">
-                      <Zap size={18} className="text-pink-600" />
+                  {/* Card Content */}
+                  <div className="flex items-center space-x-4 pr-12">
+                    <div className="p-3 bg-pink-100 rounded-full">
+                      {bankAccount.bankLogo ? (
+                        <img
+                          src={bankAccount.bankLogo}
+                          alt={bankAccount.bankName}
+                          className="w-6 h-6 object-contain"
+                        />
+                      ) : (
+                        <CreditCard className="w-6 h-6 text-pink-600" />
+                      )}
                     </div>
-                    <div className="flex-1">
-                      <div className="text-xs text-gray-500 mb-1">Bank BIN</div>
-                      <div className="font-medium text-gray-900 font-mono">{bankAccount.bankBin}</div>
-                    </div>
-                  </div>
-
-                  {bankAccount.swiftCode && (
-                    <div className="flex items-start gap-3 p-4 rounded-xl bg-pink-50/50">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white shadow-sm">
-                        <Code size={18} className="text-pink-600" />
+                    <div className="space-y-1">
+                      <h3 className="font-bold text-lg text-gray-900">{bankAccount.accountName}</h3>
+                      <div className="flex items-center space-x-3 text-sm text-gray-600">
+                        <span className="font-medium">{bankAccount.bankName}</span>
+                        <span className="text-gray-400">•</span>
+                        <span className="font-mono">****{bankAccount.accountNumber.slice(-4)}</span>
                       </div>
-                      <div className="flex-1">
-                        <div className="text-xs text-gray-500 mb-1">Swift Code</div>
-                        <div className="font-medium text-gray-900 font-mono">{bankAccount.swiftCode}</div>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span className="text-xs text-green-700 font-medium">Active Account</span>
                       </div>
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
 

@@ -5,6 +5,7 @@ export interface CreateBankAccountDTO {
   accountName: string;
   bankName: string;
   bankCode: string;
+  bankLogo?: string;
   bankBin: string;
   swiftCode?: string;
 }
@@ -15,6 +16,7 @@ export interface UpdateBankAccountDTO {
   bankName?: string;
   bankCode?: string;
   bankBin?: string;
+  bankLogo?: string;
   swiftCode?: string;
 }
 
@@ -23,6 +25,7 @@ export interface BankAccountResponseDTO {
   userId: string;
   accountNumber: string;
   accountName: string;
+  bankLogo?: string;
   bankName: string;
   bankCode: string;
   bankBin: string;

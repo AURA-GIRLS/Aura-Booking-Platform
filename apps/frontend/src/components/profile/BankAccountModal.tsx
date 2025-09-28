@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/lib/ui/dialog";
 import { Button } from "@/components/lib/ui/button";
 import { Input } from "@/components/lib/ui/input";
 import { Label } from "@/components/lib/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/lib/ui/select";
 import { Loader2 } from "lucide-react";
-import { BankAccountResponseDTO, UpdateBankAccountDTO } from "@/types/bankaccount.dtos";
+import { BankAccountResponseDTO, BankDTO, UpdateBankAccountDTO } from "@/types/bankaccount.dtos";
+import { ProfileBankAccountService } from "@/services/profile.bankaccount";
 
 interface BankAccountModalProps {
   open: boolean;
@@ -29,11 +31,12 @@ const BankAccountModal: React.FC<BankAccountModalProps> = ({
     bankName: "",
     bankCode: "",
     bankBin: "",
-    swiftCode: ""
+    swiftCode: "",
+    bankLogo: ""
   });
 
   const [errors, setErrors] = useState<Partial<UpdateBankAccountDTO>>({});
-
+  const [bankList, setBankList] = useState<BankDTO[]>([]);
   // Reset form when modal opens/closes or initial data changes
   useEffect(() => {
     if (open) {
@@ -58,7 +61,21 @@ const BankAccountModal: React.FC<BankAccountModalProps> = ({
       }
       setErrors({});
     }
+    fetchVietQrBanks();
   }, [open, initialData]);
+
+  const fetchVietQrBanks = useCallback(async () => {
+    try {
+      const response = await ProfileBankAccountService.getVietQrBankList();
+      if(response?.code === '00'){
+        setBankList(response?.data);
+      }
+      console.log("VietQR Bank List:", response.data);
+      console.log("bank list:", bankList);
+    } catch (error) {
+      console.error("Failed to fetch VietQR bank list:", error);
+    }
+  }, []);
 
   const handleInputChange = (field: keyof UpdateBankAccountDTO, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -68,30 +85,53 @@ const BankAccountModal: React.FC<BankAccountModalProps> = ({
     }
   };
 
+  const handleBankSelect = (bankId: string) => {
+    const selectedBank = bankList.find(bank => bank.id.toString() === bankId);
+    if (selectedBank) {
+      setFormData(prev => ({
+        ...prev,
+        bankName: selectedBank.shortName,
+        bankCode: selectedBank.code,
+        bankBin: selectedBank.bin,
+        swiftCode: selectedBank.swift_code || "",
+        bankLogo: selectedBank.logo
+      }));
+      
+      // Clear any errors for auto-populated fields
+      setErrors(prev => ({
+        ...prev,
+        bankName: undefined,
+        bankCode: undefined,
+        bankBin: undefined,
+        swiftCode: undefined
+      }));
+    }
+  };
+
   const validateForm = (): boolean => {
     const newErrors: Partial<UpdateBankAccountDTO> = {};
 
-    if (!formData.accountName.trim()) {
+    if (!formData.accountName!.trim()) {
       newErrors.accountName = "Account name is required";
     }
 
-    if (!formData.accountNumber.trim()) {
+    if (!formData.accountNumber!.trim()) {
       newErrors.accountNumber = "Account number is required";
-    } else if (!/^\d+$/.test(formData.accountNumber)) {
+    } else if (!/^\d+$/.test(formData.accountNumber || "")) {
       newErrors.accountNumber = "Account number must contain only digits";
     }
 
-    if (!formData.bankName.trim()) {
+    if (!formData.bankName!.trim()) {
       newErrors.bankName = "Bank name is required";
     }
 
-    if (!formData.bankCode.trim()) {
+    if (!formData.bankCode!.trim()) {
       newErrors.bankCode = "Bank code is required";
     }
 
-    if (!formData.bankBin.trim()) {
+    if (!formData.bankBin!.trim()) {
       newErrors.bankBin = "Bank BIN is required";
-    } else if (!/^\d+$/.test(formData.bankBin)) {
+    } else if (!/^\d+$/.test(formData.bankBin || "")) {
       newErrors.bankBin = "Bank BIN must contain only digits";
     }
 
@@ -113,13 +153,15 @@ const BankAccountModal: React.FC<BankAccountModalProps> = ({
     try {
       await onSubmit(formData);
     } catch (error) {
-      // Error handling is done by parent component
+      console.log("Submission error:", error);
     }
   };
 
+  
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md w-full mx-auto bg-white">
+    <Dialog open={open} onOpenChange={onOpenChange} >
+      <DialogContent className="max-w-md w-full mx-auto bg-white" aria-describedby="Add or update your bank account details">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold text-gray-900">
             {initialData ? "Update Bank Account" : "Add Bank Account"}
@@ -165,82 +207,48 @@ const BankAccountModal: React.FC<BankAccountModalProps> = ({
             )}
           </div>
 
-          {/* Bank Name */}
+          {/* Bank Selection */}
           <div className="space-y-2">
             <Label htmlFor="bankName" className="text-sm font-medium text-gray-700">
               Bank Name *
             </Label>
-            <Input
-              id="bankName"
-              type="text"
-              placeholder="Enter bank name"
-              value={formData.bankName}
-              onChange={(e) => handleInputChange("bankName", e.target.value)}
-              className={errors.bankName ? "border-red-500 focus:ring-red-500" : ""}
+            <Select 
+              onValueChange={handleBankSelect}
+              value={bankList.find(bank => bank.shortName === formData.bankName)?.id.toString() || ""}
               disabled={isLoading}
-            />
+            >
+              <SelectTrigger className={errors.bankName ? "border-red-500 focus:ring-red-500" : ""}>
+                <SelectValue placeholder="Select a bank" />
+              </SelectTrigger>
+              <SelectContent className="max-h-[200px] w-[400px] bg-white">
+                {bankList.map((bank) => (
+                  <SelectItem key={bank.id} value={bank.id.toString()}>
+                    <div className="flex items-center gap-3">
+                      {bank.logo && (
+                        <img 
+                          src={bank.logo} 
+                          alt={bank.shortName}
+                          className="w-6 h-6 object-contain"
+                        />
+                      )}
+                      <div className="flex flex-col">
+                        <span className="font-medium">{bank.shortName}</span>
+                        <span className="text-xs text-gray-500">{bank.name}</span>
+                      </div>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {errors.bankName && (
               <p className="text-sm text-red-600">{errors.bankName}</p>
             )}
           </div>
 
-          {/* Bank Code and Bank BIN in a row */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="bankCode" className="text-sm font-medium text-gray-700">
-                Bank Code *
-              </Label>
-              <Input
-                id="bankCode"
-                type="text"
-                placeholder="Bank code"
-                value={formData.bankCode}
-                onChange={(e) => handleInputChange("bankCode", e.target.value)}
-                className={errors.bankCode ? "border-red-500 focus:ring-red-500" : ""}
-                disabled={isLoading}
-              />
-              {errors.bankCode && (
-                <p className="text-sm text-red-600">{errors.bankCode}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="bankBin" className="text-sm font-medium text-gray-700">
-                Bank BIN *
-              </Label>
-              <Input
-                id="bankBin"
-                type="text"
-                placeholder="Bank BIN"
-                value={formData.bankBin}
-                onChange={(e) => handleInputChange("bankBin", e.target.value)}
-                className={errors.bankBin ? "border-red-500 focus:ring-red-500" : ""}
-                disabled={isLoading}
-              />
-              {errors.bankBin && (
-                <p className="text-sm text-red-600">{errors.bankBin}</p>
-              )}
-            </div>
-          </div>
-
-          {/* Swift Code (Optional) */}
-          <div className="space-y-2">
-            <Label htmlFor="swiftCode" className="text-sm font-medium text-gray-700">
-              SWIFT Code (Optional)
-            </Label>
-            <Input
-              id="swiftCode"
-              type="text"
-              placeholder="Enter SWIFT code (e.g., BFTVVNVX)"
-              value={formData.swiftCode}
-              onChange={(e) => handleInputChange("swiftCode", e.target.value.toUpperCase())}
-              className={errors.swiftCode ? "border-red-500 focus:ring-red-500" : ""}
-              disabled={isLoading}
-            />
-            {errors.swiftCode && (
-              <p className="text-sm text-red-600">{errors.swiftCode}</p>
-            )}
-          </div>
+          {/* Hidden fields for bank details - still populated but not shown */}
+          <input type="hidden" value={formData.bankCode} />
+          <input type="hidden" value={formData.bankBin} />
+          <input type="hidden" value={formData.swiftCode} />
 
           {/* Action Buttons */}
           <div className="flex gap-3 pt-4">

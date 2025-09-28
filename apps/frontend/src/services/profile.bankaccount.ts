@@ -1,8 +1,18 @@
 import { api } from "@/config/api";
 import { ApiResponseDTO } from "../types";
-import { UpdateBankAccountDTO, BankAccountResponseDTO } from "@/types/bankaccount.dtos";
+import { UpdateBankAccountDTO, BankAccountResponseDTO, BankListResponseDTO } from "@/types/bankaccount.dtos";
+import axios from "axios";
 
 export const ProfileBankAccountService = {
+  
+  async getVietQrBankList(): Promise<BankListResponseDTO> {
+    try {
+      const res = await axios.get<BankListResponseDTO>('https://api.vietqr.io/v2/banks');
+      return res.data;
+    } catch (error: any) {
+      throw error.response?.data || error;
+    }
+  },
   // ==================== BANK ACCOUNT ====================
   
   /**

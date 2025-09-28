@@ -4,10 +4,6 @@ import { useState } from "react";
 import { Icon } from "@iconify/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/lib/ui/card";
 import { Button } from "@/components/lib/ui/button";
-import { Input } from "@/components/lib/ui/input";
-import { Label } from "@/components/lib/ui/label";
-import { Separator } from "@/components/lib/ui/separator";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/lib/ui/dialog";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -16,35 +12,43 @@ import {
 } from "@/components/lib/ui/dropdown-menu";
 import type { BankAccountResponseDTO, UpdateBankAccountDTO } from "@/types/bankaccount.dtos";
 import DeleteConfirmDialog from "@/components/generalUI/DeleteConfirmDialog";
+import BankAccountModal from "@/components/profile/BankAccountModal";
 
 interface BankAccountManagerProps {
   bankAccount: BankAccountResponseDTO | null;
   loadingBankAccount: boolean;
-  bankAccountForm: UpdateBankAccountDTO;
-  setBankAccountForm: (form: UpdateBankAccountDTO | ((prev: UpdateBankAccountDTO) => UpdateBankAccountDTO)) => void;
-  onSave: () => Promise<void>;
+  onSave: (data: UpdateBankAccountDTO) => Promise<void>;
   onDelete: () => Promise<void>;
 }
 
 export const BankAccountManager = ({
   bankAccount,
   loadingBankAccount,
-  bankAccountForm,
-  setBankAccountForm,
   onSave,
   onDelete,
 }: BankAccountManagerProps) => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
-  const handleSave = async () => {
-    await onSave();
+  const handleSave = async (data: UpdateBankAccountDTO) => {
+    await onSave(data);
     setEditDialogOpen(false);
   };
 
   const handleDelete = async () => {
     await onDelete();
     setDeleteDialogOpen(false);
+  };
+
+  const openEditModal = () => {
+    setIsEditing(true);
+    setEditDialogOpen(true);
+  };
+
+  const openCreateModal = () => {
+    setIsEditing(false);
+    setEditDialogOpen(true);
   };
 
   if (loadingBankAccount) {
@@ -86,7 +90,7 @@ export const BankAccountManager = ({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start" side="right" className="w-48 bg-white">
-                        <DropdownMenuItem onClick={() => setEditDialogOpen(true)} className="space-x-2 focus:bg-pink-100 cursor-pointer">
+                        <DropdownMenuItem onClick={openEditModal} className="space-x-2 focus:bg-pink-100 cursor-pointer">
                           <Icon icon="lucide:edit" className="w-4 h-4" />
                           <span>Edit Account</span>
                         </DropdownMenuItem>
@@ -104,7 +108,15 @@ export const BankAccountManager = ({
                   {/* Card Content */}
                   <div className="flex items-center space-x-4 pr-12">
                     <div className="p-3 bg-pink-100 rounded-full">
-                      <Icon icon="lucide:credit-card" className="w-6 h-6 text-pink-600" />
+                      {bankAccount.bankLogo ? (
+                        <img 
+                          src={bankAccount.bankLogo} 
+                          alt={bankAccount.bankName}
+                          className="w-6 h-6 object-contain"
+                        />
+                      ) : (
+                        <Icon icon="lucide:credit-card" className="w-6 h-6 text-pink-600" />
+                      )}
                     </div>
                     <div className="space-y-1">
                       <h3 className="font-bold text-lg text-gray-900">{bankAccount.accountName}</h3>
@@ -147,7 +159,7 @@ export const BankAccountManager = ({
                 </p>
               </div>
               <Button
-                onClick={() => setEditDialogOpen(true)}
+                onClick={openCreateModal}
                 className="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white space-x-2"
                 size="lg"
               >
@@ -159,114 +171,14 @@ export const BankAccountManager = ({
         </CardContent>
       </Card>
 
-      {/* Edit/Add Bank Account Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-2xl bg-white">
-          <DialogHeader>
-            <DialogTitle className="flex items-center space-x-2">
-              <Icon icon="lucide:building-2" className="w-5 h-5 text-rose-600" />
-              <span>{bankAccount ? "Edit Bank Account" : "Add Bank Account"}</span>
-            </DialogTitle>
-            <DialogDescription>
-              Enter your bank account details to receive payouts securely.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-6 py-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="accountName" className="text-rose-700 font-medium">Account Holder Name</Label>
-                <Input
-                  id="accountName"
-                  value={bankAccountForm.accountName}
-                  onChange={(e) => setBankAccountForm(prev => ({ ...prev, accountName: e.target.value }))}
-                  placeholder="Enter full name as on bank account"
-                  className="border-rose-200 focus:border-rose-500"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="bankName" className="text-rose-700 font-medium">Bank Name</Label>
-                <Input
-                  id="bankName"
-                  value={bankAccountForm.bankName}
-                  onChange={(e) => setBankAccountForm(prev => ({ ...prev, bankName: e.target.value }))}
-                  placeholder="Enter bank name"
-                  className="border-rose-200 focus:border-rose-500"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="accountNumber" className="text-rose-700 font-medium">Account Number</Label>
-                <Input
-                  id="accountNumber"
-                  value={bankAccountForm.accountNumber}
-                  onChange={(e) => setBankAccountForm(prev => ({ ...prev, accountNumber: e.target.value }))}
-                  placeholder="Enter account number"
-                  className="border-rose-200 focus:border-rose-500"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="bankCode" className="text-rose-700 font-medium">Bank Code</Label>
-                <Input
-                  id="bankCode"
-                  value={bankAccountForm.bankCode}
-                  onChange={(e) => setBankAccountForm(prev => ({ ...prev, bankCode: e.target.value }))}
-                  placeholder="Enter bank code"
-                  className="border-rose-200 focus:border-rose-500"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="bankBin" className="text-rose-700 font-medium">Bank BIN</Label>
-                <Input
-                  id="bankBin"
-                  value={bankAccountForm.bankBin}
-                  onChange={(e) => setBankAccountForm(prev => ({ ...prev, bankBin: e.target.value }))}
-                  placeholder="Enter bank BIN"
-                  className="border-rose-200 focus:border-rose-500"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="swiftCode" className="text-rose-700 font-medium">SWIFT Code (Optional)</Label>
-                <Input
-                  id="swiftCode"
-                  value={bankAccountForm.swiftCode}
-                  onChange={(e) => setBankAccountForm(prev => ({ ...prev, swiftCode: e.target.value }))}
-                  placeholder="Enter SWIFT code (if applicable)"
-                  className="border-rose-200 focus:border-rose-500"
-                />
-              </div>
-            </div>
-            
-            <Separator />
-            
-            <div className="flex justify-end space-x-3">
-              <Button
-                variant="outline"
-                onClick={() => setEditDialogOpen(false)}
-                className="border-rose-200 text-rose-700 hover:bg-rose-50"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSave}
-                disabled={loadingBankAccount}
-                className="bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white space-x-2"
-              >
-                {loadingBankAccount ? (
-                  <Icon icon="lucide:loader-2" className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Icon icon="lucide:save" className="w-4 h-4" />
-                )}
-                <span>{bankAccount ? "Update Account" : "Save Account"}</span>
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Bank Account Modal */}
+      <BankAccountModal
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSubmit={handleSave}
+        initialData={isEditing ? bankAccount : null}
+        isLoading={loadingBankAccount}
+      />
 
       {/* Delete Confirmation Dialog */}
       <DeleteConfirmDialog

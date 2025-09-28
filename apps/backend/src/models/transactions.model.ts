@@ -6,6 +6,7 @@ const BankAccountSchema = new Schema({
   accountNumber: { type: String, required: true },
   accountName: { type: String, required: true },
   bankName: { type: String, required: true },
+  bankLogo: { type: String }, // optional nếu cần
   bankCode: { type: String, required: true },
   bankBin: { type: String, required: true },
   swiftCode: { type: String } // optional nếu cần

@@ -47,6 +47,7 @@ export const WalletBoard = ({ muaId }: WalletBoardProps) => {
     bankCode: "",
     bankBin: "",
     swiftCode: "",
+    bankLogo: ""
   });
 
   
@@ -136,6 +137,7 @@ export const WalletBoard = ({ muaId }: WalletBoardProps) => {
           bankCode: res.data.bankCode,
           bankBin: res.data.bankBin,
           swiftCode: res.data.swiftCode || "",
+          bankLogo: res.data.bankLogo || ""
         });
       }
     } catch (error) {
@@ -145,19 +147,31 @@ export const WalletBoard = ({ muaId }: WalletBoardProps) => {
     }
   };
 
-  const handleSaveBankAccount = async () => {
+  const handleSaveBankAccount = async (data: UpdateBankAccountDTO) => {
     setLoadingBankAccount(true);
     try {
+      console.log("bankAccountData", data);
       const res = bankAccount 
-        ? await ProfileBankAccountService.updateBankAccount(bankAccountForm)
-        : await ProfileBankAccountService.createBankAccount(bankAccountForm);
+        ? await ProfileBankAccountService.updateBankAccount(data)
+        : await ProfileBankAccountService.createBankAccount(data);
       
       if (res.success && res.data) {
         setBankAccount(res.data);
+        // Update the form state with the new data
+        setBankAccountForm({
+          accountNumber: res.data.accountNumber,
+          accountName: res.data.accountName,
+          bankName: res.data.bankName,
+          bankCode: res.data.bankCode,
+          bankBin: res.data.bankBin,
+          swiftCode: res.data.swiftCode || "",
+          bankLogo: res.data.bankLogo || ""
+        });
         showNotification("success", "Bank Account Saved", "Your bank account has been successfully updated.");
       }
     } catch (error) {
       console.error("Failed to save bank account", error);
+      showNotification("error", "Save Failed", "An error occurred while saving your bank account.");
     } finally {
       setLoadingBankAccount(false);
     }
@@ -370,8 +384,6 @@ export const WalletBoard = ({ muaId }: WalletBoardProps) => {
           <BankAccountManager
             bankAccount={bankAccount}
             loadingBankAccount={loadingBankAccount}
-            bankAccountForm={bankAccountForm}
-            setBankAccountForm={setBankAccountForm}
             onSave={handleSaveBankAccount}
             onDelete={handleDeleteBankAccount}
           />

@@ -115,6 +115,7 @@ export class BankAccountService {
       accountName: account.accountName,
       bankName: account.bankName,
       bankCode: account.bankCode,
+      bankLogo: account.bankLogo,
       bankBin: account.bankBin,
       swiftCode: account.swiftCode,
       createdAt: account.createdAt,

@@ -24,7 +24,7 @@ interface PayoutSectionProps {
   onSwitchToBankTab: () => void;
   onLoadWithdrawals: (page: number) => void;
 }
-
+ 
 export const PayoutSection = ({
   wallet,
   bankAccount,

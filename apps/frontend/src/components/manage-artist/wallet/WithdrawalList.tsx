@@ -107,7 +107,7 @@ export const WithdrawalList = ({
                     </div>
                     <div className="text-right">
                       <p className="font-bold text-xl text-purple-700">
-                        {formatMoney(withdrawal.amount)} {withdrawal.currency}
+                        {formatMoney(withdrawal.amount)} ₫
                       </p>
                     </div>
                   </div>
