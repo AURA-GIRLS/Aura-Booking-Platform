@@ -42,8 +42,10 @@ const LoginForm: React.FC = () => {
 				if(res.data && res.data.user.role === 'ARTIST') {
 					//need change redirect to artist dashboard
 					window.location.href = `/manage-artist/${res.data.mua?._id}/dashboard`;
-				}else{
+				}else if(res.data && res.data.user.role === 'USER'){
 					window.location.href = '/';
+				}else if(res.data && res.data.user.role === 'ADMIN'){
+					window.location.href = '/admin/dashboard';
 				}
 			} else {
 				setError(res.message || 'Login failed');
@@ -112,77 +114,136 @@ const LoginForm: React.FC = () => {
 	}, []);
 
 				return (
-					<div className="min-h-screen flex items-center justify-center">
+					<div className="min-h-screen bg-transparent flex items-center justify-center p-4">
+						{/* Background decoration */}
+						{/* <div className="absolute inset-0 overflow-hidden">
+							<div className="absolute -top-40 -right-40 w-80 h-80 bg-rose-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
+							<div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
+							<div className="absolute top-40 left-40 w-80 h-80 bg-pink-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
+						</div> */}
+
 						<form
 							onSubmit={handleSubmit}
-							className="w-full max-w-lg rounded-[2.5rem] shadow-2xl bg-white/90 border-4 border-pink-200/60 px-10 py-12 flex flex-col gap-7 animate-fade-in"
+							className="relative z-10 w-full max-w-md bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20 p-8 space-y-6"
 						>
-							{error && <div className="text-red-500 text-sm text-center">{error}</div>}
-							{success && <div className="text-green-600 text-sm text-center">{success}</div>}
-							<div className="flex flex-col items-center gap-2 mb-2">
-								<a href="/" title='home' className="w-16 h-16 rounded-full bg-pink-200 flex items-center justify-center mb-2 shadow-inner animate-bounce">
-									<UserIcon className="w-8 h-8 text-pink-500" />
-								</a>
-								<h2 className="text-3xl font-extrabold text-pink-500 tracking-tight drop-shadow-pink">Welcome Back!</h2>
-								<p className="text-pink-600 text-lg text-center font-medium">Sign in to book makeup and manage your beauty schedule.</p>
+							{/* Status Messages */}
+							{error && (
+								<div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl text-sm text-center">
+									{error}
+								</div>
+							)}
+							{success && (
+								<div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-xl text-sm text-center">
+									{success}
+								</div>
+							)}
+
+							{/* Header */}
+							<div className="text-center space-y-4">
+								<div className="relative">
+									<div className="w-20 h-20 mx-auto bg-gradient-to-br from-rose-500 to-pink-600 rounded-full flex items-center justify-center shadow-lg animate-bounce">
+										<UserIcon className="w-10 h-10 text-white" />
+									</div>
+									{/* Pulse rings */}
+									<div className="absolute inset-0 w-20 h-20 mx-auto rounded-full border-4 border-rose-300 animate-ping opacity-20"></div>
+								</div>
+								<div>
+									<h2 className="text-2xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
+										Welcome Back!
+									</h2>
+									<p className="text-gray-600 text-sm mt-2">
+										Sign in to book makeup and manage your beauty schedule
+									</p>
+								</div>
 							</div>
-							<div>
-								<Label htmlFor="email" className="block mb-1 font-medium text-pink-500">Email address*</Label>
-								<Input
-									id="email"
-									type="email"
-									name="email"
-									value={form.email}
-									onChange={handleChange}
-									required
-									placeholder="example@gmail.com"
-									className="bg-pink-50 border border-pink-200 focus:border-pink-400 focus:ring-pink-200 text-pink-700"
-								/>
+							{/* Form Fields */}
+							<div className="space-y-4">
+								<div>
+									<Label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+										Email address
+									</Label>
+									<Input
+										id="email"
+										type="email"
+										name="email"
+										value={form.email}
+										onChange={handleChange}
+										required
+										placeholder="example@gmail.com"
+										className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all duration-200"
+									/>
+								</div>
+								<div>
+									<Label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+										Password
+									</Label>
+									<Input
+										id="password"
+										type="password"
+										name="password"
+										value={form.password}
+										onChange={handleChange}
+										required
+										placeholder="Enter your password"
+										className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all duration-200"
+									/>
+								</div>
+								
+								{/* Remember & Forgot */}
+								<div className="flex items-center justify-between text-sm">
+									<label className="flex items-center gap-2 text-gray-600">
+										<input type="checkbox" className="w-4 h-4 text-rose-500 border-gray-300 rounded focus:ring-rose-500" />
+										Remember me
+									</label>
+									<a href="/auth/forgot-password" className="text-rose-600 hover:text-rose-700 font-medium hover:underline transition-colors">
+										Forgot Password?
+									</a>
+								</div>
 							</div>
-							<div>
-								<Label htmlFor="password" className="block mb-1 font-medium text-pink-500">Password*</Label>
-								<Input
-									id="password"
-									type="password"
-									name="password"
-									value={form.password}
-									onChange={handleChange}
-									required
-									placeholder="@Sn123hsn#"
-									className="bg-pink-50 border border-pink-200 focus:border-pink-400 focus:ring-pink-200 text-pink-700"
-								/>
-							</div>
-							<div className="flex items-center justify-between text-xs text-pink-400 mb-2">
-								<label className="flex items-center gap-2">
-									<input type="checkbox" className="accent-pink-400" />
-									Remember me
-								</label>
-								<a href="/auth/forgot-password" className="text-pink-500 font-semibold hover:underline">Forgot Password?</a>
-							</div>
+							{/* Submit Button */}
 							<Button
 								type="submit"
-								className="w-full bg-gradient-to-r from-pink-400 via-pink-300 to-pink-400 hover:from-pink-500 hover:to-pink-400 text-white py-3 rounded-2xl font-bold hover:scale-105 transition-transform duration-200 mb-2 shadow-lg flex items-center justify-center gap-2"
+								className="w-full bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
 								disabled={loading}
 							>
-								<svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M5 12h14" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>
-								{loading ? 'Signing in...' : 'Sign in'}
+								{loading ? (
+									<div className="flex items-center justify-center gap-2">
+										<div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+										Signing in...
+									</div>
+								) : (
+									'Sign In'
+								)}
 							</Button>
-							<div className="flex items-center gap-2 my-2">
-								<div className="flex-1 h-px bg-pink-200" />
-								<span className="text-xs text-pink-400">Or continue with</span>
-								<div className="flex-1 h-px bg-pink-200" />
-							</div>
-							<div className="flex flex-col gap-3">
-								<div ref={googleBtnRef} className="flex justify-center"></div>
-							</div>
-							<div className="flex flex-col gap-1 ">
-								<div className="flex justify-center mt-2">
-									<span className="text-xs text-pink-400">Don't have an account?</span>
-									<a href="/auth/register" className="ml-1 text-xs text-pink-500 font-semibold hover:underline">Sign up</a>
+
+							{/* Divider */}
+							<div className="relative">
+								<div className="absolute inset-0 flex items-center">
+									<div className="w-full border-t border-gray-200"></div>
 								</div>
-								<div className="flex justify-center mt-1">
-									<span className="text-xs text-pink-400">Haven't seen verification email?</span>
-									<a href="/auth/resend-verification" className="ml-1 text-xs text-pink-500 font-semibold hover:underline">Resend Email</a>
+								<div className="relative flex justify-center text-sm">
+									<span className="px-2 bg-white text-gray-500">Or continue with</span>
+								</div>
+							</div>
+
+							{/* Google Sign In */}
+							<div className="flex justify-center">
+								<div ref={googleBtnRef} className="w-full flex justify-center"></div>
+							</div>
+
+							{/* Footer Links */}
+							<div className="text-center space-y-2">
+								<div className="text-sm text-gray-600">
+									Don't have an account?{' '}
+									<a href="/auth/register" className="text-rose-600 hover:text-rose-700 font-medium hover:underline transition-colors">
+										Sign up
+									</a>
+								</div>
+								<div className="text-sm text-gray-600">
+									Haven't received verification email?{' '}
+									<a href="/auth/resend-verification" className="text-rose-600 hover:text-rose-700 font-medium hover:underline transition-colors">
+										Resend
+									</a>
 								</div>
 							</div>
 						</form>

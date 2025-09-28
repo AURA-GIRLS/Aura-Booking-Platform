@@ -1,5 +1,6 @@
 'use client';
 
+import AuthGuard from "@/components/auth/AuthGuard";
 import Footer from "@/components/generalUI/Footer";
 import ArtistNavbar from "@/components/manage-artist/general-components/ArtistNavbar";
 import { MuaResponseDTO } from "@/types/user.dtos";
@@ -61,10 +62,12 @@ export default function ArtistLayout({ children }: { children: React.ReactNode }
   }, []);
   
   return (
-    <main className="flex flex-col min-h-screen bg-white">
-      <ArtistNavbar mua={mua} setMua={setMua} />
-      <div className="flex-1">{children}</div>
-      <Footer />
-    </main>
+    <AuthGuard requiredRole="ARTIST">
+      <main className="flex flex-col min-h-screen bg-white">
+        <ArtistNavbar mua={mua} setMua={setMua} />
+        <div className="flex-1">{children}</div>
+        <Footer />
+      </main>
+    </AuthGuard>
   );
 }

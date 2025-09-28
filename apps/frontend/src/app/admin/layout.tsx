@@ -9,7 +9,7 @@ import { Poppins } from "next/font/google";
 import { useState, useEffect } from "react";
 
 
-export default function UserLayout({ children }: { children: React.ReactNode }) {
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserResponseDTO | null>(null);
 
   useEffect(() => {
@@ -65,12 +65,13 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
   }, []);
 
   return (
-    <AuthGuard requiredRole="USER">
-      <main className="flex flex-col min-h-screen bg-white">
+    <AuthGuard requiredRole="ADMIN">
+      <main className="flex flex-col min-h-screen bg-white ">
         <Navbar user={user} setUser={setUser} />
-        <div className="flex-1">{children}</div>
+        <div className="flex-1 ">{children}</div>
         <Footer />
       </main>
     </AuthGuard>
+
   );
 }

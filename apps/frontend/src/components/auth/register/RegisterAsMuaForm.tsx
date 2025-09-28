@@ -49,130 +49,167 @@ export default function RegisterAsMuaForm() {
 	};
 
 			return (
-				<form onSubmit={handleSubmit} className="bg-white/90 rounded-[2.5rem] shadow-2xl border-4 border-pink-200/60 p-10 flex flex-col gap-6 max-w-lg w-full mx-auto mt-12 animate-fade-in">
-					<div className="flex flex-col items-center gap-2 mb-2">
-						<a href="/" title='home'className="w-16 h-16 rounded-full bg-pink-200 flex items-center justify-center mb-2 shadow-inner animate-bounce">
-							<BrushIcon className="w-8 h-8 text-pink-500" />
-						</a>
-						<h2 className="text-3xl font-extrabold text-pink-500 tracking-tight drop-shadow-pink">Sign up as Makeup Artist</h2>
-						<p className="text-pink-600 text-lg text-center font-medium">Grow your brand. Get more bookings. Join Aura's artist network!</p>
+				<div className="min-h-screen bg-transparent flex items-center justify-center p-4">
+
+					<form onSubmit={handleSubmit} className="relative z-10 w-full max-w-md bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20 p-8 space-y-6">
+						{/* Header */}
+						<div className="text-center space-y-4">
+							<div className="relative">
+								<div className="w-20 h-20 mx-auto bg-gradient-to-br from-rose-500 to-pink-600 rounded-full flex items-center justify-center shadow-lg animate-bounce">
+									<BrushIcon className="w-10 h-10 text-white" />
+								</div>
+								{/* Pulse rings */}
+								<div className="absolute inset-0 w-20 h-20 mx-auto rounded-full border-4 border-rose-300 animate-ping opacity-20"></div>
+							</div>
+							<div>
+								<h2 className="text-2xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
+									Join as Makeup Artist
+								</h2>
+								<p className="text-gray-600 text-sm mt-2">
+									Grow your brand. Get more bookings. Join Aura's artist network!
+								</p>
+							</div>
+						</div>
+					{/* Form Fields */}
+					<div className="space-y-4">
+						<div>
+							<Label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">Full Name</Label>
+							<Input
+								id="fullName"
+								name="fullName"
+								type="text"
+								placeholder="Your full name"
+								className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all duration-200"
+								value={form.fullName}
+								onChange={handleChange}
+								required
+							/>
+						</div>
+						<div>
+							<Label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">Email</Label>
+							<Input
+								id="email"
+								name="email"
+								type="email"
+								placeholder="you@email.com"
+								className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all duration-200"
+								value={form.email}
+								onChange={handleChange}
+								required
+							/>
+						</div>
+						<div>
+							<Label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">Password</Label>
+							<Input
+								id="password"
+								name="password"
+								type="password"
+								placeholder="Password"
+								className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all duration-200"
+								value={form.password}
+								onChange={handleChange}
+								required
+							/>
+						</div>
+						<div>
+							<Label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-2">Phone Number</Label>
+							<Input
+								id="phoneNumber"
+								name="phoneNumber"
+								type="text"
+								placeholder="Phone number"
+								className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all duration-200"
+								value={form.phoneNumber}
+								onChange={handleChange}
+							/>
+						</div>
+						<div>
+							<Label htmlFor="experienceYears" className="block text-sm font-medium text-gray-700 mb-2">Years of Experience</Label>
+							<Input
+								id="experienceYears"
+								name="experienceYears"
+								type="number"
+								placeholder="e.g. 3"
+								className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all duration-200"
+								value={form.experienceYears}
+								onChange={handleChange}
+								min={0}
+							/>
+						</div>
+						<div>
+							<Label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">Location</Label>
+							<Input
+								id="location"
+								name="location"
+								type="text"
+								placeholder="City/Province"
+								className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all duration-200"
+								value={form.location}
+								onChange={handleChange}
+							/>
+						</div>
+						<div>
+							<Label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-2">Short Bio</Label>
+							<textarea
+								id="bio"
+								name="bio"
+								placeholder="Tell us about yourself (optional)"
+								className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all duration-200 min-h-[80px] resize-none"
+								value={form.bio}
+								onChange={handleChange}
+							/>
+						</div>
 					</div>
-					<div className="flex flex-col gap-2">
-						<Label htmlFor="fullName" className="text-pink-600">Full Name</Label>
-						<Input
-							id="fullName"
-							name="fullName"
-							type="text"
-							placeholder="Your full name"
-							className="bg-pink-50 focus:ring-pink-300"
-							value={form.fullName}
-							onChange={handleChange}
-							required
-						/>
-					</div>
-					<div className="flex flex-col gap-2">
-						<Label htmlFor="email" className="text-pink-600">Email</Label>
-						<Input
-							id="email"
-							name="email"
-							type="email"
-							placeholder="you@email.com"
-							className="bg-pink-50 focus:ring-pink-300"
-							value={form.email}
-							onChange={handleChange}
-							required
-						/>
-					</div>
-					<div className="flex flex-col gap-2">
-						<Label htmlFor="password" className="text-pink-600">Password</Label>
-						<Input
-							id="password"
-							name="password"
-							type="password"
-							placeholder="Password"
-							className="bg-pink-50 focus:ring-pink-300"
-							value={form.password}
-							onChange={handleChange}
-							required
-						/>
-					</div>
-					<div className="flex flex-col gap-2">
-						<Label htmlFor="phoneNumber" className="text-pink-600">Phone Number</Label>
-						<Input
-							id="phoneNumber"
-							name="phoneNumber"
-							type="text"
-							placeholder="Phone number"
-							className="bg-pink-50 focus:ring-pink-300"
-							value={form.phoneNumber}
-							onChange={handleChange}
-						/>
-					</div>
-					<div className="flex flex-col gap-2">
-						<Label htmlFor="experienceYears" className="text-pink-600">Years of Experience</Label>
-						<Input
-							id="experienceYears"
-							name="experienceYears"
-							type="number"
-							placeholder="e.g. 3"
-							className="bg-pink-50 focus:ring-pink-300"
-							value={form.experienceYears}
-							onChange={handleChange}
-							min={0}
-						/>
-					</div>
-					<div className="flex flex-col gap-2">
-						<Label htmlFor="location" className="text-pink-600">Location</Label>
-						<Input
-							id="location"
-							name="location"
-							type="text"
-							placeholder="City/Province"
-							className="bg-pink-50 focus:ring-pink-300"
-							value={form.location}
-							onChange={handleChange}
-						/>
-					</div>
-					<div className="flex flex-col gap-2">
-						<Label htmlFor="bio" className="text-pink-600">Short Bio</Label>
-						<textarea
-							id="bio"
-							name="bio"
-							placeholder="Tell us about yourself (optional)"
-							className="bg-pink-50 focus:ring-pink-300 rounded-lg p-2 min-h-[80px] border border-pink-200"
-							value={form.bio}
-							onChange={handleChange}
-						/>
-					</div>
+					{/* Status Messages */}
 					{error && (
-						<Alert variant="destructive" className="bg-red-50 border-red-200 text-red-700">
-							<AlertDescription>{error}</AlertDescription>
-						</Alert>
+						<div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl text-sm text-center">
+							{error}
+						</div>
 					)}
 					{success && (
-						<Alert className="bg-green-50 border-green-200 text-green-700">
-							<AlertDescription>Registration successful! Please check your email to verify your account.</AlertDescription>
-						</Alert>
+						<div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-xl text-sm text-center">
+							Registration successful! Please check your email to verify your account.
+						</div>
 					)}
+
+					{/* Submit Button */}
 					<Button
 						type="submit"
-						className="mt-2 py-4 rounded-2xl bg-gradient-to-r from-pink-400 via-pink-300 to-pink-400 hover:from-pink-500 hover:to-pink-400 text-white font-bold text-lg shadow-lg hover:scale-105 transition-transform duration-200"
+						className="w-full bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
 						disabled={loading}
 					>
-						{loading ? 'Registering...' : 'Sign Up'}
+						{loading ? (
+							<div className="flex items-center justify-center gap-2">
+								<div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+								Registering...
+							</div>
+						) : (
+							'Join as Artist'
+						)}
 					</Button>
 
-					<div className="flex flex-col gap-1 mt-2">
-						<a href="/auth/register/customer" className="text-xs text-pink-500 font-semibold hover:underline text-center">Sign up as customer</a>
-						<div className="flex justify-center mt-2">
-							<span className="text-xs text-pink-400">Already have an account?</span>
-							<a href="/auth/login" className="ml-1 text-xs text-pink-500 font-semibold hover:underline">Sign In</a>
+					{/* Footer Links */}
+					<div className="text-center space-y-2">
+						<div className="text-sm text-gray-600">
+							Want to join as customer?{' '}
+							<a href="/auth/register/customer" className="text-rose-600 hover:text-rose-700 font-medium hover:underline transition-colors">
+								Sign up as customer
+							</a>
 						</div>
-						<div className="flex justify-center mt-1">
-							<span className="text-xs text-pink-400">Haven't seen verification email?</span>
-							<a href="/auth/resend-verification" className="ml-1 text-xs text-pink-500 font-semibold hover:underline">Resend Email</a>
+						<div className="text-sm text-gray-600">
+							Already have an account?{' '}
+							<a href="/auth/login" className="text-rose-600 hover:text-rose-700 font-medium hover:underline transition-colors">
+								Sign In
+							</a>
+						</div>
+						<div className="text-sm text-gray-600">
+							Haven't received verification email?{' '}
+							<a href="/auth/resend-verification" className="text-rose-600 hover:text-rose-700 font-medium hover:underline transition-colors">
+								Resend
+							</a>
 						</div>
 					</div>
 				</form>
+				</div>
 			);
 }
