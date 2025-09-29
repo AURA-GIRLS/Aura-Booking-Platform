@@ -19,7 +19,7 @@ import Notification from "@/components/generalUI/Notification";
 import FeedbackActions from "@/components/feedback/FeedbackActions";
 import DeleteConfirmDialog from "@/components/generalUI/DeleteConfirmDialog";
 import { authService } from "@/services/auth";
-import { BOOKING_STATUS, BookingStatus } from "@/constants/index";
+import { BOOKING_STATUS, BookingStatus, TRANSACTION_STATUS } from "@/constants/index";
 import { TransactionService } from "@/services/transaction";
 
 // Types & Interfaces
@@ -46,6 +46,11 @@ interface BookingHistoryItem {
   locationType: 'HOME' | 'STUDIO' | 'VENUE';
   address?: string;
   createdAt: string;
+  transaction?: {
+    _id: string;
+    status: string;
+    amount: number;
+  };
 }
 
 interface NotificationState {
@@ -60,7 +65,8 @@ const STATUS_OPTIONS = [
   { value: 'PENDING', label: 'Pending', color: 'bg-yellow-100 text-yellow-800' },
   { value: 'CONFIRMED', label: 'Confirmed', color: 'bg-blue-100 text-blue-800' },
   { value: 'COMPLETED', label: 'Completed', color: 'bg-green-100 text-green-800' },
-  { value: 'CANCELLED', label: 'Cancelled', color: 'bg-red-100 text-red-800' }
+  { value: 'CANCELLED', label: 'Cancelled', color: 'bg-red-100 text-red-800' },
+  { value: 'REJECTED', label: 'Rejected', color: 'bg-red-100 text-red-800' }
 ];
 
 const BookingHistory: React.FC = () => {
@@ -99,6 +105,7 @@ const BookingHistory: React.FC = () => {
       setIsLoading(true);
       const response = await authService.getBookingHistory();
       if (response.success && response.data) {
+        console.log('📊 Booking History Data:', response.data);
         setBookings(response.data);
       }
     } catch (error: any) {
@@ -160,9 +167,10 @@ const BookingHistory: React.FC = () => {
         showNotification("error", response.message || "Failed to cancel booking");
       }
     } catch (error: any) {
-      showNotification("error", error.message || "Failed to cancel booking");
+      showNotification("error", error?.message || "Failed to cancel booking");
     } finally {
       setCancelDialog(prev => ({ ...prev, open: false }));
+      loadBookingHistory();
     }
   }, [cancelDialog.bookingId]);
 
@@ -209,6 +217,16 @@ const BookingHistory: React.FC = () => {
       case 'VENUE': return 'At Venue';
       default: return type;
     }
+  };
+
+  const canCancelBooking = (booking: BookingHistoryItem) => {
+    // Only PENDING bookings can be cancelled
+    if (booking.status !== BOOKING_STATUS.PENDING) return false;
+    
+    // Cannot cancel if refund is already being processed
+    if (booking.transaction?.status === TRANSACTION_STATUS.PENDING_REFUND) return false;
+    
+    return true;
   };
 
   // Computed Values
@@ -259,6 +277,7 @@ const BookingHistory: React.FC = () => {
     booking, 
     onBookAgain, 
     onCancelBooking,
+    canCancelBooking,
     formatCurrency, 
     formatDate, 
     getTimeOfBooking, 
@@ -268,6 +287,7 @@ const BookingHistory: React.FC = () => {
     booking: BookingHistoryItem;
     onBookAgain: (muaId: string, serviceId: string) => void;
     onCancelBooking: (bookingId: string, serviceName: string) => void;
+    canCancelBooking: (booking: BookingHistoryItem) => boolean;
     formatCurrency: (amount: number) => string;
     formatDate: (dateString: string) => string;
     getTimeOfBooking: (date: string) => string;
@@ -325,9 +345,16 @@ const BookingHistory: React.FC = () => {
         </div>
         
         {/* Status Badge */}
-        <span className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusBadge(booking.status).color}`}>
-          {getStatusBadge(booking.status).label}
-        </span>
+        <div className="flex flex-col items-end gap-1">
+          <span className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusBadge(booking.status).color}`}>
+            {getStatusBadge(booking.status).label}
+          </span>
+          {booking.transaction?.status === TRANSACTION_STATUS.PENDING_REFUND && (
+            <span className="rounded-full px-2 py-1 text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200">
+              Refund Processing
+            </span>
+          )}
+        </div>
       </div>
       
       {/* Price + Actions */}
@@ -361,13 +388,26 @@ const BookingHistory: React.FC = () => {
           
           {/* Cancel Button - only show for PENDING bookings */}
           {booking.status === BOOKING_STATUS.PENDING && (
-            <button
-              type="button"
-              onClick={() => onCancelBooking(booking._id, booking.servicePackage.name)}
-              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold shadow-sm transition-colors border border-red-200 bg-white text-red-700 hover:bg-red-50"
-            >
-              <X size={16} /> Cancel Booking
-            </button>
+            <>
+              {canCancelBooking(booking) ? (
+                <button
+                  type="button"
+                  onClick={() => onCancelBooking(booking._id, booking.servicePackage.name)}
+                  className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold shadow-sm transition-colors border border-red-200 bg-white text-red-700 hover:bg-red-50"
+                >
+                  <X size={16} /> Cancel Booking
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={true}
+                  className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold shadow-sm transition-colors border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
+                  title="Refund is being processed"
+                >
+                  <Hourglass size={16} /> Processing Refund
+                </button>
+              )}
+            </>
           )}
           
           {/* Book Again Button */}
@@ -533,6 +573,7 @@ const BookingHistory: React.FC = () => {
                   booking={booking}
                   onBookAgain={handleBookAgain}
                   onCancelBooking={handleCancelBooking}
+                  canCancelBooking={canCancelBooking}
                   formatCurrency={formatCurrency}
                   formatDate={formatDate}
                   getTimeOfBooking={getTimeOfBooking}

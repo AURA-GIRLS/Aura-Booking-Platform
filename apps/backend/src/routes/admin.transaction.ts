@@ -10,6 +10,7 @@ const adminTransactionController = new AdminTransactionController();
 router.use(authenticateToken);
 router.use(requireRole([USER_ROLES.ADMIN]));
 
+// ==================== PAYOUT ROUTES ====================
 router.get("/payouts", (req, res) => 
   adminTransactionController.getPayouts(req, res)
 );
@@ -18,6 +19,16 @@ router.get("/payouts/:payoutId", (req, res) =>
   adminTransactionController.getPayoutById(req, res)
 );
 
+// ==================== WITHDRAWAL ROUTES ====================
+router.get("/withdrawals", (req, res) => 
+  adminTransactionController.getWithdrawals(req, res)
+);
+
+router.get("/withdrawals/:withdrawalId", (req, res) => 
+  adminTransactionController.getWithdrawalById(req, res)
+);
+
+// ==================== TRANSACTION ROUTES ====================
 router.get("/summary", (req, res) => 
   adminTransactionController.getTransactionSummary(req, res)
 );

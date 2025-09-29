@@ -11,7 +11,10 @@
 import { User } from "../models/users.models";
 import { MUA } from "../models/muas.models";
 import { Booking } from "../models/bookings.models";
-import { USER_ROLES, USER_STATUS, MUA_STATUS } from "../constants/index";
+import { Portfolio } from "../models/portfolios.models";
+import { Feedback } from "../models/feedbacks.models";
+import { Withdraw } from "../models/transactions.model";
+import { USER_ROLES, USER_STATUS, MUA_STATUS, BOOKING_STATUS, WITHDRAW_STATUS } from "../constants/index";
 import type {
   AdminUserQueryDTO,
   AdminMUAQueryDTO,
@@ -390,22 +393,154 @@ export async function getMUAs(query: AdminMUAQueryDTO = {}): Promise<AdminMUALis
       return acc;
     }, {} as Record<string, number>);
 
+    // Get portfolio counts for each MUA
+    const portfolioCounts = await Portfolio.aggregate([
+      { $match: { muaId: { $in: muaIds } } },
+      { 
+        $group: { 
+          _id: '$muaId', 
+          totalMedia: { $sum: { $size: '$media' } },
+          images: { 
+            $sum: { 
+              $size: { 
+                $filter: { 
+                  input: '$media', 
+                  cond: { $eq: ['$$this.mediaType', 'IMAGE'] } 
+                } 
+              } 
+            } 
+          },
+          videos: { 
+            $sum: { 
+              $size: { 
+                $filter: { 
+                  input: '$media', 
+                  cond: { $eq: ['$$this.mediaType', 'VIDEO'] } 
+                } 
+              } 
+            } 
+          }
+        } 
+      }
+    ]);
+
+    const portfolioCountMap = portfolioCounts.reduce((acc, item) => {
+      acc[item._id.toString()] = {
+        images: item.images || 0,
+        videos: item.videos || 0,
+        total: item.totalMedia || 0
+      };
+      return acc;
+    }, {} as Record<string, { images: number; videos: number; total: number }>);
+
+    // Get earnings for each MUA from completed bookings
+    const earningsData = await Booking.aggregate([
+      { 
+        $match: { 
+          muaId: { $in: muaIds }, 
+          status: BOOKING_STATUS.COMPLETED 
+        } 
+      },
+      { 
+        $group: { 
+          _id: '$muaId', 
+          totalEarnings: { $sum: '$totalPrice' },
+          completedBookings: { $sum: 1 }
+        } 
+      }
+    ]);
+
+    const earningsMap = earningsData.reduce((acc, item) => {
+      acc[item._id.toString()] = {
+        totalEarnings: item.totalEarnings || 0,
+        completedBookings: item.completedBookings || 0
+      };
+      return acc;
+    }, {} as Record<string, { totalEarnings: number; completedBookings: number }>);
+
+    // Get pending withdrawals for each MUA
+    const pendingWithdrawals = await Withdraw.aggregate([
+      { 
+        $match: { 
+          muaId: { $in: muaIds }, 
+          status: WITHDRAW_STATUS.PENDING 
+        } 
+      },
+      { 
+        $group: { 
+          _id: '$muaId', 
+          pendingAmount: { $sum: '$amount' }
+        } 
+      }
+    ]);
+
+    const withdrawalMap = pendingWithdrawals.reduce((acc, item) => {
+      acc[item._id.toString()] = item.pendingAmount || 0;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Get average ratings for each MUA
+    const ratingsData = await Feedback.aggregate([
+      { $match: { muaId: { $in: muaIds } } },
+      { 
+        $group: { 
+          _id: '$muaId', 
+          avgRating: { $avg: '$rating' },
+          totalReviews: { $sum: 1 }
+        } 
+      }
+    ]);
+
+    const ratingsMap = ratingsData.reduce((acc, item) => {
+      acc[item._id.toString()] = {
+        rating: Math.round(item.avgRating * 10) / 10 || 0,
+        totalReviews: item.totalReviews || 0
+      };
+      return acc;
+    }, {} as Record<string, { rating: number; totalReviews: number }>);
+
     // Format MUAs
     const formattedMUAs: AdminMUAResponseDTO[] = muas.map(mua => {
       const populatedUser = mua.userId as any;
+      const muaIdStr = mua._id.toString();
+      const bookingCount = bookingCountMap[muaIdStr] || 0;
+      const portfolioCount = portfolioCountMap[muaIdStr] || { images: 0, videos: 0, total: 0 };
+      const earnings = earningsMap[muaIdStr] || { totalEarnings: 0, completedBookings: 0 };
+      const pendingWithdrawal = withdrawalMap[muaIdStr] || 0;
+      const ratings = ratingsMap[muaIdStr] || { rating: 0, totalReviews: 0 };
+
       return {
         _id: mua._id.toString(),
         userId: mua.userId?.toString() || '',
         userName: populatedUser?.fullName,
         name: populatedUser?.fullName || '',
+        email: populatedUser?.email || '',
+        phone: populatedUser?.phoneNumber || '',
         bio: mua.bio || '',
-        experience: (mua as any).experienceYears || 0,
-        rating: (mua as any).ratingAverage || 0,
-        bookingCount: bookingCountMap[mua._id.toString()] || 0,
-        profilePicture: populatedUser?.avatarUrl || '',
         location: mua.location || '',
-        isAvailable: (mua as any).isVerified || false,
+        experience: mua.experienceYears || 0,
+        rating: ratings.rating,
+        totalReviews: ratings.totalReviews,
+        bookingCount: bookingCount,
+        completedBookings: earnings.completedBookings,
+        totalEarnings: earnings.totalEarnings,
+        pendingWithdrawal: pendingWithdrawal,
+        profilePicture: populatedUser?.avatarUrl || '',
+        isAvailable: mua.isVerified || false,
         status: (mua as any).status || MUA_STATUS.PENDING,
+        joinedAt: mua.createdAt,
+        lastActive: populatedUser?.updatedAt || mua.updatedAt,
+        portfolio: {
+          images: portfolioCount.images,
+          videos: portfolioCount.videos,
+          total: portfolioCount.total
+        },
+        verification: {
+          identity: populatedUser?.isEmailVerified || false,
+          portfolio: portfolioCount.total > 0,
+          background: mua.isVerified || false
+        },
+        specialties: [], // TODO: Add specialties field to MUA model if needed
         createdAt: mua.createdAt,
         updatedAt: mua.updatedAt,
         rejectionReason: (mua as any).rejectionReason || undefined,
@@ -424,6 +559,16 @@ export async function getMUAs(query: AdminMUAQueryDTO = {}): Promise<AdminMUALis
       };
     });
 
+    // Calculate active and banned MUAs from current results
+    const activeMUAsInPage = formattedMUAs.filter(mua => 
+      mua.status === MUA_STATUS.APPROVED && 
+      mua.user?.status === USER_STATUS.ACTIVE
+    ).length;
+    
+    const bannedMUAsInPage = formattedMUAs.filter(mua => 
+      mua.user?.status === USER_STATUS.BANNED
+    ).length;
+
     return {
       muas: formattedMUAs,
       pagination: {
@@ -435,9 +580,11 @@ export async function getMUAs(query: AdminMUAQueryDTO = {}): Promise<AdminMUALis
       },
       statistics: {
         totalMUAs,
+        activeMUAs: activeMUAsInPage,
         pendingMUAs,
         approvedMUAs,
-        rejectedMUAs
+        rejectedMUAs,
+        bannedMUAs: bannedMUAsInPage
       }
     };
   } catch (error) {
@@ -642,6 +789,80 @@ export async function bulkApproveMUAs(bulkData: BulkApproveMUAsDTO): Promise<{ s
   }
 }
 
+/**
+ * Bulk reject MUA applications
+ */
+export async function bulkRejectMUAs(bulkData: { muaIds: string[]; reason: string }): Promise<{ successful: number; failed: number; total: number }> {
+  try {
+    const { muaIds, reason } = bulkData;
+    
+    const results = await Promise.allSettled(
+      muaIds.map(muaId => rejectMUA(muaId, { reason }))
+    );
+    
+    const successful = results.filter(result => result.status === 'fulfilled').length;
+    const failed = results.filter(result => result.status === 'rejected').length;
+    
+    return {
+      successful,
+      failed,
+      total: muaIds.length
+    };
+  } catch (error) {
+    throw new Error(`Failed to bulk reject MUAs: ${error}`);
+  }
+}
+
+/**
+ * Ban a MUA (ban the associated user)
+ */
+export async function banMUA(muaId: string, banData: BanUserDTO = {}): Promise<AdminMUAResponseDTO> {
+  try {
+    const mua = await MUA.findById(muaId).populate('userId').exec();
+    
+    if (!mua) {
+      throw new Error('MUA not found');
+    }
+    
+    if (!mua.userId) {
+      throw new Error('MUA has no associated user');
+    }
+    
+    // Ban the user
+    await banUser(mua.userId.toString(), banData);
+    
+    // Return updated MUA info
+    return getMUAById(muaId) as Promise<AdminMUAResponseDTO>;
+  } catch (error) {
+    throw new Error(`Failed to ban MUA: ${error}`);
+  }
+}
+
+/**
+ * Unban a MUA (unban the associated user)
+ */
+export async function unbanMUA(muaId: string): Promise<AdminMUAResponseDTO> {
+  try {
+    const mua = await MUA.findById(muaId).populate('userId').exec();
+    
+    if (!mua) {
+      throw new Error('MUA not found');
+    }
+    
+    if (!mua.userId) {
+      throw new Error('MUA has no associated user');
+    }
+    
+    // Unban the user
+    await unbanUser(mua.userId.toString());
+    
+    // Return updated MUA info
+    return getMUAById(muaId) as Promise<AdminMUAResponseDTO>;
+  } catch (error) {
+    throw new Error(`Failed to unban MUA: ${error}`);
+  }
+}
+
 // ==================== STATISTICS ====================
 
 /**
@@ -691,11 +912,23 @@ export async function getUserStatistics(): Promise<UserStatisticsDTO> {
  */
 export async function getMUAStatistics(): Promise<MUAStatisticsDTO> {
   try {
-    const [totalMUAs, pendingMUAs, approvedMUAs, rejectedMUAs] = await Promise.all([
+    const [totalMUAs, pendingMUAs, approvedMUAs, rejectedMUAs, activeMUAs, bannedMUAs] = await Promise.all([
       MUA.countDocuments({}),
       MUA.countDocuments({ status: MUA_STATUS.PENDING }),
       MUA.countDocuments({ status: MUA_STATUS.APPROVED }),
-      MUA.countDocuments({ status: MUA_STATUS.REJECTED })
+      MUA.countDocuments({ status: MUA_STATUS.REJECTED }),
+      // Count active MUAs (approved and user status is active)
+      MUA.aggregate([
+        { $lookup: { from: 'users', localField: 'userId', foreignField: '_id', as: 'user' } },
+        { $match: { status: MUA_STATUS.APPROVED, 'user.status': USER_STATUS.ACTIVE } },
+        { $count: 'total' }
+      ]).then(result => result[0]?.total || 0),
+      // Count banned MUAs (user status is banned)
+      MUA.aggregate([
+        { $lookup: { from: 'users', localField: 'userId', foreignField: '_id', as: 'user' } },
+        { $match: { 'user.status': USER_STATUS.BANNED } },
+        { $count: 'total' }
+      ]).then(result => result[0]?.total || 0)
     ]);
 
     // Get approved/rejected this month
@@ -706,21 +939,48 @@ export async function getMUAStatistics(): Promise<MUAStatisticsDTO> {
     const [approvedThisMonth, rejectedThisMonth] = await Promise.all([
       MUA.countDocuments({
         status: MUA_STATUS.APPROVED,
-        approvedAt: { $gte: startOfMonth }
+        updatedAt: { $gte: startOfMonth }
       }),
       MUA.countDocuments({
         status: MUA_STATUS.REJECTED,
-        rejectedAt: { $gte: startOfMonth }
+        updatedAt: { $gte: startOfMonth }
       })
     ]);
 
+    // Get total bookings and earnings statistics
+    const [bookingStats, earningsStats] = await Promise.all([
+      Booking.aggregate([
+        { $lookup: { from: 'muas', localField: 'muaId', foreignField: '_id', as: 'mua' } },
+        { $match: { mua: { $ne: [] } } },
+        { $group: { _id: null, totalBookings: { $sum: 1 } } }
+      ]).then(result => result[0]?.totalBookings || 0),
+      
+      Booking.aggregate([
+        { $lookup: { from: 'muas', localField: 'muaId', foreignField: '_id', as: 'mua' } },
+        { $match: { mua: { $ne: [] }, status: BOOKING_STATUS.COMPLETED } },
+        { $group: { _id: null, totalEarnings: { $sum: '$totalPrice' } } }
+      ]).then(result => result[0]?.totalEarnings || 0)
+    ]);
+
+    // Get average rating across all MUAs
+    const avgRatingResult = await Feedback.aggregate([
+      { $group: { _id: null, avgRating: { $avg: '$rating' } } }
+    ]);
+    const avgRating = Math.round((avgRatingResult[0]?.avgRating || 0) * 10) / 10;
+
     return {
       totalMUAs,
+      activeMUAs,
       pendingMUAs,
       approvedMUAs,
       rejectedMUAs,
+      bannedMUAs,
+      reviewingMUAs: 0, // Add this field if you have a reviewing status
       approvedThisMonth,
-      rejectedThisMonth
+      rejectedThisMonth,
+      totalBookings: bookingStats,
+      totalEarnings: earningsStats,
+      avgRating
     };
   } catch (error) {
     throw new Error(`Failed to get MUA statistics: ${error}`);

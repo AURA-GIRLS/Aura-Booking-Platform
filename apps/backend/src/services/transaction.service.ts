@@ -1,7 +1,7 @@
 import { BankAccount, Transaction, Wallet, Withdraw } from "models/transactions.model";
 import type { CreateTransactionDTO, UpdateTransactionDTO, TransactionResponseDTO, PayOSCreateLinkInput, PayOSCreateLinkResult, PaymentWebhookResponse, WalletResponseDTO, WithdrawResponseDTO } from "types/transaction.dto";
 import { createBooking, deleteRedisPendingBooking, getBookingById, getRedisPendingBooking } from "./booking.service";
-import { BOOKING_STATUS, PAYMENT_METHODS, TRANSACTION_STATUS, WITHDRAW_STATUS, type TransactionStatus } from "constants/index";
+import { BOOKING_STATUS, PAYMENT_METHODS, REFUND_REASON, TRANSACTION_STATUS, WITHDRAW_STATUS, type RefundReason, type TransactionStatus } from "constants/index";
 import type { BookingResponseDTO } from "types";
 import type { CreateBookingDTO, PendingBookingResponseDTO } from "types/booking.dtos";
 import mongoose from "mongoose";
@@ -10,6 +10,8 @@ import { User } from "@models/users.models";
 import { fromUTC } from "utils/timeUtils";
 import { Booking } from "@models/bookings.models";
 import { createPayOSPaymentLink, makeRefund, makeWithdrawal } from "./payos.service";
+import { MUA } from "@models/muas.models";
+import { EmailService } from "./email.service";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
@@ -172,13 +174,14 @@ if(transaction && transaction.status===TRANSACTION_STATUS.HOLD && muaWallet){
 export async function handleRefundBookingBeforeConfirm(bookingId:string, bookingStatus:any):Promise<void>{
 //payout(tim customer, lay bank account tu user)
 //update transaction
- const refundResponse = await makeRefund(bookingId);
+const refundReason: RefundReason = bookingStatus === BOOKING_STATUS.CANCELLED ? REFUND_REASON.CANCELLED : REFUND_REASON.REJECTED;
+ const refundResponse = await makeRefund(bookingId,refundReason);
  if(refundResponse.code !== '00'){
   throw new Error(`Payout failed: ${refundResponse.desc} (code: ${refundResponse.code})`);
  }
  const transaction = await Transaction.findOne({ bookingId: bookingId }).exec();
  const booking = await Booking.findById(bookingId).exec();
- if(transaction && transaction.status===TRANSACTION_STATUS.HOLD){
+ if(transaction &&( transaction.status===TRANSACTION_STATUS.HOLD || transaction.status===TRANSACTION_STATUS.PENDING_REFUND) ){
   transaction.status = TRANSACTION_STATUS.REFUNDED;
   transaction.payoutId = refundResponse.data.id;
   await transaction.save();
@@ -186,6 +189,27 @@ export async function handleRefundBookingBeforeConfirm(bookingId:string, booking
  if(booking && booking.status === BOOKING_STATUS.PENDING){
   booking.status = bookingStatus;
   await booking.save();
+ }
+
+ // Send refund success notification to customer
+ try {
+   const customer = await User.findById(transaction?.customerId).exec();
+   const service = await ServicePackage.findById(booking?.serviceId).exec();
+   
+   if (customer && customer.email) {
+     const emailService = new EmailService();
+     await emailService.sendRefundSuccessNotification(
+       customer.email,
+       customer.fullName || 'Customer',
+       transaction?.amount || 0,
+       bookingId,
+       service?.name || 'Service',
+       refundResponse.data.id
+     );
+   }
+ } catch (emailError) {
+   console.error('Failed to send refund success notification:', emailError);
+   // Don't throw error here to avoid breaking the refund process
  }
 }
 export async function handleWithdrawalMUA(muaId:string):Promise<void>{
@@ -196,22 +220,41 @@ export async function handleWithdrawalMUA(muaId:string):Promise<void>{
   if(wallet.balance <=0){
     throw new Error(`Wallet for MUA ${muaId} has insufficient balance`);
   }
+ 
+  const withdrawalAmount = wallet.balance; // Store the amount before reset
   const payoutResponse = await makeWithdrawal(muaId);
   if(payoutResponse.code !== '00'){
     throw new Error(`Payout failed: ${payoutResponse.desc} (code: ${payoutResponse.code})`);
   }
-   const withdrawRecord = new Withdraw({
-    muaId: new mongoose.Types.ObjectId(muaId),
-    amount: wallet.balance,
-    currency: wallet.currency,
-    status: WITHDRAW_STATUS.SUCCESS,
-    reference: payoutResponse.data.id,
-  });
-  await withdrawRecord.save();
+  const existingWithdraw = await Withdraw.findOne({ muaId: muaId, status: WITHDRAW_STATUS.PENDING }).exec();
+  if (existingWithdraw) {
+    existingWithdraw.status = WITHDRAW_STATUS.SUCCESS;
+    existingWithdraw.reference= payoutResponse.data.id;
+    await existingWithdraw.save();
+  }
   //reset balance
   wallet.balance = 0;
   await wallet.save();
 
+  // Send withdrawal success notification to MUA
+  try {
+    const mua = await MUA.findById(muaId).populate('userId').exec();
+    const user = mua?.userId as any;
+    
+    if (user && user.email) {
+      const emailService = new EmailService();
+      await emailService.sendWithdrawalSuccessNotification(
+        user.email,
+        user.fullName || 'MUA',
+        withdrawalAmount,
+        muaId,
+        payoutResponse.data.id
+      );
+    }
+  } catch (emailError) {
+    console.error('Failed to send withdrawal success notification:', emailError);
+    // Don't throw error here to avoid breaking the withdrawal process
+  }
 }
 // READ - by id
 export async function getTransactionById(id: string): Promise<TransactionResponseDTO | null> {

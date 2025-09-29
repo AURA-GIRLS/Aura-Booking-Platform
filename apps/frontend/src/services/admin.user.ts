@@ -197,6 +197,50 @@ export async function bulkApproveMUAs(bulkData: BulkApproveMUAsDTO): Promise<Api
   }
 }
 
+/**
+ * Reject multiple MUA applications
+ */
+export async function bulkRejectMUAs(bulkData: { muaIds: string[]; reason: string }): Promise<ApiResponseDTO<{
+  successful: number;
+  failed: number;
+  total: number;
+}>> {
+  try {
+    const response = await api.put<ApiResponseDTO<{
+      successful: number;
+      failed: number;
+      total: number;
+    }>>('/admin/muas/bulk-reject', bulkData);
+    return response.data;
+  } catch (error: any) {
+    throw error?.response?.data || error;
+  }
+}
+
+/**
+ * Ban a MUA (ban the associated user)
+ */
+export async function banMUA(muaId: string, banData: BanUserDTO = {}): Promise<ApiResponseDTO<AdminMUAResponseDTO>> {
+  try {
+    const response = await api.put<ApiResponseDTO<AdminMUAResponseDTO>>(`/admin/muas/${muaId}/ban`, banData);
+    return response.data;
+  } catch (error: any) {
+    throw error?.response?.data || error;
+  }
+}
+
+/**
+ * Unban a MUA (unban the associated user)
+ */
+export async function unbanMUA(muaId: string): Promise<ApiResponseDTO<AdminMUAResponseDTO>> {
+  try {
+    const response = await api.put<ApiResponseDTO<AdminMUAResponseDTO>>(`/admin/muas/${muaId}/unban`);
+    return response.data;
+  } catch (error: any) {
+    throw error?.response?.data || error;
+  }
+}
+
 // ==================== STATISTICS ====================
 
 /**

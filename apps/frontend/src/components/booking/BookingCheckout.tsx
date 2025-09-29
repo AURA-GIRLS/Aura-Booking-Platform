@@ -6,9 +6,12 @@ import { BookingService } from "@/services/booking";
 import { usePayOS, PayOSConfig } from "@payos/payos-checkout";
 import { TransactionService } from "@/services/transaction";
 import { PayOSCreateLinkInput } from "@/types/transaction.dto";
-import { CheckCircle, QrCode } from "lucide-react";
+import { CheckCircle, QrCode, CreditCard, AlertTriangle } from "lucide-react";
 import { useNotification } from "@/hooks/useNotification";
 import { convertStringToLocalDate } from "src/utils/TimeUtils";
+import ProfileBankAccountService from "@/services/profile.bankaccount";
+import { BankAccountResponseDTO, UpdateBankAccountDTO } from "@/types/bankaccount.dtos";
+import BankAccountModal from "@/components/profile/BankAccountModal";
 
 // moved into component with useMemo so changes propagate correctly
 
@@ -29,8 +32,16 @@ export function BookingCheckout({customer, onPrev, bookingData }: Readonly<Booki
   const [checkoutUrl, setCheckoutUrl] = useState("");
   const [orderCode, setOrderCode] = useState(0);
   const [locked, setLocked] = useState(false);
- const [paymentMethod, setPaymentMethod] = useState('qr'); // only QR for now
-  const { notification, showError, closeNotification } = useNotification();
+  const [paymentMethod, setPaymentMethod] = useState('qr'); // only QR for now
+  
+  // Bank account states
+  const [bankAccount, setBankAccount] = useState<BankAccountResponseDTO | null>(null);
+  const [bankAccountLoading, setBankAccountLoading] = useState(false);
+  const [showBankAccountModal, setShowBankAccountModal] = useState(false);
+  const [bankAccountStep, setBankAccountStep] = useState<'contact' | 'bank' | 'payment'>('contact');
+  
+  const { notification, showError, showSuccess, closeNotification } = useNotification();
+  
   // Helper: update localStorage user profile with latest contact info
   const updateLocalProfile = useCallback((full?: string, phoneNum?: string) => {
     if (typeof window === 'undefined') return;
@@ -51,6 +62,51 @@ export function BookingCheckout({customer, onPrev, bookingData }: Readonly<Booki
       console.warn('Failed to update localStorage profile', e);
     }
   }, []);
+
+  // Load bank account on component mount
+  const loadBankAccount = useCallback(async () => {
+    try {
+      setBankAccountLoading(true);
+      const response = await ProfileBankAccountService.getBankAccount();
+      if (response.success && response.data) {
+        setBankAccount(response.data);
+      }
+    } catch (error: any) {
+      // Don't show error if no bank account exists
+      if (!error.message?.includes('not found')) {
+        console.error('Failed to load bank account:', error);
+      }
+    } finally {
+      setBankAccountLoading(false);
+    }
+  }, []);
+
+  // Handle bank account creation/update
+  const handleBankAccountSubmit = useCallback(async (data: UpdateBankAccountDTO) => {
+    try {
+      setBankAccountLoading(true);
+      let response;
+
+      if (bankAccount) {
+        response = await ProfileBankAccountService.updateBankAccount(data);
+        showSuccess("Bank account updated successfully!");
+      } else {
+        response = await ProfileBankAccountService.createBankAccount(data);
+        showSuccess("Bank account created successfully!");
+      }
+
+      if (response.success && response.data) {
+        setBankAccount(response.data);
+        setShowBankAccountModal(false);
+        setBankAccountStep('payment');
+      }
+    } catch (error: any) {
+      showError(error.message || "Failed to save bank account");
+    } finally {
+      setBankAccountLoading(false);
+    }
+  }, [bankAccount, showError, showSuccess]);
+
   const payOSConfig = useMemo<PayOSConfig>(() => ({
     RETURN_URL: typeof window !== "undefined" ? window.location.origin : "http://localhost:3000",
     ELEMENT_ID: "payos_embedded",
@@ -126,15 +182,27 @@ export function BookingCheckout({customer, onPrev, bookingData }: Readonly<Booki
         return null;
       }), [bookingData, note, phone]);
 
-  // Generate QR flow: lock, create pending, then fetch link and open
+  // Generate QR flow: validate contact info and bank account, then create pending booking and fetch link
   const handleGenerateQR = useCallback(async () => {
     setSubmitError(null);
+    
+    // Validate contact information
     if (!customerName || !phone) {
       const msg = "Please enter required contact information.";
       setSubmitError(msg);
       showError(msg);
       return;
     }
+
+    // Validate bank account
+    if (!bankAccount) {
+      const msg = "Bank account is required to receive payments. Please add your bank account first.";
+      setSubmitError(msg);
+      showError(msg);
+      setBankAccountStep('bank');
+      return;
+    }
+
     try {
       setSubmitting(true);
       setLocked(true);
@@ -153,7 +221,12 @@ export function BookingCheckout({customer, onPrev, bookingData }: Readonly<Booki
     } finally {
       setSubmitting(false);
     }
-  }, [customerName, phone, createPendingBooking, fetchTransactionLink, orderCode]);
+  }, [customerName, phone, bankAccount, createPendingBooking, fetchTransactionLink, orderCode, showError]);
+
+  // Load bank account on mount
+  useEffect(() => {
+    loadBankAccount();
+  }, [loadBankAccount]);
 
   // Cleanup embedded UI on unmount only
   useEffect(() => {
@@ -170,14 +243,14 @@ export function BookingCheckout({customer, onPrev, bookingData }: Readonly<Booki
     }
   }, [locked, checkoutUrl]);
 
-  // Auto start payment step if user already has full name and phone
+  // Auto start payment step if user already has full name, phone, and bank account
   useEffect(() => {
-    if (!autoStartRef.current && !locked && customerName && phone) {
+    if (!autoStartRef.current && !locked && customerName && phone && bankAccount && bankAccountStep === 'payment') {
       autoStartRef.current = true;
       // This will validate again and lock + fetch QR
       handleGenerateQR();
     }
-  }, [customerName, phone, locked, handleGenerateQR]);
+  }, [customerName, phone, bankAccount, bankAccountStep, locked, handleGenerateQR]);
 
   // Auto-hide notification after a short delay
   useEffect(() => {
@@ -228,7 +301,7 @@ export function BookingCheckout({customer, onPrev, bookingData }: Readonly<Booki
       )}
       <div className="text-center space-y-2">
         <h3 className="text-2xl font-semibold text-pink-600">Complete your booking</h3>
-        <p className="text-sm text-neutral-500">Fill your contact information and complete payment. Follow the guide below.</p>
+        <p className="text-sm text-neutral-500">Fill your contact information, add bank account, and complete payment. Follow the guide below.</p>
       </div>
       {/* Moved checkout guide to the top so users can follow easily */}
       <div id="checkout_guide" className="flex justify-content rounded-xl border border-pink-100 bg-pink-50 p-4 text-[11px] leading-relaxed text-neutral-700 animate-in fade-in slide-in-from-bottom-1" aria-label="Checkout guide">
@@ -237,12 +310,12 @@ export function BookingCheckout({customer, onPrev, bookingData }: Readonly<Booki
           <p>Follow these steps to finish and confirm your booking:</p>
           <ol className="list-decimal pl-5 space-y-1">
             <li>Review your booking summary below to ensure everything is correct.</li>
-            <li>If needed, fill or update your contact details.</li>
+            <li>Fill or update your contact details (name and phone number).</li>
+            <li><span className="font-semibold">Add your bank account</span> for receiving refunds if needed - ensure all details are accurate.</li>
             <li>In the payment section, click <span className="font-semibold">Generate QR payment</span>.</li>
             <li>Scan the QR code with your banking app and complete the payment.</li>
-            <li>Keep this page open; we’ll confirm automatically once the payment succeeds.</li>
-            <li>If the artist declines or you cancel in time, you’ll receive a full refund.</li>
-            <li>Need to update contact details later? Click <span className="font-semibold">Change contact info</span>.</li>
+            <li>Keep this page open; we'll confirm automatically once the payment succeeds.</li>
+            <li>If the artist declines or you cancel in time, you'll receive a full refund to your registered bank account.</li>
           </ol>
         </div>
       </div>
@@ -314,6 +387,85 @@ export function BookingCheckout({customer, onPrev, bookingData }: Readonly<Booki
             </div>
           )}
         </div>
+
+        {/* Bank Account Section */}
+        <div className="rounded-xl border bg-white p-5 shadow-sm space-y-4 animate-in fade-in slide-in-from-bottom-1">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-pink-600">Bank Account for Payments</span>
+            {bankAccount && !locked && (
+              <button
+                type="button"
+                onClick={() => setShowBankAccountModal(true)}
+                className="text-xs text-pink-600 hover:underline"
+              >
+                Edit Bank Account
+              </button>
+            )}
+          </div>
+          
+          {bankAccountLoading ? (
+            <div className="flex items-center justify-center py-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-pink-600"></div>
+              <span className="ml-2 text-sm text-gray-600">Loading bank account...</span>
+            </div>
+          ) : bankAccount ? (
+            <div className="bg-gradient-to-r from-pink-50 to-white border border-pink-200 rounded-lg p-4">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-pink-100 rounded-full">
+                  {bankAccount.bankLogo ? (
+                    <img
+                      src={bankAccount.bankLogo}
+                      alt={bankAccount.bankName}
+                      className="w-5 h-5 object-contain"
+                    />
+                  ) : (
+                    <CreditCard className="w-5 h-5 text-pink-600" />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <div className="font-medium text-gray-900">{bankAccount.accountName}</div>
+                  <div className="text-sm text-gray-600">
+                    {bankAccount.bankName} • ****{bankAccount.accountNumber.slice(-4)}
+                  </div>
+                </div>
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <div className="flex items-start space-x-3">
+                <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5" />
+                <div className="flex-1">
+                  <div className="font-medium text-amber-800">Bank Account Required</div>
+                  <div className="text-sm text-amber-700 mt-1">
+                    You need to add a bank account to receive payment refunds if needed.
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowBankAccountModal(true)}
+                    className="mt-2 text-sm bg-amber-100 hover:bg-amber-200 text-amber-800 px-3 py-1 rounded-md transition-colors"
+                  >
+                    Add Bank Account
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Important Notice */}
+        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs animate-in fade-in slide-in-from-bottom-1">
+          <div className="flex items-start space-x-2">
+            <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5" />
+            <div className="flex-1">
+              <div className="font-medium text-red-800 mb-1">Important Notice</div>
+              <div className="text-red-700">
+                <p>Ensure your bank account information is accurate. AURA is not responsible for issues caused by incorrect details.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Continue to payment button (show whenever contact info is editable/unlocked) */}
         {!locked && (
           <div className="flex justify-end">
@@ -326,9 +478,16 @@ export function BookingCheckout({customer, onPrev, bookingData }: Readonly<Booki
                   showError(msg);
                   return;
                 }
+                if (!bankAccount) {
+                  const msg = "Please add your bank account information first.";
+                  setSubmitError(msg);
+                  showError(msg);
+                  return;
+                }
                 setSubmitError(null);
                 // Sync latest contact info to localStorage on proceed
                 updateLocalProfile(customerName, phone);
+                setBankAccountStep('payment');
                 setLocked(true);
                 if (paymentMethod === 'qr') {
                   // Auto-start QR flow when proceeding
@@ -336,14 +495,14 @@ export function BookingCheckout({customer, onPrev, bookingData }: Readonly<Booki
                 }
               }}
               className="px-4 h-10 rounded-md text-sm bg-pink-600 text-white hover:bg-pink-500 disabled:opacity-50"
-              disabled={submitting}
+              disabled={submitting || bankAccountLoading}
             >
               Continue to payment
             </button>
           </div>
         )}
 
-  <div className="rounded-xl border bg-white p-5 shadow-sm text-sm space-y-4 animate-in fade-in slide-in-from-bottom-1">
+        <div className="rounded-xl border bg-white p-5 shadow-sm text-sm space-y-4 animate-in fade-in slide-in-from-bottom-1">
           <div className="flex items-start gap-4">
             <div className="w-14 h-14 rounded-lg bg-pink-100 flex items-center justify-center text-pink-500 text-lg overflow-hidden">
               <span>💄</span>
@@ -413,7 +572,15 @@ export function BookingCheckout({customer, onPrev, bookingData }: Readonly<Booki
       <div className="flex justify-start gap-4 ">
         <button onClick={onPrev} type="button" className="w-fit px-4 h-11 border rounded-md text-sm bg-neutral-50 hover:bg-neutral-100">Back</button>
        </div>
+
+      {/* Bank Account Modal */}
+      <BankAccountModal
+        open={showBankAccountModal}
+        onOpenChange={setShowBankAccountModal}
+        onSubmit={handleBankAccountSubmit}
+        initialData={bankAccount}
+        isLoading={bankAccountLoading}
+      />
     </div>
   );
 }
-

@@ -462,8 +462,8 @@ export class BookingController {
     try {
       const { id } = req.params;
       
-      const data = await updateBookingStatus(id, BOOKING_STATUS.REJECTED);
       await handleRefundBookingBeforeConfirm(id,BOOKING_STATUS.REJECTED);
+      const data = await updateBookingStatus(id, BOOKING_STATUS.REJECTED);
       if (!data) {
         const response: ApiResponseDTO = {
           status: 404,

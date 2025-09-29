@@ -1,4 +1,4 @@
-import { TRANSACTION_STATUS, WITHDRAW_STATUS } from "constants/index";
+import { REFUND_REASON, TRANSACTION_STATUS, WITHDRAW_STATUS } from "constants/index";
 import { model, Schema } from "mongoose";
 
 const BankAccountSchema = new Schema({
@@ -26,7 +26,8 @@ const TransactionSchema = new Schema({
   status: { type: String, enum: Object.values(TRANSACTION_STATUS), default: TRANSACTION_STATUS.HOLD },
   paymentMethod: String,
   paymentReference: String,
-  payoutId: String,       // id của lệnh payout nếu có
+  payoutId: String,       
+  refundReason: { type: String, enum: Object.values(REFUND_REASON), default: REFUND_REASON.CANCELLED },
 }, { timestamps: true });
 
 const WithdrawSchema = new Schema({

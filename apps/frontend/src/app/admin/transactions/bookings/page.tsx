@@ -1,4 +1,4 @@
-import BookingPayments from '@/components/admin/transactions/BookingPayments';
+import BookingPayments from "@/components/admin/transactions/BookingPayments";
 
 export default function BookingPaymentsPage() {
   return <BookingPayments />;

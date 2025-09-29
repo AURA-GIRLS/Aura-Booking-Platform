@@ -87,12 +87,6 @@ const UserManagement: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to load users:', error);
-      // Use fallback mock data if API fails
-      const mockUsers = generateMockUsers();
-      const filtered = filterMockUsers(mockUsers);
-      setUsers(filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize));
-      setTotalUsers(filtered.length);
-      setTotalPages(Math.ceil(filtered.length / pageSize));
     } finally {
       setIsLoading(false);
     }
@@ -119,49 +113,6 @@ const UserManagement: React.FC = () => {
     }
   };
 
-  const generateMockUsers = (): UserResponseDTO[] => [
-    {
-      _id: 'USR001',
-      id: 'USR001', 
-      fullName: 'Nguyễn Thị Linh',
-      email: 'linh.nguyen@email.com',
-      phoneNumber: '0901234567',
-      role: 'USER',
-      status: 'active',
-      isEmailVerified: true,
-      createdAt: new Date('2024-01-15'),
-      avatarUrl: undefined
-    },
-    {
-      _id: 'USR002',
-      id: 'USR002',
-      fullName: 'Trần Minh Châu',
-      email: 'chau.tran@email.com',
-      phoneNumber: '0912345678',
-      role: 'ARTIST',
-      status: 'active',
-      isEmailVerified: true,
-      createdAt: new Date('2024-02-20'),
-      avatarUrl: undefined
-    },
-    // Add more mock users as needed...
-  ];
-
-  const filterMockUsers = (mockUsers: UserResponseDTO[]) => {
-    return mockUsers.filter(user => {
-      const matchesSearch = user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           (user.phoneNumber && user.phoneNumber.includes(searchTerm)) ||
-                           user._id.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesFilter = filter === 'all' || user.status === filter;
-      // Map role filter to match UserResponseDTO role values
-      const userRole = user.role === 'USER' ? 'customer' : user.role === 'ARTIST' ? 'mua' : user.role;
-      const matchesRole = roleFilter === 'all' || userRole === roleFilter;
-      
-      return matchesSearch && matchesFilter && matchesRole;
-    });
-  };
 
   // Selection functions
   const toggleSelection = (userId: string) => {
@@ -187,6 +138,7 @@ const UserManagement: React.FC = () => {
       const response = await banUser(userId, { reason: 'Admin action' });
       if (response.success) {
         await loadUsers(); // Reload data
+        await loadStatistics();
       }
     } catch (error) {
       console.error('Failed to ban user:', error);
@@ -202,6 +154,7 @@ const UserManagement: React.FC = () => {
       const response = await unbanUser(userId);
       if (response.success) {
         await loadUsers(); // Reload data
+        await loadStatistics();
       }
     } catch (error) {
       console.error('Failed to unban user:', error);
@@ -407,19 +360,11 @@ const UserManagement: React.FC = () => {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="flex items-center justify-between p-2 rounded-lg bg-blue-50">
             <span className="text-xs font-medium text-blue-900">Customers</span>
-            <span className="font-bold text-blue-900 text-sm">{statistics?.totalCustomers || 0}</span>
+            <span className="font-bold text-blue-900 text-sm">{statistics?.usersByRole.USER || 0}</span>
           </div>
           <div className="flex items-center justify-between p-2 rounded-lg bg-purple-50">
             <span className="text-xs font-medium text-purple-900">MUAs</span>
-            <span className="font-bold text-purple-900 text-sm">{statistics?.totalMUAs || 0}</span>
-          </div>
-          <div className="flex items-center justify-between p-2 rounded-lg bg-yellow-50">
-            <span className="text-xs font-medium text-yellow-900">Pending</span>
-            <span className="font-bold text-yellow-900 text-sm">{statistics?.pendingUsers || 0}</span>
-          </div>
-          <div className="flex items-center justify-between p-2 rounded-lg bg-red-50">
-            <span className="text-xs font-medium text-red-900">Banned</span>
-            <span className="font-bold text-red-900 text-sm">{statistics?.bannedUsers || 0}</span>
+            <span className="font-bold text-purple-900 text-sm">{statistics?.usersByRole.ARTIST || 0}</span>
           </div>
         </div>
       </div>

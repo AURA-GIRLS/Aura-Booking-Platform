@@ -103,6 +103,10 @@ export const TRANSACTION_STATUS = {
   PENDING_REFUND: 'PENDING_REFUND',
   REFUNDED: 'REFUNDED'
 } as const;
+export const REFUND_REASON = {
+  CANCELLED: 'CANCELLED',
+  REJECTED: 'REJECTED',
+} as const;
 export const WITHDRAW_STATUS = {
   PENDING:'PENDING',
   PROCESSING:'PROCESSING',
@@ -145,3 +149,4 @@ export type WithdrawStatus = typeof WITHDRAW_STATUS[keyof typeof WITHDRAW_STATUS
 export type PayoutCategory = typeof PAYOUT_CATEGORIES[keyof typeof PAYOUT_CATEGORIES];
 export type PostStatus = typeof POST_STATUS[keyof typeof POST_STATUS];
 export type TargetType = typeof TARGET_TYPES[keyof typeof TARGET_TYPES];
+export type RefundReason = typeof REFUND_REASON[keyof typeof REFUND_REASON];

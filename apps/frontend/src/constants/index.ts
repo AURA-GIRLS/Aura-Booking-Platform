@@ -95,11 +95,6 @@ export const SLOT_TYPES = {
   BOOKING: 'BOOKING'
 } as const;
 
-export const TRANSACTION_STATUS = {
-  HOLD:'HOLD' ,
-  CAPTURED: 'CAPTURED' ,
-  REFUNDED: 'REFUNDED'
-} as const;
 export const WITHDRAW_STATUS = {
   PENDING:'PENDING',
   PROCESSING:'PROCESSING',
@@ -123,6 +118,16 @@ export const TARGET_TYPES = {
   POST: 'POST',
   COMMENT: 'COMMENT'
 } as const;
+export const TRANSACTION_STATUS = {
+  HOLD:'HOLD' ,
+  CAPTURED: 'CAPTURED' ,
+  PENDING_REFUND: 'PENDING_REFUND',
+  REFUNDED: 'REFUNDED'
+} as const;
+export const REFUND_REASON = {
+  CANCELLED: 'CANCELLED',
+  REJECTED: 'REJECTED',
+} as const;
 
 // Type definitions derived from constants
 export type UserRole = typeof USER_ROLES[keyof typeof USER_ROLES];
@@ -143,3 +148,4 @@ export type WithdrawStatus = typeof WITHDRAW_STATUS[keyof typeof WITHDRAW_STATUS
 export type PayoutCategory = typeof PAYOUT_CATEGORIES[keyof typeof PAYOUT_CATEGORIES];
 export type PostStatus = typeof POST_STATUS[keyof typeof POST_STATUS];
 export type TargetType = typeof TARGET_TYPES[keyof typeof TARGET_TYPES];
+export type RefundReason = typeof REFUND_REASON[keyof typeof REFUND_REASON];

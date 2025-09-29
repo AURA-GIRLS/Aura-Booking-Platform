@@ -37,14 +37,33 @@ export interface AdminUserResponseDTO extends UserResponseDTO {
 
 export interface AdminMUAResponseDTO extends MuaResponseDTO {
   name: string;
+  email?: string;
+  phone?: string;
   bio?: string;
   experience?: number;
   rating?: number;
+  totalReviews?: number;
   bookingCount?: number;
+  completedBookings?: number;
+  totalEarnings?: number;
+  pendingWithdrawal?: number;
   profilePicture?: string;
   location?: string;
   isAvailable?: boolean;
   status: MUAStatus;
+  joinedAt?: Date;
+  lastActive?: Date;
+  specialties?: string[];
+  portfolio?: {
+    images: number;
+    videos: number;
+    total: number;
+  };
+  verification?: {
+    identity: boolean;
+    portfolio: boolean;
+    background: boolean;
+  };
   createdAt: Date;
   updatedAt: Date;
   user?: AdminUserResponseDTO; // Populated user info
@@ -80,9 +99,11 @@ export interface AdminMUAListResponseDTO {
   };
   statistics: {
     totalMUAs: number;
+    activeMUAs: number;
     pendingMUAs: number;
     approvedMUAs: number;
     rejectedMUAs: number;
+    bannedMUAs: number;
   };
 }
 
@@ -122,9 +143,15 @@ export interface UserStatisticsDTO {
 
 export interface MUAStatisticsDTO {
   totalMUAs: number;
+  activeMUAs: number;
   pendingMUAs: number;
   approvedMUAs: number;
   rejectedMUAs: number;
+  bannedMUAs: number;
+  reviewingMUAs: number;
   approvedThisMonth: number;
   rejectedThisMonth: number;
+  totalBookings: number;
+  totalEarnings: number;
+  avgRating: number;
 }

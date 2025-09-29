@@ -46,10 +46,30 @@ export function BookingTime({
   }), [slots, viewYear, viewMonth]);
 
   const slotsByDay = useMemo(() => {
+    const now = new Date();
+    const currentTime = now.getTime();
+    const currentDate = now.toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
+    
     return monthSlots.reduce<Record<string, BookingSlot[]>>((acc, s) => {
       if (!acc[s.day]) {
         acc[s.day] = [];
       }
+      
+      // Parse slot date and time
+      const slotDate = s.day.split("T")[0] || s.day; // Get date part (YYYY-MM-DD)
+      const [hours, minutes] = s.startTime.split(':').map(Number);
+      
+      // Create Date object for this slot
+      const slotDateTime = new Date(slotDate);
+      slotDateTime.setHours(hours, minutes, 0, 0);
+      
+      // Only filter by time if it's today, otherwise show all future slots
+      if (slotDate === currentDate) {
+        if (slotDateTime.getTime() <= currentTime) {
+          return acc; // Skip past slots for today
+        }
+      }
+      
       acc[s.day].push(s);
       return acc;
     }, {});

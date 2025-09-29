@@ -537,6 +537,14 @@ export class AuthService {
           }
         },
         {
+          $lookup: {
+            from: 'transactions',
+            localField: '_id',
+            foreignField: 'bookingId',
+            as: 'transaction'
+          }
+        },
+        {
           $unwind: { path: '$servicePackage', preserveNullAndEmptyArrays: true }
         },
         {
@@ -544,6 +552,9 @@ export class AuthService {
         },
         {
           $unwind: { path: '$muaUser', preserveNullAndEmptyArrays: true }
+        },
+        {
+          $unwind: { path: '$transaction', preserveNullAndEmptyArrays: true }
         },
         {
           $project: {
@@ -568,6 +579,11 @@ export class AuthService {
               fullName: '$muaUser.fullName',
               avatarUrl: '$muaUser.avatarUrl',
               location: '$muaProfile.location'
+            },
+            transaction: {
+              _id: '$transaction._id',
+              status: '$transaction.status',
+              amount: '$transaction.amount'
             }
           }
         },

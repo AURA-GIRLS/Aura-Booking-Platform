@@ -9,13 +9,23 @@ import type {
   PayoutResponseDTO,
   TransactionResponseDTO
 } from "../types/transaction.dto";
+import type {
+  AdminTransactionQueryDTO,
+  AdminWithdrawQueryDTO,
+  AdminTransactionResponseDTO,
+  AdminWithdrawResponseDTO,
+  AdminTransactionListResponseDTO,
+  AdminWithdrawListResponseDTO,
+  TransactionSummaryDTO
+} from '../types/admin.transaction.dto';
 import type { ApiResponseDTO } from '../types/common.dtos';
 import { api } from "../config/api";
 
 // Type aliases for union types
 type ApprovalState = "APPROVED" | "PENDING" | "REJECTED";
-type TransactionStatus = 'HOLD' | 'CAPTURED' | 'REFUNDED';
+type TransactionStatus = 'HOLD' | 'CAPTURED' | 'REFUNDED' | 'PENDING_REFUND';
 type PayoutTransactionState = "SUCCEEDED" | "FAILED" | "PENDING" | "PROCESSING";
+type WithdrawalStatus = 'PENDING' | 'PROCESSING' | 'SUCCESS' | 'FAILED';
 
 // Local interfaces for API responses
 // Helper function to build query string
@@ -73,40 +83,27 @@ export async function getPayoutById(payoutId: string): Promise<ApiResponseDTO<Pa
 /**
  * Get list of transactions with filtering and pagination
  */
-export async function getTransactions(query: {
-  page?: number;
-  pageSize?: number;
-  customerId?: string;
-  bookingId?: string;
-  status?: TransactionStatus;
-  fromDate?: string;
-  toDate?: string;
-} = {}): Promise<ApiResponseDTO<{
-  transactions: TransactionResponseDTO[];
-  pagination: {
-    page: number;
-    pageSize: number;
-    total: number;
-    totalPages: number;
-    hasMore: boolean;
-  };
-  total: number;
-}>> {
+export async function getTransactions(query: AdminTransactionQueryDTO = {}): Promise<ApiResponseDTO<AdminTransactionListResponseDTO>> {
   try {
     const queryString = buildQueryString(query);
     const endpoint = queryString ? `/admin/transactions?${queryString}` : '/admin/transactions';
     
-    const response = await api.get<ApiResponseDTO<{
-      transactions: TransactionResponseDTO[];
-      pagination: {
-        page: number;
-        pageSize: number;
-        total: number;
-        totalPages: number;
-        hasMore: boolean;
-      };
-      total: number;
-    }>>(endpoint);
+    const response = await api.get<ApiResponseDTO<AdminTransactionListResponseDTO>>(endpoint);
+    return response.data;
+  } catch (error: any) {
+    throw error?.response?.data || error;
+  }
+}
+
+/**
+ * Get list of withdrawals with filtering and pagination
+ */
+export async function getWithdrawals(query: AdminWithdrawQueryDTO = {}): Promise<ApiResponseDTO<AdminWithdrawListResponseDTO>> {
+  try {
+    const queryString = buildQueryString(query);
+    const endpoint = queryString ? `/admin/transactions/withdrawals?${queryString}` : '/admin/transactions/withdrawals';
+    
+    const response = await api.get<ApiResponseDTO<AdminWithdrawListResponseDTO>>(endpoint);
     return response.data;
   } catch (error: any) {
     throw error?.response?.data || error;
@@ -116,9 +113,21 @@ export async function getTransactions(query: {
 /**
  * Get detailed information about a specific transaction
  */
-export async function getTransactionById(transactionId: string): Promise<ApiResponseDTO<TransactionResponseDTO>> {
+export async function getTransactionById(transactionId: string): Promise<ApiResponseDTO<AdminTransactionResponseDTO>> {
   try {
-    const response = await api.get<ApiResponseDTO<TransactionResponseDTO>>(`/admin/transactions/${transactionId}`);
+    const response = await api.get<ApiResponseDTO<AdminTransactionResponseDTO>>(`/admin/transactions/${transactionId}`);
+    return response.data;
+  } catch (error: any) {
+    throw error?.response?.data || error;
+  }
+}
+
+/**
+ * Get detailed information about a specific withdrawal
+ */
+export async function getWithdrawalById(withdrawalId: string): Promise<ApiResponseDTO<AdminWithdrawResponseDTO>> {
+  try {
+    const response = await api.get<ApiResponseDTO<AdminWithdrawResponseDTO>>(`/admin/transactions/withdrawals/${withdrawalId}`);
     return response.data;
   } catch (error: any) {
     throw error?.response?.data || error;
@@ -131,50 +140,12 @@ export async function getTransactionById(transactionId: string): Promise<ApiResp
 export async function getTransactionSummary(query: {
   fromDate?: string;
   toDate?: string;
-} = {}): Promise<ApiResponseDTO<{
-  transactions: {
-    total: number;
-    byStatus: {
-      HOLD: number;
-      CAPTURED: number;
-      REFUNDED: number;
-    };
-    totalAmount: number;
-  };
-  payouts: {
-    total: number;
-    byApprovalState: {
-      APPROVED: number;
-      PENDING: number;
-      REJECTED: number;
-    };
-    totalAmount: number;
-  };
-}>> {
+} = {}): Promise<ApiResponseDTO<TransactionSummaryDTO>> {
   try {
     const queryString = buildQueryString(query);
     const endpoint = queryString ? `/admin/transactions/summary?${queryString}` : '/admin/transactions/summary';
     
-    const response = await api.get<ApiResponseDTO<{
-      transactions: {
-        total: number;
-        byStatus: {
-          HOLD: number;
-          CAPTURED: number;
-          REFUNDED: number;
-        };
-        totalAmount: number;
-      };
-      payouts: {
-        total: number;
-        byApprovalState: {
-          APPROVED: number;
-          PENDING: number;
-          REJECTED: number;
-        };
-        totalAmount: number;
-      };
-    }>>(endpoint);
+    const response = await api.get<ApiResponseDTO<TransactionSummaryDTO>>(endpoint);
     return response.data;
   } catch (error: any) {
     throw error?.response?.data || error;
@@ -385,37 +356,6 @@ export async function safeTransactionApiCall<T>(
 /**
  * Subscribe to real-time transaction updates (WebSocket)
  */
-export function subscribeToTransactionUpdates(
-  onUpdate: (transaction: TransactionResponseDTO) => void,
-  onError?: (error: Error) => void
-): () => void {
-  // This would typically use WebSocket or Server-Sent Events
-  // For now, we'll use polling as a fallback
-  
-  const interval = setInterval(async () => {
-    try {
-      // Get recent transactions (last 5 minutes)
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-      const response = await getTransactions({
-        fromDate: fiveMinutesAgo,
-        pageSize: 50
-      });
-      
-      // This is a simplified implementation
-      // In a real app, you'd track which transactions are new
-      if (response.data?.transactions) {
-        response.data.transactions.forEach(onUpdate);
-      }
-    } catch (error) {
-      if (onError) {
-        onError(error instanceof Error ? error : new Error('Unknown error'));
-      }
-    }
-  }, 10000); // Poll every 10 seconds
-  
-  // Return cleanup function
-  return () => clearInterval(interval);
-}
 
 /**
  * Subscribe to real-time payout updates (WebSocket)

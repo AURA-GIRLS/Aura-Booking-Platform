@@ -247,10 +247,12 @@ export const WalletBoard = ({ muaId }: WalletBoardProps) => {
         showNotification(
           "error",
           "Payout Failed",
-          res.message || "An error occurred while processing your payout. Please try again."
+          res.message || ''
         );
+         await loadWallet();
+        await loadWithdrawals(1);
       }
-    } catch (error) {
+    } catch (error:any) {
       console.error("Failed to make payout", error);
       
       // Close confirm dialog
@@ -260,7 +262,7 @@ export const WalletBoard = ({ muaId }: WalletBoardProps) => {
       showNotification(
         "error",
         "Payout Failed",
-        "An unexpected error occurred. Please check your connection and try again."
+        error?.message || "An unexpected error occurred. Please check your connection and try again."
       );
     } finally {
       setPayoutLoading(false);

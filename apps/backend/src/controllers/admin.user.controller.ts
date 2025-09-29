@@ -255,6 +255,63 @@ export async function bulkApproveMUAs(req: Request, res: Response) {
   }
 }
 
+/**
+ * PUT /admin/muas/bulk-reject
+ * Reject multiple MUA applications
+ */
+export async function bulkRejectMUAs(req: Request, res: Response) {
+  try {
+    const bulkData = req.body;
+    
+    if (!bulkData.muaIds || !Array.isArray(bulkData.muaIds) || bulkData.muaIds.length === 0) {
+      return errorResponse(res, 'MUA IDs array is required', 400);
+    }
+    
+    if (!bulkData.reason) {
+      return errorResponse(res, 'Rejection reason is required', 400);
+    }
+    
+    const result = await AdminUserService.bulkRejectMUAs(bulkData);
+    
+    return successResponse(res, result, `Bulk rejection completed: ${result.successful} successful, ${result.failed} failed`);
+  } catch (error: any) {
+    return errorResponse(res, error.message, 500);
+  }
+}
+
+/**
+ * PUT /admin/muas/:id/ban
+ * Ban a MUA (ban the associated user)
+ */
+export async function banMUA(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const banData = req.body;
+    
+    const result = await AdminUserService.banMUA(id, banData);
+    
+    return successResponse(res, result, 'MUA banned successfully');
+  } catch (error: any) {
+    return errorResponse(res, error.message, 500);
+  }
+}
+
+/**
+ * PUT /admin/muas/:id/unban
+ * Unban a MUA (unban the associated user)
+ */
+export async function unbanMUA(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    
+    const result = await AdminUserService.unbanMUA(id);
+    
+    return successResponse(res, result, 'MUA unbanned successfully');
+  } catch (error: any) {
+    return errorResponse(res, error.message, 500);
+  }
+}
+
 // ==================== STATISTICS ====================
 
 /**

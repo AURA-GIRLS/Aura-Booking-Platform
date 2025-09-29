@@ -105,4 +105,24 @@ router.put('/muas/:id/reject', AdminUserController.rejectMUA);
  */
 router.put('/muas/bulk-approve', AdminUserController.bulkApproveMUAs);
 
+/**
+ * PUT /admin/muas/bulk-reject
+ * Reject multiple MUA applications
+ * Body: { muaIds: string[], reason: string }
+ */
+router.put('/muas/bulk-reject', AdminUserController.bulkRejectMUAs);
+
+/**
+ * PUT /admin/muas/:id/ban
+ * Ban a MUA (ban the associated user)
+ * Body: { reason?: string }
+ */
+router.put('/muas/:id/ban', AdminUserController.banMUA);
+
+/**
+ * PUT /admin/muas/:id/unban
+ * Unban a MUA (unban the associated user)
+ */
+router.put('/muas/:id/unban', AdminUserController.unbanMUA);
+
 export default router;

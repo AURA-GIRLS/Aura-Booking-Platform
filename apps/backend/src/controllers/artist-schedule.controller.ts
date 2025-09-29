@@ -199,13 +199,21 @@ export class ArtistsScheduleController {
 
   async getPendingBookings(req:Request,res:Response){
     const {muaId} = req.params;
-    const {pageNumber, pageSize} = req.query;
+    const {pageNumber = '1', pageSize = '10'} = req.query;
+    
+    console.log("🔍 Controller - getPendingBookings called:", {
+      muaId,
+      pageNumber,
+      pageSize,
+      queryParams: req.query
+    });
+    
     try{
-      const data = await getPendingBookingSlots(muaId, Number(pageNumber),Number(pageSize) )
+      const data = await getPendingBookingSlots(muaId, Number(pageNumber), Number(pageSize))
       const response: ApiResponseDTO = { success: true, data };
       res.status(200).json(response);
     }catch(err){
-      console.error(err);
+      console.error("❌ Controller error:", err);
       const response: ApiResponseDTO = {
         success: false,
         message: err instanceof Error ? err.message : "Failed to get weekly pending bookings",

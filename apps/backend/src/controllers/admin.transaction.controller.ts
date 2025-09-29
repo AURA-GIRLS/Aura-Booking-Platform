@@ -7,9 +7,17 @@ import {
   buildPayoutListQuery 
 } from "../services/payos.service";
 import { 
-  getTransactions, 
-  getTransactionById
-} from "../services/transaction.service";
+  getTransactions as getTransactionsService,
+  getWithdrawals,
+  getTransactionSummary,
+  getTransactionById as getTransactionByIdService,
+  getWithdrawalById
+} from "../services/admin.transaction.service";
+import type {
+  AdminTransactionQueryDTO,
+  AdminWithdrawQueryDTO,
+  TransactionSummaryDTO
+} from "../types/admin.transaction.dto";
 
 // Helper functions for consistent response format
 const successResponse = <T>(res: Response, data: T, message: string = 'Success', statusCode: number = 200) => {
@@ -104,15 +112,32 @@ export class AdminTransactionController {
         pageSize = "10",
         customerId,
         bookingId,
-        status
+        status,
+        paymentMethod,
+        fromDate,
+        toDate,
+        minAmount,
+        maxAmount,
+        customerName,
+        muaName,
+        serviceName
       } = req.query as Record<string, string>;
 
-      const filters: any = {};
-      if (customerId) filters.customerId = customerId;
-      if (bookingId) filters.bookingId = bookingId;
-      if (status) filters.status = status as 'HOLD' | 'CAPTURED' | 'REFUNDED';
+      const filters: AdminTransactionQueryDTO = {
+        customerId,
+        bookingId,
+        status: status as any,
+        paymentMethod,
+        fromDate,
+        toDate,
+        minAmount: minAmount ? parseFloat(minAmount) : undefined,
+        maxAmount: maxAmount ? parseFloat(maxAmount) : undefined,
+        customerName,
+        muaName,
+        serviceName
+      };
 
-      const data = await getTransactions(
+      const data = await getTransactionsService(
         parseInt(page),
         parseInt(pageSize),
         filters
@@ -136,7 +161,7 @@ export class AdminTransactionController {
         return errorResponse(res, "Transaction ID is required", 400);
       }
 
-      const data = await getTransactionById(transactionId);
+      const data = await getTransactionByIdService(transactionId);
 
       if (!data) {
         return errorResponse(res, "Transaction not found", 404);
@@ -145,6 +170,72 @@ export class AdminTransactionController {
       return successResponse(res, data, "Transaction retrieved successfully");
     } catch (error) {
       return errorResponse(res, error instanceof Error ? error.message : "Failed to get transaction", 500);
+    }
+  }
+
+  /**
+   * GET /admin/withdrawals
+   * Get list of withdrawals with filtering and pagination
+   */
+  async getWithdrawals(req: Request, res: Response) {
+    try {
+      const {
+        page = "1",
+        pageSize = "10",
+        muaId,
+        status,
+        reference,
+        fromDate,
+        toDate,
+        minAmount,
+        maxAmount,
+        muaName
+      } = req.query as Record<string, string>;
+
+      const filters: AdminWithdrawQueryDTO = {
+        muaId,
+        status: status as any,
+        reference,
+        fromDate,
+        toDate,
+        minAmount: minAmount ? parseFloat(minAmount) : undefined,
+        maxAmount: maxAmount ? parseFloat(maxAmount) : undefined,
+        muaName
+      };
+
+      const data = await getWithdrawals(
+        parseInt(page),
+        parseInt(pageSize),
+        filters
+      );
+
+      return successResponse(res, data, "Withdrawals retrieved successfully");
+    } catch (error) {
+      return errorResponse(res, error instanceof Error ? error.message : "Failed to get withdrawals", 500);
+    }
+  }
+
+  /**
+   * GET /admin/withdrawals/:withdrawalId
+   * Get detailed information about a specific withdrawal
+   */
+  async getWithdrawalById(req: Request, res: Response) {
+    try {
+      const { withdrawalId } = req.params;
+
+      if (!withdrawalId) {
+        return errorResponse(res, "Withdrawal ID is required", 400);
+      }
+
+      const data = await getWithdrawalById(withdrawalId);
+
+      if (!data) {
+        return errorResponse(res, "Withdrawal not found", 404);
+      }
+
+      return successResponse(res, data, "Withdrawal retrieved successfully");
+    } catch (error) {
+      return errorResponse(res, error instanceof Error ? error.message : "Failed to get withdrawal", 500);
     }
   }
 
@@ -161,47 +252,7 @@ export class AdminTransactionController {
         toDate
       } = req.query as Record<string, string>;
 
-      // Get transaction statistics
-      const transactionFilters: any = {};
-      const payoutFilters: any = {};
-
-      // Add date filters if provided
-      if (fromDate) {
-        payoutFilters.fromDate = fromDate;
-      }
-      if (toDate) {
-        payoutFilters.toDate = toDate;
-      }
-
-      // Get transactions summary
-      const [transactionsData, payoutsData] = await Promise.all([
-        getTransactions(1, 1000), // Get more for summary
-        getPayoutList(payoutFilters)
-      ]);
-
-      // Calculate summary statistics
-      const summary = {
-        transactions: {
-          total: transactionsData.total,
-          byStatus: {
-            HOLD: transactionsData.transactions.filter(t => t.status === 'HOLD').length,
-            CAPTURED: transactionsData.transactions.filter(t => t.status === 'CAPTURED').length,
-            REFUNDED: transactionsData.transactions.filter(t => t.status === 'REFUNDED').length,
-          },
-          totalAmount: transactionsData.transactions.reduce((sum, t) => sum + t.amount, 0)
-        },
-        payouts: {
-          total: payoutsData.data.pagination.total,
-          byApprovalState: {
-            APPROVED: payoutsData.data.payouts.filter(p => p.approvalState === 'APPROVED').length,
-            PENDING: payoutsData.data.payouts.filter(p => p.approvalState === 'PENDING').length,
-            REJECTED: payoutsData.data.payouts.filter(p => p.approvalState === 'REJECTED').length,
-          },
-          totalAmount: payoutsData.data.payouts.reduce((sum, p) => 
-            sum + p.transactions.reduce((txSum, tx) => txSum + tx.amount, 0), 0
-          )
-        }
-      };
+      const summary = await getTransactionSummary(fromDate, toDate);
 
       return successResponse(res, summary, "Transaction summary retrieved successfully");
     } catch (error) {

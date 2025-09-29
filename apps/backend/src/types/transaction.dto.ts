@@ -1,4 +1,4 @@
-import type { PaymentMethod, PayoutCategory, TransactionStatus } from "constants/index";
+import type { PaymentMethod, PayoutCategory, RefundReason, TransactionStatus } from "constants/index";
 
 export interface CreateTransactionDTO {
   bookingId: string;
@@ -27,6 +27,7 @@ export interface TransactionResponseDTO {
     bookingDate?: string; 
     amount: number;
     currency: string;
+    refundReason?:RefundReason;
     status: TransactionStatus;
     paymentMethod: PaymentMethod;
 }

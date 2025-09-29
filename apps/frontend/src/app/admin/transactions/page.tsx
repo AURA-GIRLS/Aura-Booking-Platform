@@ -1,5 +1,5 @@
-import TransactionManagement from '@/components/admin/transactions/TransactionManagement';
+import TransactionOverview from "@/components/admin/transactions/TransactionOverview";
 
 export default function TransactionsPage() {
-  return <TransactionManagement />;
+  return <TransactionOverview />;
 }

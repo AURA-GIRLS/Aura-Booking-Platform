@@ -10,6 +10,11 @@ interface AdminHeaderProps {
 }
 
 const AdminHeader: React.FC<AdminHeaderProps> = ({ user, onMenuToggle }) => {
+   const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('currentUser');
+    window.location.href = '/auth/login';
+  };
   return (
     <header className="bg-white border-b border-rose-100 shadow-sm">
       <div className="flex items-center justify-between px-6 py-4">
@@ -81,12 +86,8 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ user, onMenuToggle }) => {
                   <User className="w-4 h-4" />
                   Profile
                 </a>
-                <a href="/admin/settings" className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-rose-50">
-                  <Settings className="w-4 h-4" />
-                  Settings
-                </a>
                 <hr className="my-2 border-rose-100" />
-                <button className="w-full flex items-center gap-3 px-4 py-2 text-sm text-rose-600 hover:bg-rose-50">
+                <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-rose-600 hover:bg-rose-50">
                   <LogOut className="w-4 h-4" />
                   Sign Out
                 </button>

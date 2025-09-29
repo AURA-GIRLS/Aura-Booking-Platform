@@ -8,6 +8,7 @@ import { Separator } from "@/components/lib/ui/separator";
 import type { WalletResponseDTO, WithdrawResponseDTO } from "@/types/transaction.dto";
 import type { BankAccountResponseDTO } from "@/types/bankaccount.dtos";
 import { WithdrawalList } from "./WithdrawalList";
+import { WITHDRAW_STATUS } from "@/constants/index";
 
 interface PayoutSectionProps {
   wallet: WalletResponseDTO | null;
@@ -35,6 +36,18 @@ export const PayoutSection = ({
   onLoadWithdrawals,
 }: PayoutSectionProps) => {
   const formatMoney = (n: number) => (n ?? 0).toLocaleString();
+  
+  // Check if there's a pending or processing withdrawal
+  const hasPendingWithdrawal = withdrawals.items.some(
+    (withdrawal) => 
+      withdrawal.status === WITHDRAW_STATUS.PENDING || 
+      withdrawal.status === WITHDRAW_STATUS.PROCESSING
+  );
+  const pendingWithdrawal = withdrawals.items.find(
+    (withdrawal) => 
+      withdrawal.status === WITHDRAW_STATUS.PENDING || 
+      withdrawal.status === WITHDRAW_STATUS.PROCESSING
+  );
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -127,6 +140,41 @@ export const PayoutSection = ({
                         Complete more bookings to earn money for withdrawal.
                       </p>
                     </div>
+                  </div>
+                ) : hasPendingWithdrawal ? (
+                  <div className="space-y-4">
+                    <div className="text-center space-y-4">
+                      <div className="mx-auto w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
+                        <Icon icon="lucide:clock" className="w-6 h-6 text-amber-600" />
+                      </div>
+                      <div className="space-y-2">
+                        <h3 className="font-semibold text-gray-900">Withdrawal in Progress</h3>
+                        <p className="text-sm text-gray-700">
+                          You have a withdrawal request being processed. Please wait until it's completed.
+                        </p>
+                        {pendingWithdrawal && (
+                          <div className="text-center p-3 bg-amber-50 rounded-lg border border-amber-200">
+                            <p className="text-sm font-medium text-amber-800">
+                              Processing: {formatMoney(pendingWithdrawal.amount)} ₫
+                            </p>
+                            <p className="text-xs text-amber-600 mt-1">
+                              Status: {pendingWithdrawal.status === WITHDRAW_STATUS.PENDING ? "PENDING PROCESSING" : "PROCESSING"}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <Button
+                      disabled={true}
+                      size="lg"
+                      className="w-full bg-gray-400 text-gray-600 space-x-2 cursor-not-allowed"
+                    >
+                      <Icon icon="lucide:clock" className="w-5 h-5" />
+                      <span>Processing Withdrawal...</span>
+                    </Button>
+                    <p className="text-xs text-center text-gray-600">
+                      New withdrawal requests will be available once current processing is complete
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-4">

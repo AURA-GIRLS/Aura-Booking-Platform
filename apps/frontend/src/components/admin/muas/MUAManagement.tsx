@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Users,
@@ -25,182 +25,94 @@ import {
   Calendar,
   DollarSign,
   ThumbsUp,
-  Camera
+  Camera,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Ban,
+  Check
 } from 'lucide-react';
-
-interface MUA {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  location: string;
-  status: 'active' | 'banned' | 'pending' | 'reviewing';
-  joinedAt: string;
-  lastActive: string;
-  totalBookings: number;
-  completedBookings: number;
-  rating: number;
-  totalReviews: number;
-  totalEarnings: number;
-  pendingWithdrawal: number;
-  specialties: string[];
-  portfolio: {
-    images: number;
-    videos: number;
-  };
-  verification: {
-    identity: boolean;
-    portfolio: boolean;
-    background: boolean;
-  };
-  avatar?: string;
-}
+import {
+  getMUAs,
+  getMUAStatistics,
+  approveMUA,
+  rejectMUA,
+  banMUA,
+  unbanMUA,
+  bulkApproveMUAs,
+  bulkRejectMUAs
+} from '@/services/admin.user';
+import type { AdminMUAResponseDTO, MUAStatisticsDTO } from '@/types/admin.user.dto';
 
 const MUAManagement: React.FC = () => {
   const [filter, setFilter] = useState<'all' | 'active' | 'banned' | 'pending' | 'reviewing'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMUAs, setSelectedMUAs] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalMUAs, setTotalMUAs] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [muas, setMuas] = useState<AdminMUAResponseDTO[]>([]);
+  const [statistics, setStatistics] = useState<MUAStatisticsDTO | null>(null);
 
-  // Mock data - replace with API calls
-  const mockMUAs: MUA[] = [
-    {
-      id: 'MUA001',
-      name: 'Trần Minh Châu',
-      email: 'chau.tran@email.com',
-      phone: '0912345678',
-      location: 'TP.HCM',
-      status: 'active',
-      joinedAt: '2024-02-20',
-      lastActive: '2024-12-14',
-      totalBookings: 45,
-      completedBookings: 42,
-      rating: 4.8,
-      totalReviews: 38,
-      totalEarnings: 18500000,
-      pendingWithdrawal: 2500000,
-      specialties: ['Bridal Makeup', 'Party Makeup', 'Photoshoot'],
-      portfolio: { images: 24, videos: 6 },
-      verification: { identity: true, portfolio: true, background: true }
-    },
-    {
-      id: 'MUA002',
-      name: 'Phạm Thúy Kiều',
-      email: 'kieu.pham@email.com',
-      phone: '0934567890',
-      location: 'Hà Nội',
-      status: 'active',
-      joinedAt: '2024-01-08',
-      lastActive: '2024-12-13',
-      totalBookings: 62,
-      completedBookings: 58,
-      rating: 4.9,
-      totalReviews: 54,
-      totalEarnings: 25800000,
-      pendingWithdrawal: 1200000,
-      specialties: ['Wedding Makeup', 'Fashion Makeup', 'Editorial'],
-      portfolio: { images: 32, videos: 8 },
-      verification: { identity: true, portfolio: true, background: true }
-    },
-    {
-      id: 'MUA003',
-      name: 'Đặng Khánh Ly',
-      email: 'ly.dang@email.com',
-      phone: '0967890123',
-      location: 'Huế',
-      status: 'pending',
-      joinedAt: '2024-12-10',
-      lastActive: '2024-12-11',
-      totalBookings: 0,
-      completedBookings: 0,
-      rating: 0,
-      totalReviews: 0,
-      totalEarnings: 0,
-      pendingWithdrawal: 0,
-      specialties: ['Natural Makeup', 'Korean Style'],
-      portfolio: { images: 12, videos: 2 },
-      verification: { identity: true, portfolio: false, background: false }
-    },
-    {
-      id: 'MUA004',
-      name: 'Lê Thanh Hương',
-      email: 'huong.le@email.com',
-      phone: '0945678901',
-      location: 'Đà Nẵng',
-      status: 'reviewing',
-      joinedAt: '2024-12-08',
-      lastActive: '2024-12-09',
-      totalBookings: 0,
-      completedBookings: 0,
-      rating: 0,
-      totalReviews: 0,
-      totalEarnings: 0,
-      pendingWithdrawal: 0,
-      specialties: ['Traditional Makeup', 'Special Events'],
-      portfolio: { images: 18, videos: 4 },
-      verification: { identity: true, portfolio: true, background: false }
-    },
-    {
-      id: 'MUA005',
-      name: 'Nguyễn Thị Mai',
-      email: 'mai.nguyen@email.com',
-      phone: '0923456789',
-      location: 'Cần Thơ',
-      status: 'banned',
-      joinedAt: '2024-08-15',
-      lastActive: '2024-11-20',
-      totalBookings: 28,
-      completedBookings: 20,
-      rating: 3.2,
-      totalReviews: 15,
-      totalEarnings: 8500000,
-      pendingWithdrawal: 0,
-      specialties: ['Daily Makeup', 'Party Makeup'],
-      portfolio: { images: 15, videos: 3 },
-      verification: { identity: true, portfolio: true, background: true }
-    },
-    {
-      id: 'MUA006',
-      name: 'Võ Minh Anh',
-      email: 'anh.vo@email.com',
-      phone: '0987654321',
-      location: 'Vũng Tàu',
-      status: 'active',
-      joinedAt: '2024-05-12',
-      lastActive: '2024-12-12',
-      totalBookings: 33,
-      completedBookings: 31,
-      rating: 4.6,
-      totalReviews: 29,
-      totalEarnings: 14200000,
-      pendingWithdrawal: 800000,
-      specialties: ['Beach Wedding', 'Outdoor Events', 'Natural Look'],
-      portfolio: { images: 28, videos: 5 },
-      verification: { identity: true, portfolio: true, background: true }
+  // Load data from API
+  useEffect(() => {
+    loadMUAs();
+    loadStatistics();
+  }, [currentPage, pageSize, filter, searchTerm]);
+
+  const loadMUAs = async () => {
+    setIsLoading(true);
+    try {
+      const response = await getMUAs({
+        page: currentPage,
+        pageSize: pageSize,
+        status: filter !== 'all' ? filter as any : undefined,
+        search: searchTerm || undefined
+      });
+      
+      if (response.success && response.data) {
+        setMuas(response.data.muas);
+        setTotalMUAs(response.data.pagination.total);
+        setTotalPages(response.data.pagination.totalPages);
+      }
+    } catch (error) {
+      console.error('Failed to load MUAs:', error);
+      setMuas([]);
+      setTotalMUAs(0);
+      setTotalPages(0);
+    } finally {
+      setIsLoading(false);
     }
-  ];
+  };
 
-  // Calculate statistics
-  const totalMUAs = mockMUAs.length;
-  const activeMUAs = mockMUAs.filter(m => m.status === 'active').length;
-  const pendingMUAs = mockMUAs.filter(m => m.status === 'pending').length;
-  const reviewingMUAs = mockMUAs.filter(m => m.status === 'reviewing').length;
-  const bannedMUAs = mockMUAs.filter(m => m.status === 'banned').length;
-  const totalBookings = mockMUAs.reduce((sum, m) => sum + m.totalBookings, 0);
-  const totalEarnings = mockMUAs.reduce((sum, m) => sum + m.totalEarnings, 0);
-  const avgRating = mockMUAs.filter(m => m.rating > 0).reduce((sum, m) => sum + m.rating, 0) / mockMUAs.filter(m => m.rating > 0).length;
+  const loadStatistics = async () => {
+    try {
+      const response = await getMUAStatistics();
+      if (response.success && response.data) {
+        setStatistics(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to load statistics:', error);
+    }
+  };
 
-  // Filter MUAs based on search and filters
-  const filteredMUAs = mockMUAs.filter(mua => {
-    const matchesSearch = mua.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         mua.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         mua.phone.includes(searchTerm) ||
-                         mua.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         mua.location.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesFilter = filter === 'all' || mua.status === filter;
-    
-    return matchesSearch && matchesFilter;
-  });
+  // Use real statistics from API or fallback values
+  const stats = statistics || {
+    totalMUAs: 0,
+    activeMUAs: 0,
+    pendingMUAs: 0,
+    approvedMUAs: 0,
+    rejectedMUAs: 0,
+    bannedMUAs: 0,
+    reviewingMUAs: 0,
+    approvedThisMonth: 0,
+    rejectedThisMonth: 0,
+    totalBookings: 0,
+    totalEarnings: 0,
+    avgRating: 0
+  };
 
   // Selection functions
   const toggleSelection = (muaId: string) => {
@@ -212,38 +124,102 @@ const MUAManagement: React.FC = () => {
   };
 
   const selectAll = () => {
-    if (selectedMUAs.length === filteredMUAs.length) {
+    if (selectedMUAs.length === muas.length) {
       setSelectedMUAs([]);
     } else {
-      setSelectedMUAs(filteredMUAs.map(m => m.id));
+      setSelectedMUAs(muas.map(m => m._id));
     }
   };
 
   // Action handlers
-  const handleApproveMUA = (muaId: string) => {
-    console.log('Approving MUA:', muaId);
-    // TODO: Implement approve API call
+  const handleApproveMUA = async (muaId: string) => {
+    try {
+      setIsLoading(true);
+      const response = await approveMUA(muaId, { adminNotes: 'Admin approval' });
+      if (response.success) {
+        await loadMUAs();
+      }
+    } catch (error) {
+      console.error('Failed to approve MUA:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleRejectMUA = (muaId: string) => {
-    console.log('Rejecting MUA:', muaId);
-    // TODO: Implement reject API call
+  const handleRejectMUA = async (muaId: string) => {
+    try {
+      setIsLoading(true);
+      const response = await rejectMUA(muaId, { reason: 'Admin rejection' });
+      if (response.success) {
+        await loadMUAs();
+      }
+    } catch (error) {
+      console.error('Failed to reject MUA:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleBanMUA = (muaId: string) => {
-    console.log('Banning MUA:', muaId);
-    // TODO: Implement ban API call
+  const handleBanMUA = async (muaId: string) => {
+    try {
+      setIsLoading(true);
+      const response = await banMUA(muaId, { reason: 'Admin action' });
+      if (response.success) {
+        await loadMUAs();
+      }
+    } catch (error) {
+      console.error('Failed to ban MUA:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleUnbanMUA = (muaId: string) => {
-    console.log('Unbanning MUA:', muaId);
-    // TODO: Implement unban API call
+  const handleUnbanMUA = async (muaId: string) => {
+    try {
+      setIsLoading(true);
+      const response = await unbanMUA(muaId);
+      if (response.success) {
+        await loadMUAs();
+      }
+    } catch (error) {
+      console.error('Failed to unban MUA:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleBulkAction = (action: 'approve' | 'reject' | 'ban' | 'unban') => {
-    console.log(`${action} MUAs:`, selectedMUAs);
-    // TODO: Implement bulk API call
-    setSelectedMUAs([]);
+  const handleBulkAction = async (action: 'approve' | 'reject' | 'ban' | 'unban') => {
+    try {
+      setIsLoading(true);
+      let response;
+      
+      switch (action) {
+        case 'approve':
+          response = await bulkApproveMUAs({ 
+            muaIds: selectedMUAs, 
+            adminNotes: 'Bulk admin approval' 
+          });
+          break;
+        case 'reject':
+          response = await bulkRejectMUAs({ 
+            muaIds: selectedMUAs, 
+            reason: 'Bulk admin rejection' 
+          });
+          break;
+        default:
+          console.log(`${action} not implemented yet`);
+          return;
+      }
+      
+      if (response?.success) {
+        setSelectedMUAs([]);
+        await loadMUAs();
+      }
+    } catch (error) {
+      console.error(`Failed to ${action} MUAs:`, error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Utility functions
@@ -254,19 +230,18 @@ const MUAManagement: React.FC = () => {
     }).format(amount);
   };
 
-  const formatDate = (dateString: string): string => {
+  const formatDate = (dateString: string | Date): string => {
     return new Date(dateString).toLocaleDateString('vi-VN');
   };
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      active: { bg: 'bg-green-100', text: 'text-green-800', label: 'Active', icon: UserCheck },
-      banned: { bg: 'bg-red-100', text: 'text-red-800', label: 'Banned', icon: UserX },
-      pending: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Pending Approval', icon: Clock },
-      reviewing: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Under Review', icon: Eye }
+      PENDING: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Pending Approval', icon: Clock },
+      APPROVED: { bg: 'bg-green-100', text: 'text-green-800', label: 'Approved', icon: CheckCircle },
+      REJECTED: { bg: 'bg-red-100', text: 'text-red-800', label: 'Rejected', icon: XCircle },
     };
     
-    const config = statusConfig[status as keyof typeof statusConfig];
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.PENDING;
     const Icon = config.icon;
     return (
       <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
@@ -276,7 +251,16 @@ const MUAManagement: React.FC = () => {
     );
   };
 
-  const getVerificationBadge = (verification: MUA['verification']) => {
+  const getVerificationBadge = (verification?: { identity: boolean; portfolio: boolean; background: boolean }) => {
+    if (!verification) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+          <UserX className="w-3 h-3" />
+          Not Verified
+        </span>
+      );
+    }
+
     const allVerified = verification.identity && verification.portfolio && verification.background;
     const partiallyVerified = verification.identity || verification.portfolio || verification.background;
     
@@ -331,14 +315,14 @@ const MUAManagement: React.FC = () => {
         <div className="bg-white rounded-2xl shadow-lg border border-rose-100 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 text-sm font-medium mb-1">Total MUAs</p>
-              <p className="text-2xl font-bold text-gray-900">{totalMUAs}</p>
-              <div className="flex items-center gap-1 mt-2">
-                <Brush className="w-4 h-4 text-purple-500" />
-                <span className="text-sm font-medium text-purple-600">{activeMUAs} active</span>
+              <p className="text-gray-600 text-sm font-medium mb-2">Total MUAs</p>
+              <p className="text-2xl font-bold text-purple-600">{stats.totalMUAs}</p>
+              <div className="flex items-center gap-2 mt-2">
+                <TrendingUp className="w-4 h-4 text-purple-500" />
+                <span className="text-sm font-medium text-purple-600">{stats.activeMUAs} active</span>
               </div>
             </div>
-            <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center">
               <Users className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -347,14 +331,14 @@ const MUAManagement: React.FC = () => {
         <div className="bg-white rounded-2xl shadow-lg border border-rose-100 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 text-sm font-medium mb-1">Pending Review</p>
-              <p className="text-2xl font-bold text-yellow-600">{pendingMUAs + reviewingMUAs}</p>
-              <div className="flex items-center gap-1 mt-2">
+              <p className="text-gray-600 text-sm font-medium mb-2">Pending Applications</p>
+              <p className="text-2xl font-bold text-yellow-600">{stats.pendingMUAs + stats.reviewingMUAs}</p>
+              <div className="flex items-center gap-2 mt-2">
                 <Clock className="w-4 h-4 text-yellow-500" />
-                <span className="text-sm font-medium text-yellow-600">Need attention</span>
+                <span className="text-sm font-medium text-yellow-600">Need Review</span>
               </div>
             </div>
-            <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-2xl flex items-center justify-center">
               <Clock className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -363,14 +347,14 @@ const MUAManagement: React.FC = () => {
         <div className="bg-white rounded-2xl shadow-lg border border-rose-100 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 text-sm font-medium mb-1">Total Bookings</p>
-              <p className="text-2xl font-bold text-blue-600">{totalBookings}</p>
-              <div className="flex items-center gap-1 mt-2">
+              <p className="text-gray-600 text-sm font-medium mb-2">Total Bookings</p>
+              <p className="text-2xl font-bold text-blue-600">{stats.totalBookings}</p>
+              <div className="flex items-center gap-2 mt-2">
                 <Calendar className="w-4 h-4 text-blue-500" />
                 <span className="text-sm font-medium text-blue-600">All time</span>
               </div>
             </div>
-            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center">
               <Calendar className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -379,14 +363,14 @@ const MUAManagement: React.FC = () => {
         <div className="bg-white rounded-2xl shadow-lg border border-rose-100 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 text-sm font-medium mb-1">Total Earnings</p>
-              <p className="text-2xl font-bold text-green-600">{formatCurrency(totalEarnings)}</p>
-              <div className="flex items-center gap-1 mt-2">
+              <p className="text-gray-600 text-sm font-medium mb-2">Total Earnings</p>
+              <p className="text-2xl font-bold text-green-600">{formatCurrency(stats.totalEarnings)}</p>
+              <div className="flex items-center gap-2 mt-2">
                 <DollarSign className="w-4 h-4 text-green-500" />
-                <span className="text-sm font-medium text-green-600">Platform revenue</span>
+                <span className="text-sm font-medium text-green-600">Revenue</span>
               </div>
             </div>
-            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-2xl flex items-center justify-center">
               <DollarSign className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -398,37 +382,40 @@ const MUAManagement: React.FC = () => {
         <div className="bg-white rounded-2xl shadow-lg border border-rose-100 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-purple-600" />
-            MUA Status Distribution
+            MUA Status Overview
           </h3>
-          <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
             <div className="flex items-center justify-between p-3 rounded-lg bg-green-50">
-              <div className="flex items-center gap-3">
-                <UserCheck className="w-5 h-5 text-green-600" />
-                <span className="font-medium text-green-900">Active MUAs</span>
-              </div>
+              <span className="text-sm font-medium text-green-900">Active</span>
               <div className="text-right">
-                <span className="font-bold text-green-900">{activeMUAs}</span>
-                <span className="text-green-600 text-sm ml-2">({((activeMUAs/totalMUAs)*100).toFixed(1)}%)</span>
+                <span className="font-bold text-green-900">{stats.activeMUAs}</span>
+                <span className="text-green-600 text-xs ml-2">
+                  ({stats.totalMUAs > 0 ? ((stats.activeMUAs/stats.totalMUAs)*100).toFixed(1) : '0'}%)
+                </span>
               </div>
             </div>
             <div className="flex items-center justify-between p-3 rounded-lg bg-yellow-50">
-              <div className="flex items-center gap-3">
-                <Clock className="w-5 h-5 text-yellow-600" />
-                <span className="font-medium text-yellow-900">Pending Review</span>
-              </div>
+              <span className="text-sm font-medium text-yellow-900">Pending</span>
               <div className="text-right">
-                <span className="font-bold text-yellow-900">{pendingMUAs + reviewingMUAs}</span>
-                <span className="text-yellow-600 text-sm ml-2">({(((pendingMUAs + reviewingMUAs)/totalMUAs)*100).toFixed(1)}%)</span>
+                <span className="font-bold text-yellow-900">{stats.pendingMUAs + stats.reviewingMUAs}</span>
+                <span className="text-yellow-600 text-xs ml-2">
+                  ({stats.totalMUAs > 0 ? (((stats.pendingMUAs + stats.reviewingMUAs)/stats.totalMUAs)*100).toFixed(1) : '0'}%)
+                </span>
               </div>
             </div>
             <div className="flex items-center justify-between p-3 rounded-lg bg-red-50">
-              <div className="flex items-center gap-3">
-                <UserX className="w-5 h-5 text-red-600" />
-                <span className="font-medium text-red-900">Banned</span>
-              </div>
+              <span className="text-sm font-medium text-red-900">Banned</span>
               <div className="text-right">
-                <span className="font-bold text-red-900">{bannedMUAs}</span>
-                <span className="text-red-600 text-sm ml-2">({((bannedMUAs/totalMUAs)*100).toFixed(1)}%)</span>
+                <span className="font-bold text-red-900">{stats.bannedMUAs}</span>
+                <span className="text-red-600 text-xs ml-2">
+                  ({stats.totalMUAs > 0 ? ((stats.bannedMUAs/stats.totalMUAs)*100).toFixed(1) : '0'}%)
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+              <span className="text-sm font-medium text-gray-900">Total</span>
+              <div className="text-right">
+                <span className="font-bold text-gray-900">{stats.totalMUAs}</span>
               </div>
             </div>
           </div>
@@ -436,37 +423,33 @@ const MUAManagement: React.FC = () => {
 
         <div className="bg-white rounded-2xl shadow-lg border border-rose-100 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Activity className="w-5 h-5 text-pink-600" />
-            Performance Overview
+            <Activity className="w-5 h-5 text-purple-600" />
+            Performance Metrics
           </h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 rounded-lg bg-pink-50">
-              <div className="flex items-center gap-3">
-                <Star className="w-5 h-5 text-pink-600" />
-                <span className="font-medium text-pink-900">Average Rating</span>
-              </div>
+          <div className="grid grid-cols-3 gap-4 text-center">
+            <div className="p-3 rounded-lg bg-pink-50">
+              <div className="text-sm font-medium text-pink-900 mb-1">Avg Rating</div>
               <div className="text-right">
-                <span className="font-bold text-pink-900">{avgRating.toFixed(1)}</span>
-                <span className="text-pink-600 text-sm ml-2">/ 5.0</span>
+                <span className="font-bold text-pink-900">{stats.avgRating.toFixed(1)}</span>
+                <div className="flex justify-center mt-1">
+                  {getRatingStars(stats.avgRating)}
+                </div>
               </div>
             </div>
-            <div className="flex items-center justify-between p-3 rounded-lg bg-blue-50">
-              <div className="flex items-center gap-3">
-                <Calendar className="w-5 h-5 text-blue-600" />
-                <span className="font-medium text-blue-900">Avg Bookings/MUA</span>
-              </div>
+            <div className="p-3 rounded-lg bg-blue-50">
+              <div className="text-sm font-medium text-blue-900 mb-1">Avg Bookings</div>
               <div className="text-right">
-                <span className="font-bold text-blue-900">{Math.round(totalBookings/activeMUAs)}</span>
-                <span className="text-blue-600 text-sm ml-2">bookings</span>
+                <span className="font-bold text-blue-900">
+                  {stats.activeMUAs > 0 ? Math.round(stats.totalBookings/stats.activeMUAs) : 0}
+                </span>
               </div>
             </div>
-            <div className="flex items-center justify-between p-3 rounded-lg bg-green-50">
-              <div className="flex items-center gap-3">
-                <DollarSign className="w-5 h-5 text-green-600" />
-                <span className="font-medium text-green-900">Avg Earnings/MUA</span>
-              </div>
+            <div className="p-3 rounded-lg bg-green-50">
+              <div className="text-sm font-medium text-green-900 mb-1">Avg Earnings</div>
               <div className="text-right">
-                <span className="font-bold text-green-900">{formatCurrency(Math.round(totalEarnings/activeMUAs))}</span>
+                <span className="font-bold text-green-900">
+                  {formatCurrency(stats.activeMUAs > 0 ? Math.round(stats.totalEarnings/stats.activeMUAs) : 0)}
+                </span>
               </div>
             </div>
           </div>
@@ -481,11 +464,10 @@ const MUAManagement: React.FC = () => {
               <Search className="w-4 h-4 text-gray-500" />
               <input
                 type="text"
-                placeholder="Search by name, email, location, ID..."
+                placeholder="Search by name, email, location..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="border border-rose-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent min-w-[250px]"
-                aria-label="Search MUAs"
               />
             </div>
             
@@ -495,12 +477,11 @@ const MUAManagement: React.FC = () => {
                 value={filter} 
                 onChange={(e) => setFilter(e.target.value as any)}
                 className="border border-rose-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                aria-label="Filter by status"
               >
                 <option value="all">All Status</option>
                 <option value="active">Active</option>
-                <option value="pending">Pending Approval</option>
-                <option value="reviewing">Under Review</option>
+                <option value="pending">Pending</option>
+                <option value="reviewing">Reviewing</option>
                 <option value="banned">Banned</option>
               </select>
             </div>
@@ -512,15 +493,17 @@ const MUAManagement: React.FC = () => {
                 <button 
                   onClick={() => handleBulkAction('approve')}
                   className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                  disabled={isLoading}
                 >
-                  <UserCheck className="w-4 h-4" />
+                  <CheckCircle className="w-4 h-4" />
                   Approve ({selectedMUAs.length})
                 </button>
                 <button 
                   onClick={() => handleBulkAction('reject')}
                   className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                  disabled={isLoading}
                 >
-                  <UserX className="w-4 h-4" />
+                  <XCircle className="w-4 h-4" />
                   Reject ({selectedMUAs.length})
                 </button>
               </>
@@ -538,7 +521,8 @@ const MUAManagement: React.FC = () => {
       <div className="bg-white rounded-2xl shadow-lg border border-rose-100 overflow-hidden">
         <div className="px-6 py-4 border-b border-rose-100 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-900">
-            All MUAs ({filteredMUAs.length})
+            MUAs ({totalMUAs} total)
+            {isLoading && <span className="text-sm text-gray-500 ml-2">Loading...</span>}
           </h3>
           <button
             onClick={selectAll}
@@ -547,162 +531,154 @@ const MUAManagement: React.FC = () => {
             Select All
           </button>
         </div>
+        
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-purple-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   <input 
                     type="checkbox" 
                     className="rounded border-gray-300"
                     onChange={selectAll}
-                    checked={selectedMUAs.length === filteredMUAs.length && filteredMUAs.length > 0}
-                    aria-label="Select all MUAs"
+                    checked={selectedMUAs.length === muas.length && muas.length > 0}
                   />
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">MUA</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact & Location</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Performance</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Portfolio</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Earnings</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">MUA</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contact</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Performance</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Portfolio</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredMUAs.map((mua) => (
-                <tr key={mua.id} className="hover:bg-purple-50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap">
+              {muas.map((mua: AdminMUAResponseDTO) => (
+                <tr key={mua._id} className="hover:bg-purple-50 transition-colors">
+                  <td className="px-4 py-4 whitespace-nowrap">
                     <input 
                       type="checkbox" 
                       className="rounded border-gray-300"
-                      checked={selectedMUAs.includes(mua.id)}
-                      onChange={() => toggleSelection(mua.id)}
-                      aria-label={`Select ${mua.name}`}
+                      checked={selectedMUAs.includes(mua._id)}
+                      onChange={() => toggleSelection(mua._id)}
                     />
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-4 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center">
                         <span className="text-white font-semibold text-sm">
-                          {mua.name.charAt(0).toUpperCase()}
+                          {mua.name?.charAt(0).toUpperCase() || 'M'}
                         </span>
                       </div>
                       <div>
-                        <Link 
-                          href={`/admin/users?id=${mua.id}`}
-                          className="text-sm font-medium text-gray-900 hover:text-purple-600 transition-colors"
-                        >
-                          {mua.name}
-                        </Link>
-                        <div className="text-sm text-gray-500">ID: {mua.id}</div>
-                        <div className="flex gap-1 mt-1">
-                          {mua.specialties.slice(0, 2).map((specialty, idx) => (
-                            <span key={idx} className="text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded">
-                              {specialty}
-                            </span>
-                          ))}
-                          {mua.specialties.length > 2 && (
-                            <span className="text-xs text-gray-500">+{mua.specialties.length - 2}</span>
-                          )}
+                        <div className="text-sm font-medium text-gray-900">
+                          <Link 
+                            href={`/admin/users?id=${mua.userId}`}
+                            className="hover:text-purple-600 transition-colors"
+                          >
+                            {mua.name || 'Unknown'}
+                          </Link>
                         </div>
+                        <div className="text-xs text-gray-500">ID: {mua._id}</div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm">
-                      <div className="flex items-center gap-1 text-gray-900">
-                        <Mail className="w-3 h-3 text-gray-400" />
-                        {mua.email}
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    <div className="text-xs">
+                      <div className="text-gray-900 flex items-center gap-1">
+                        <Mail className="w-3 h-3" />
+                        {mua.email || 'N/A'}
                       </div>
-                      <div className="flex items-center gap-1 text-gray-500">
-                        <Phone className="w-3 h-3 text-gray-400" />
-                        {mua.phone}
+                      <div className="text-gray-500 flex items-center gap-1 mt-1">
+                        <Phone className="w-3 h-3" />
+                        {mua.phone || 'N/A'}
                       </div>
-                      <div className="flex items-center gap-1 text-gray-400">
+                      <div className="text-gray-400 flex items-center gap-1 mt-1">
                         <MapPin className="w-3 h-3" />
-                        <span className="text-xs">{mua.location}</span>
+                        {mua.location || 'N/A'}
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-4 py-4 whitespace-nowrap">
                     <div className="space-y-1">
                       {getStatusBadge(mua.status)}
                       {getVerificationBadge(mua.verification)}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  <td className="px-4 py-4 whitespace-nowrap text-xs">
                     <div>
-                      {mua.rating > 0 ? getRatingStars(mua.rating) : <span className="text-gray-400">No ratings</span>}
-                      <div className="text-gray-600 mt-1">
-                        {mua.completedBookings}/{mua.totalBookings} completed
+                      <div className="flex items-center gap-1 mb-1">
+                        <Star className="w-3 h-3 text-yellow-400" />
+                        <span className="font-medium">{mua.rating?.toFixed(1) || '0.0'}</span>
+                        <span className="text-gray-500">({mua.totalReviews || 0})</span>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1">
-                        <Camera className="w-4 h-4 text-purple-500" />
-                        <span>{mua.portfolio.images}</span>
+                      <div className="text-gray-900">
+                        {mua.bookingCount || 0} bookings
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Award className="w-4 h-4 text-pink-500" />
-                        <span>{mua.portfolio.videos}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <div>
                       <div className="text-green-600 font-medium">
-                        {formatCurrency(mua.totalEarnings)}
+                        {formatCurrency(mua.totalEarnings || 0)}
                       </div>
-                      {mua.pendingWithdrawal > 0 && (
-                        <div className="text-yellow-600 text-xs">
-                          Pending: {formatCurrency(mua.pendingWithdrawal)}
-                        </div>
-                      )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <td className="px-4 py-4 whitespace-nowrap text-xs">
+                    <div>
+                      <div className="flex items-center gap-1 mb-1">
+                        <Camera className="w-3 h-3 text-blue-500" />
+                        <span>{mua.portfolio?.images || 0} photos</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Award className="w-3 h-3 text-purple-500" />
+                        <span>{mua.portfolio?.videos || 0} videos</span>
+                      </div>
+                      <div className="text-gray-400 mt-1">
+                        Joined: {formatDate(mua.joinedAt || mua.createdAt)}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-xs font-medium">
                     <div className="flex items-center gap-2">
-                      <Link 
-                        href={`/admin/users?id=${mua.id}`}
-                        className="flex items-center gap-1 text-purple-600 hover:text-purple-900 transition-colors"
-                      >
-                        <Eye className="w-4 h-4" />
+                      <button className="flex items-center gap-1 text-purple-600 hover:text-purple-900 transition-colors">
+                        <Eye className="w-3 h-3" />
                         View
-                      </Link>
-                      {mua.status === 'pending' || mua.status === 'reviewing' ? (
+                      </button>
+                      
+                      {mua.status === 'PENDING' && (
                         <>
                           <button 
-                            onClick={() => handleApproveMUA(mua.id)}
+                            onClick={() => handleApproveMUA(mua._id)}
                             className="flex items-center gap-1 text-green-600 hover:text-green-900 transition-colors"
+                            disabled={isLoading}
                           >
-                            <UserCheck className="w-4 h-4" />
+                            <Check className="w-3 h-3" />
                             Approve
                           </button>
                           <button 
-                            onClick={() => handleRejectMUA(mua.id)}
+                            onClick={() => handleRejectMUA(mua._id)}
                             className="flex items-center gap-1 text-red-600 hover:text-red-900 transition-colors"
+                            disabled={isLoading}
                           >
-                            <UserX className="w-4 h-4" />
+                            <XCircle className="w-3 h-3" />
                             Reject
                           </button>
                         </>
-                      ) : mua.status === 'active' ? (
+                      )}
+                      
+                      {mua.user?.status !== 'banned' ? (
                         <button 
-                          onClick={() => handleBanMUA(mua.id)}
+                          onClick={() => handleBanMUA(mua._id)}
                           className="flex items-center gap-1 text-red-600 hover:text-red-900 transition-colors"
+                          disabled={isLoading}
                         >
-                          <ShieldOff className="w-4 h-4" />
+                          <Ban className="w-3 h-3" />
                           Ban
                         </button>
-                      ) : mua.status === 'banned' && (
+                      ) : (
                         <button 
-                          onClick={() => handleUnbanMUA(mua.id)}
+                          onClick={() => handleUnbanMUA(mua._id)}
                           className="flex items-center gap-1 text-green-600 hover:text-green-900 transition-colors"
+                          disabled={isLoading}
                         >
-                          <Shield className="w-4 h-4" />
+                          <Shield className="w-3 h-3" />
                           Unban
                         </button>
                       )}
@@ -712,6 +688,37 @@ const MUAManagement: React.FC = () => {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Pagination */}
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-gray-700">
+              Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalMUAs)} of {totalMUAs} results
+            </span>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1 || isLoading}
+              className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50"
+            >
+              Previous
+            </button>
+            
+            <span className="px-3 py-1 text-sm">
+              Page {currentPage} of {totalPages}
+            </span>
+            
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages || isLoading}
+              className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
     </div>

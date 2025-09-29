@@ -10,15 +10,61 @@
  * Separated from transaction.service.ts for better code organization
  */
 
-import { BankAccount, Transaction, Wallet } from "models/transactions.model";
+import { BankAccount, Transaction, Wallet, Withdraw } from "models/transactions.model";
 import type { PayOSCreateLinkInput, PayOSCreateLinkResult, PaymentWebhookResponse, PayoutInput, PayoutResponseDTO, PayoutListQueryDTO, PayoutListResponseDTO, PayoutAccountDetailDTO } from "types/transaction.dto";
 import { config } from "config";
 import { createPayOSOutHttp, createPayOSSignedHttp, payosHttp } from "utils/payosHttp";
 import crypto from "crypto";
-import { BOOKING_STATUS, PAYOUT_CATEGORIES, TRANSACTION_STATUS } from "constants/index";
+import { BOOKING_STATUS, PAYOUT_CATEGORIES, TRANSACTION_STATUS, WITHDRAW_STATUS, type RefundReason } from "constants/index";
 import { Booking } from "@models/bookings.models";
 import { createPayOSPaymentSignature, createPayOSPayoutSignature } from "utils/payoutSignature";
 import { MUA } from "@models/muas.models";
+import { User } from "@models/users.models";
+import { EmailService } from "./email.service";
+import mongoose from "mongoose";
+
+// ==================== Helper Functions ====================
+
+/**
+ * Send low balance alert to all admin users
+ */
+async function notifyAdminsOfLowBalance(
+  requestType: 'refund' | 'withdrawal',
+  requestedAmount: number,
+  currentBalance: number,
+  requestId: string
+): Promise<void> {
+  try {
+    // Find all users with ADMIN role
+    const adminUsers = await User.find({ role: 'ADMIN' }).exec();
+    
+    if (adminUsers.length === 0) {
+      console.warn('No admin users found to notify about low balance');
+      return;
+    }
+
+    const emailService = new EmailService();
+    
+    // Send email to each admin
+    const emailPromises = adminUsers.map(admin => 
+      emailService.sendLowBalanceAlert(
+        admin.email,
+        admin.fullName || 'Admin',
+        requestType,
+        requestedAmount,
+        currentBalance,
+        requestId
+      ).catch(error => {
+        console.error(`Failed to send low balance alert to admin ${admin.email}:`, error);
+      })
+    );
+
+    await Promise.allSettled(emailPromises);
+    console.log(`Low balance alerts sent to ${adminUsers.length} admin(s)`);
+  } catch (error) {
+    console.error('Error notifying admins of low balance:', error);
+  }
+}
 
 // ==================== PayOS Payment Link ====================
 
@@ -75,7 +121,7 @@ export async function getPayoutDetail(payoutId: string): Promise<PayoutResponseD
   const response = await payoutHttp.get(`/v1/payouts/${payoutId}`);
   return response.data;
 }
-export async function makeRefund(bookingId: string): Promise<PayoutResponseDTO> {
+export async function makeRefund(bookingId: string, refundReason: RefundReason): Promise<PayoutResponseDTO> {
   if (!config.payosPOClientId || !config.payosPOApiKey || !config.payosPOChecksumKey) {
     throw new Error("Missing PayOS payout credentials (clientId/apiKey/checksumKey)");
   }
@@ -99,12 +145,22 @@ export async function makeRefund(bookingId: string): Promise<PayoutResponseDTO> 
     throw new Error(`Transaction with bookingId ${bookingId} not found.`);
   }
   
-  if (transaction.status !== TRANSACTION_STATUS.HOLD) {
+  if (transaction.status !== TRANSACTION_STATUS.HOLD && transaction.status !== TRANSACTION_STATUS.PENDING_REFUND) {
     throw new Error(`Transaction with bookingId ${bookingId} is not in HOLD status.`);
   }
   const payoutAccount = await getPayoutAccountDetail();
   if(payoutAccount.code ==='00' && payoutAccount.data.balance < (transaction.amount || 0)) {
-    throw new Error(`Insufficient payout account balance. Current balance: ${payoutAccount.data.balance}`);
+    // Notify admins about insufficient balance
+    transaction.status = TRANSACTION_STATUS.PENDING_REFUND;
+    transaction.refundReason = refundReason;
+    await transaction.save();
+    await notifyAdminsOfLowBalance(
+      'refund',
+      transaction.amount || 0,
+      payoutAccount.data.balance,
+      bookingId
+    );
+    throw new Error(`Refund feature is temporarily unavailable due to insufficient payout account balance. Please wait for admin send notification email and try it later!`);
   }
   const payload: PayoutInput = {
     referenceId: transaction.paymentReference || '',
@@ -139,12 +195,10 @@ export async function makeWithdrawal(muaId: string): Promise<PayoutResponseDTO> 
   if (!muaData) {
     throw new Error(`MUA with ID ${muaId} not found.`);
   }
- 
   const bankAccount = await BankAccount.findOne({ userId: muaData.userId }).exec();
   if (!bankAccount) {
     throw new Error(`Bank account for user with ID ${muaData.userId} not found.`);
   }
-  
   const wallet = await Wallet.findOne({ muaId: muaId }).exec();
   if (!wallet) {
     throw new Error(`Wallet for MUA with ID ${muaId} not found.`);
@@ -154,7 +208,24 @@ export async function makeWithdrawal(muaId: string): Promise<PayoutResponseDTO> 
   }
    const payoutAccount = await getPayoutAccountDetail();
   if(payoutAccount.code ==='00' && payoutAccount.data.balance < (wallet.balance || 0)) {
-    throw new Error(`Insufficient payout account balance. Current balance: ${payoutAccount.data.balance}`);
+    const existingPendingWithdraw = await Withdraw.findOne({ muaId: muaId, status: WITHDRAW_STATUS.PENDING }).exec(); 
+    if(existingPendingWithdraw) {
+      throw new Error(`You already have a pending withdrawal request. Please wait for it to be processed before making a new one.`);
+    }
+    const withdrawRecord = new Withdraw({
+        muaId: new mongoose.Types.ObjectId(muaId),
+        amount: wallet.balance,
+        currency: wallet.currency,
+        status: WITHDRAW_STATUS.PENDING,
+      });
+      await withdrawRecord.save();
+    await notifyAdminsOfLowBalance(
+      'withdrawal',
+      wallet.balance || 0,
+      payoutAccount.data.balance,
+      muaId
+    );
+    throw new Error(`Withdrawal feature is temporarily unavailable due to insufficient payout account balance. Please wait for admin send notification email and try it later!`);
   }
   const payload: PayoutInput = {
     referenceId: '',
