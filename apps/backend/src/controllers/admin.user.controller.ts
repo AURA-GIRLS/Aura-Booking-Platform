@@ -130,6 +130,26 @@ export async function bulkBanUsers(req: Request, res: Response) {
   }
 }
 
+/**
+ * PUT /admin/users/bulk-unban
+ * Unban multiple users
+ */
+export async function bulkUnbanUsers(req: Request, res: Response) {
+  try {
+    const bulkData = req.body;
+    
+    if (!bulkData.userIds || !Array.isArray(bulkData.userIds) || bulkData.userIds.length === 0) {
+      return errorResponse(res, 'User IDs array is required', 400);
+    }
+    
+    const result = await AdminUserService.bulkUnbanUsers(bulkData);
+    
+    return successResponse(res, result, `Bulk unban completed: ${result.successful} successful, ${result.failed} failed`);
+  } catch (error: any) {
+    return errorResponse(res, error.message, 500);
+  }
+}
+
 // ==================== MUA MANAGEMENT ====================
 
 /**

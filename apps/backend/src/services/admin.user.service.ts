@@ -287,6 +287,30 @@ export async function bulkBanUsers(bulkData: BulkBanUsersDTO): Promise<{ success
   }
 }
 
+/**
+ * Bulk unban users
+ */
+export async function bulkUnbanUsers(bulkData: { userIds: string[] }): Promise<{ successful: number; failed: number; total: number }> {
+  try {
+    const { userIds } = bulkData;
+    
+    const results = await Promise.allSettled(
+      userIds.map(userId => unbanUser(userId))
+    );
+    
+    const successful = results.filter(result => result.status === 'fulfilled').length;
+    const failed = results.filter(result => result.status === 'rejected').length;
+    
+    return {
+      successful,
+      failed,
+      total: userIds.length
+    };
+  } catch (error) {
+    throw new Error(`Failed to bulk unban users: ${error}`);
+  }
+}
+
 // ==================== MUA MANAGEMENT ====================
 
 /**

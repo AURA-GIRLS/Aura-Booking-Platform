@@ -273,7 +273,7 @@ export async function getTransactionsByMuaId(
   muaId: string,
   page: number = 1,
   pageSize: number = 10,
-  status?: 'HOLD' | 'CAPTURED' | 'REFUNDED'
+  status?: TransactionStatus
 ): Promise<{ transactions: TransactionResponseDTO[]; total: number; page: number; totalPages: number }>{
   try {
     const matchStage: any = {};

@@ -56,6 +56,13 @@ router.put('/users/:id/unban', AdminUserController.unbanUser);
  */
 router.put('/users/bulk-ban', AdminUserController.bulkBanUsers);
 
+/**
+ * PUT /admin/users/bulk-unban
+ * Unban multiple users
+ * Body: { userIds: string[] }
+ */
+router.put('/users/bulk-unban', AdminUserController.bulkUnbanUsers);
+
 // ==================== MUA MANAGEMENT ROUTES ====================
 
 /**

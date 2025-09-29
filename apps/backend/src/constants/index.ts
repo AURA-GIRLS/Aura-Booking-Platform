@@ -100,6 +100,7 @@ export const SLOT_TYPES = {
 export const TRANSACTION_STATUS = {
   HOLD:'HOLD' ,
   CAPTURED: 'CAPTURED' ,
+  PENDING_REFUND: 'PENDING_REFUND',
   REFUNDED: 'REFUNDED'
 } as const;
 export const WITHDRAW_STATUS = {

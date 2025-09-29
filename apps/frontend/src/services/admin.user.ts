@@ -108,6 +108,22 @@ export async function bulkBanUsers(bulkData: BulkBanUsersDTO): Promise<ApiRespon
   }
 }
 
+export async function bulkUnBanUsers(bulkData: BulkBanUsersDTO): Promise<ApiResponseDTO<{
+  successful: number;
+  failed: number;
+  total: number;
+}>> {
+  try {
+    const response = await api.put<ApiResponseDTO<{
+      successful: number;
+      failed: number;
+      total: number;
+    }>>('/admin/users/bulk-unban', bulkData);
+    return response.data;
+  } catch (error: any) {
+    throw error?.response?.data || error;
+  }
+}
 // ==================== MUA MANAGEMENT ====================
 
 /**
