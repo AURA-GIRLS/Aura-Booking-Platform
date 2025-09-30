@@ -18,7 +18,7 @@ const PortfolioMediaSchema = new Schema({
   category: {
     type: String,
     enum: Object.values(PORTFOLIO_CATEGORIES),
-    default: PORTFOLIO_CATEGORIES.CASUAL
+    default: PORTFOLIO_CATEGORIES.DAILY
   }
 });
 
@@ -48,7 +48,7 @@ const PortfolioSchema = new Schema({
   category: {
     type: String,
     enum: Object.values(PORTFOLIO_CATEGORIES),
-    default: PORTFOLIO_CATEGORIES.CASUAL
+    default: PORTFOLIO_CATEGORIES.DAILY
   },
   tags: [{
     type: String,
@@ -80,15 +80,68 @@ PortfolioSchema.path('tags').validate(function (value: string[]) {
   return value.length <= 10;
 }, 'Tags cannot exceed 10 items');
 
+const CertificateImageSchema = new Schema({
+  url: { type: String, required: true },
+  publicId: { type: String, required: true },
+  width: { type: Number },
+  height: { type: Number }
+}, { _id: false });
+
 const CertificateSchema = new Schema({
-  muaId: { type: Schema.Types.ObjectId, ref: "MUA" },
-  title: String,
-  issuer: String,
-  description: String,
-  issueDate: Date,
-  expireDate: Date,
-  imageUrl: String
+  muaId: { 
+    type: Schema.Types.ObjectId, 
+    ref: "MUA",
+    required: true
+  },
+  title: {
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: [200, 'Title cannot exceed 200 characters']
+  },
+  issuer: {
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: [200, 'Issuer cannot exceed 200 characters']
+  },
+  description: {
+    type: String,
+    maxlength: [500, 'Description cannot exceed 500 characters']
+  },
+  issueDate: {
+    type: Date,
+    required: true
+  },
+  expireDate: {
+    type: Date
+  },
+  image: {
+    type: CertificateImageSchema,
+    required: true
+  },
+  createdAt: { 
+    type: Date, 
+    default: Date.now 
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
+  }
 });
 
+// Add indexes
+CertificateSchema.index({ muaId: 1 });
+CertificateSchema.index({ createdAt: -1 });
+CertificateSchema.index({ muaId: 1, createdAt: -1 });
+
+// Validate expireDate is after issueDate
+CertificateSchema.pre('save', function(next) {
+  if (this.expireDate && this.issueDate && this.expireDate < this.issueDate) {
+    next(new Error('Expire date must be after issue date'));
+  } else {
+    next();
+  }
+});
 export const Portfolio = model("Portfolio", PortfolioSchema);
 export const Certificate = model("Certificate", CertificateSchema);

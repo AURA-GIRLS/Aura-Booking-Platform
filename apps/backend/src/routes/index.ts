@@ -11,6 +11,7 @@ import profileRoutes from "./profile";
 import feedbackRoutes from "./feedback"; 
 import serviceRoutes from "./services";
 import portfolioRoutes from "./portfolio.routes";
+import certificateRoutes from "./certificate.routes";
 
 const router = Router();
 
@@ -39,5 +40,5 @@ router.use('/profile', profileRoutes);
 router.use('/feedback', feedbackRoutes); 
 router.use("/services", serviceRoutes);
 router.use("/portfolios", portfolioRoutes);
-
+router.use("/certificates", certificateRoutes);
 export default router;

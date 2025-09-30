@@ -84,6 +84,9 @@ export default function ArtistNavbar({ mua, setMua }:  Readonly<ArtistNavbarProp
                 <DropdownMenuItem asChild>
                     <Link href={`/manage-artist/${id}/public-portfolio`}>My Public Portfolio</Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href={`/manage-artist/${id}/certificates`} className="w-full">My Certificates</Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleLogout} className="px-2 py-2 text-red-500 cursor-pointer">Logout</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -130,6 +133,9 @@ export default function ArtistNavbar({ mua, setMua }:  Readonly<ArtistNavbarProp
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href={`/manage-artist/${id}/public-portfolio`}>My Public Portfolio</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href={`/manage-artist/${id}/certificates`} className="w-full">My Certificates</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleLogout} className="px-2 py-2 text-red-500 cursor-pointer">Logout</DropdownMenuItem>
                 </DropdownMenuContent>
