@@ -32,8 +32,8 @@ import type { RefundSummaryDTO } from '@/types/admin.refund.dto';
 import type { WithdrawalSummaryDTO } from '@/types/admin.withdrawal.dto';
 
 interface DashboardData {
-  userStats: UserStatisticsDTO | null;
-  muaStats: MUAStatisticsDTO | null;
+  userStats: any | null;
+  muaStats: any | null;
   transactionStats: TransactionSummaryDTO | null;
   refundStats: RefundSummaryDTO | null;
   withdrawalStats: WithdrawalSummaryDTO | null;
@@ -112,7 +112,7 @@ const StatCard: React.FC<{
     isPositive: boolean;
   };
   subtitle?: string;
-  color?: 'blue' | 'green' | 'yellow' | 'red' | 'purple' | 'indigo';
+  color?: 'blue' | 'green' | 'yellow' | 'red' | 'purple' | 'indigo'|'orange';
 }> = ({ title, value, icon, trend, subtitle, color = 'blue' }) => {
   const colorClasses = {
     blue: 'bg-blue-50 text-blue-600 border-blue-200',
@@ -120,7 +120,8 @@ const StatCard: React.FC<{
     yellow: 'bg-yellow-50 text-yellow-600 border-yellow-200',
     red: 'bg-red-50 text-red-600 border-red-200',
     purple: 'bg-purple-50 text-purple-600 border-purple-200',
-    indigo: 'bg-indigo-50 text-indigo-600 border-indigo-200'
+    indigo: 'bg-indigo-50 text-indigo-600 border-indigo-200',
+    orange: 'bg-orange-50 text-orange-600 border-orange-200'
   };
 
   return (

@@ -11,11 +11,8 @@ import {
   Filter,
   Download,
   BarChart3,
-  Activity,
   TrendingUp,
   UserCheck,
-  Mail,
-  MapPin,
   Clock,
   ChevronLeft,
   ChevronRight,
@@ -69,7 +66,7 @@ const UserManagement: React.FC = () => {
     try {
       const response = await getUsers({
         page: currentPage,
-        limit: pageSize,
+        pageSize: pageSize,
         status: filter !== 'all' ? filter : undefined,
         role: roleFilter !== 'all' ? roleFilter as any : undefined,
         search: searchTerm || undefined
@@ -610,11 +607,14 @@ const UserManagement: React.FC = () => {
             
             <div className="flex items-center gap-1">
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                const pageNum = currentPage <= 3 
-                  ? i + 1 
-                  : currentPage >= totalPages - 2
-                    ? totalPages - 4 + i
-                    : currentPage - 2 + i;
+                let pageNum;
+                if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
                 
                 if (pageNum < 1 || pageNum > totalPages) return null;
                 

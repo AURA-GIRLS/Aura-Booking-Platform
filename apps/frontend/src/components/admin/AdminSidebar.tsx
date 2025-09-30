@@ -123,7 +123,7 @@ const AdminSidebar = () => {
           `}
           onClick={() => hasChildren ? toggleExpanded(item.name.toLowerCase().replace(' ', '')) : null}
         >
-          <Link href={item.href} className="flex items-center flex-1">
+          <Link href={item.href as any} className="flex items-center flex-1">
             <item.icon className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'} mr-3 flex-shrink-0`} />
             {!isCollapsed && (
               <>

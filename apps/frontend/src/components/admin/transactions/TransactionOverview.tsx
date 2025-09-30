@@ -467,6 +467,7 @@ const TransactionOverview: React.FC = () => {
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-gray-500" />
               <select 
+              title="Select status"
                 value={statusFilter} 
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="border border-rose-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-transparent"
@@ -572,6 +573,7 @@ const TransactionOverview: React.FC = () => {
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-gray-500" />
               <select 
+              title="Select status"
                 value={statusFilter} 
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="border border-rose-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-transparent"

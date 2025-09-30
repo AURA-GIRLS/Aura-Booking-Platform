@@ -13,7 +13,6 @@ import {
   User,
   Eye,
   Building,
-  DollarSign,
   TrendingUp,
   AlertTriangle
 } from 'lucide-react';
@@ -158,26 +157,7 @@ const WithdrawalManagementNew: React.FC = () => {
     }
   };
 
-  const handleRejectWithdrawal = async (withdrawalId: string) => {
-    const reason = prompt('Please enter rejection reason:');
-    if (!reason) return;
 
-    setIsProcessing(true);
-    try {
-      const response = await rejectWithdrawal(withdrawalId, reason);
-      if (response.success) {
-        await loadWithdrawals();
-        await loadSummary();
-      } else {
-        alert(`Failed to reject withdrawal: ${response.message}`);
-      }
-    } catch (error) {
-      console.error('Error rejecting withdrawal:', error);
-      alert('Failed to reject withdrawal');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
 
   const handleBulkApprove = async () => {
     if (selectedWithdrawals.length === 0) return;
@@ -312,6 +292,7 @@ const WithdrawalManagementNew: React.FC = () => {
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-gray-500" />
               <select 
+                title="Filter by status"
                 value={filter} 
                 onChange={(e) => setFilter(e.target.value as any)}
                 className="border border-blue-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -329,6 +310,8 @@ const WithdrawalManagementNew: React.FC = () => {
               <div className="flex gap-2">
                 <input
                   type="date"
+                  title="From date"
+                  placeholder="From date"
                   value={dateRange.from}
                   onChange={(e) => setDateRange(prev => ({ ...prev, from: e.target.value }))}
                   className="border border-blue-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -336,6 +319,8 @@ const WithdrawalManagementNew: React.FC = () => {
                 <span className="text-gray-500 self-center">to</span>
                 <input
                   type="date"
+                  title="To date"
+                  placeholder="To date"
                   value={dateRange.to}
                   onChange={(e) => setDateRange(prev => ({ ...prev, to: e.target.value }))}
                   className="border border-blue-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -385,6 +370,7 @@ const WithdrawalManagementNew: React.FC = () => {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   <input 
                     type="checkbox" 
+                    title="Select all"
                     className="rounded border-gray-300"
                     onChange={selectAll}
                     checked={selectedWithdrawals.length === withdrawals.filter(w => w.status === 'PENDING').length}
@@ -405,6 +391,7 @@ const WithdrawalManagementNew: React.FC = () => {
                   <td className="px-4 py-4 whitespace-nowrap">
                     <input 
                       type="checkbox" 
+                      title="Select withdrawal"
                       className="rounded border-gray-300"
                       checked={selectedWithdrawals.includes(withdrawal._id)}
                       onChange={() => toggleSelection(withdrawal._id)}
@@ -418,9 +405,6 @@ const WithdrawalManagementNew: React.FC = () => {
                       {withdrawal.reference && (
                         <div className="text-xs text-blue-600 mt-1">Ref: {withdrawal.reference.slice(0,10)}</div>
                       )}
-                      {/* {withdrawal.notes && (
-                        <div className="text-xs text-blue-600 mt-1">{withdrawal.notes}</div>
-                      )} */}
                     </div>
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
@@ -482,16 +466,14 @@ const WithdrawalManagementNew: React.FC = () => {
                         View
                       </button>
                       {withdrawal.status === 'PENDING' && (
-                        <>
-                          <button 
-                            onClick={() => handleApproveWithdrawal(withdrawal._id)}
-                            disabled={isProcessing}
-                            className="flex items-center gap-1 text-green-600 hover:text-green-900 transition-colors text-xs disabled:opacity-50"
-                          >
-                            <CheckCircle className="w-3 h-3" />
-                            Approve
-                          </button>
-                        </>
+                        <button 
+                          onClick={() => handleApproveWithdrawal(withdrawal._id)}
+                          disabled={isProcessing}
+                          className="flex items-center gap-1 text-green-600 hover:text-green-900 transition-colors text-xs disabled:opacity-50"
+                        >
+                          <CheckCircle className="w-3 h-3" />
+                          Approve
+                        </button>
                       )}
                     </div>
                   </td>

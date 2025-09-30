@@ -21,6 +21,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ user, onMenuToggle }) => {
         {/* Left Section */}
         <div className="flex items-center gap-4">
           <button
+          title="click to toggle menu"
             onClick={onMenuToggle}
             className="p-2 rounded-lg hover:bg-rose-50 transition-colors lg:hidden"
           >
@@ -41,7 +42,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ user, onMenuToggle }) => {
         <div className="flex items-center gap-4">
           {/* Notifications */}
           <div className="relative">
-            <button className="p-2 rounded-lg hover:bg-rose-50 transition-colors relative">
+            <button title='notif' className="p-2 rounded-lg hover:bg-rose-50 transition-colors relative">
               <Bell className="w-5 h-5 text-gray-600" />
               <span className="absolute -top-1 -right-1 w-3 h-3 bg-rose-500 rounded-full"></span>
             </button>

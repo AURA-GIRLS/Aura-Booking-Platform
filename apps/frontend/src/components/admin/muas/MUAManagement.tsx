@@ -474,6 +474,7 @@ const MUAManagement: React.FC = () => {
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-gray-500" />
               <select 
+              title="Filter by status"
                 value={filter} 
                 onChange={(e) => setFilter(e.target.value as any)}
                 className="border border-rose-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
@@ -538,6 +539,7 @@ const MUAManagement: React.FC = () => {
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   <input 
+                  placeholder="Select All"
                     type="checkbox" 
                     className="rounded border-gray-300"
                     onChange={selectAll}
@@ -557,6 +559,8 @@ const MUAManagement: React.FC = () => {
                 <tr key={mua._id} className="hover:bg-purple-50 transition-colors">
                   <td className="px-4 py-4 whitespace-nowrap">
                     <input 
+                    title="Select MUA"
+                    placeholder="Select MUA"
                       type="checkbox" 
                       className="rounded border-gray-300"
                       checked={selectedMUAs.includes(mua._id)}

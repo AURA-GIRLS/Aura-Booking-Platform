@@ -1,9 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import {
-  DollarSign,
   CreditCard,
   TrendingUp,
   Clock,
@@ -222,6 +220,7 @@ const BookingPayments: React.FC = () => {
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-gray-500" />
               <select 
+              title="Filter"
                 value={filter} 
                 onChange={(e) => setFilter(e.target.value as any)}
                 className="border border-rose-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-transparent"
@@ -238,6 +237,8 @@ const BookingPayments: React.FC = () => {
               <Calendar className="w-4 h-4 text-gray-500" />
               <div className="flex gap-2">
                 <input
+                title="Date"
+                placeholder="Date"
                   type="date"
                   value={dateRange.from}
                   onChange={(e) => setDateRange(prev => ({ ...prev, from: e.target.value }))}
@@ -245,6 +246,8 @@ const BookingPayments: React.FC = () => {
                 />
                 <span className="text-gray-500 self-center">to</span>
                 <input
+                title="Date"
+                placeholder="Date"
                   type="date"
                   value={dateRange.to}
                   onChange={(e) => setDateRange(prev => ({ ...prev, to: e.target.value }))}

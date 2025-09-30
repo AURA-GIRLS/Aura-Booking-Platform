@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import {
   RefreshCw,
   CheckCircle,
-  XCircle,
   Clock,
   Search,
   Filter,
@@ -12,8 +11,6 @@ import {
   Calendar,
   User,
   Eye,
-  AlertTriangle,
-  DollarSign,
   TrendingUp
 } from 'lucide-react';
 import {
@@ -27,7 +24,6 @@ import type {
   AdminRefundQueryDTO,
   RefundSummaryDTO
 } from '@/types/admin.refund.dto';
-import { PAYMENT_METHODS } from '@/constants/index';
 
 const RefundManagementNew: React.FC = () => {
   const [filter, setFilter] = useState<'all' | 'PENDING_REFUND' | 'REFUNDED'>('all');
@@ -286,6 +282,7 @@ const RefundManagementNew: React.FC = () => {
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-gray-500" />
               <select 
+              title="filter by status"
                 value={filter} 
                 onChange={(e) => setFilter(e.target.value as any)}
                 className="border border-orange-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
@@ -300,6 +297,7 @@ const RefundManagementNew: React.FC = () => {
               <Calendar className="w-4 h-4 text-gray-500" />
               <div className="flex gap-2">
                 <input
+                title="date"
                   type="date"
                   value={dateRange.from}
                   onChange={(e) => setDateRange(prev => ({ ...prev, from: e.target.value }))}
@@ -307,6 +305,7 @@ const RefundManagementNew: React.FC = () => {
                 />
                 <span className="text-gray-500 self-center">to</span>
                 <input
+                title="date"
                   type="date"
                   value={dateRange.to}
                   onChange={(e) => setDateRange(prev => ({ ...prev, to: e.target.value }))}
@@ -357,6 +356,7 @@ const RefundManagementNew: React.FC = () => {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   <input 
                     type="checkbox" 
+                    title="Select all refunds"
                     className="rounded border-gray-300"
                     onChange={selectAll}
                     checked={selectedRefunds.length === refunds.filter(r => r.status === 'PENDING_REFUND').length}
@@ -378,6 +378,7 @@ const RefundManagementNew: React.FC = () => {
                   <td className="px-4 py-4 whitespace-nowrap">
                     <input 
                       type="checkbox" 
+                      title={`Select refund ${refund._id.slice(-8)}`}
                       className="rounded border-gray-300"
                       checked={selectedRefunds.includes(refund._id)}
                       onChange={() => toggleSelection(refund._id)}
@@ -420,14 +421,6 @@ const RefundManagementNew: React.FC = () => {
                       <div className="text-xs text-gray-500">
                         Original: {formatCurrency(refund.originalAmount)}
                       </div>
-                      {/* {refund.processingFee > 0 && (
-                        <div className="text-xs text-red-500">
-                          Fee: -{formatCurrency(refund.processingFee)}
-                        </div>
-                      )}
-                      <div className="text-xs font-medium text-green-600">
-                        Net: {formatCurrency(refund.netRefundAmount)}
-                      </div> */}
                     </div>
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
