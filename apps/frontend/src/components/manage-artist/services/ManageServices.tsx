@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { PlusCircle } from 'lucide-react';
 import ServiceTable from './ServiceTable';
 import ServiceFormModal from './ServiceFormModal';
+import ServiceDeleteConfirmModal from './ServiceDeleteConfirmModal';
+import Notification from '../../generalUI/Notification';
 import type { MuaService } from '@/services/dashboard'; 
 import { api } from '@/config/api';
 
@@ -16,6 +18,35 @@ export default function ManageServices({ muaId }: Props) {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingService, setEditingService] = useState<MuaService | null>(null);
+  
+  // Delete confirmation modal state
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    serviceId: string | null;
+    serviceName: string;
+    isDeleting: boolean;
+  }>({
+    isOpen: false,
+    serviceId: null,
+    serviceName: '',
+    isDeleting: false,
+  });
+
+  // Notification state
+  const [notification, setNotification] = useState<{
+    type: "success" | "error";
+    message: string;
+    isVisible: boolean;
+  }>({
+    type: "success",
+    message: "",
+    isVisible: false,
+  });
+
+  // Show notification helper
+  const showNotification = (type: "success" | "error", message: string) => {
+    setNotification({ type, message, isVisible: true });
+  };
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -37,6 +68,7 @@ export default function ManageServices({ muaId }: Props) {
         setServices(mapped);
       } catch (err) {
         console.error('Failed to fetch services', err);
+        showNotification("error", "Failed to load services. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -95,6 +127,7 @@ export default function ManageServices({ muaId }: Props) {
             }
             : s
         ));
+        showNotification("success", "Service updated successfully!");
       } else {
         // Create new service
         const payload = toBackendPayload(serviceToSave);
@@ -111,23 +144,56 @@ export default function ManageServices({ muaId }: Props) {
           imageUrl: created?.imageUrl ?? serviceToSave.imageUrl,
         };
         setServices((prev) => [...prev, newService]);
+        showNotification("success", "Service created successfully!");
       }
     } catch (err) {
       console.error('Failed to save service', err);
-      alert('Failed to save service. Please try again.');
+      showNotification("error", editingService ? "Failed to update service. Please try again." : "Failed to create service. Please try again.");
     } finally {
       handleCloseModal();
     }
   };
 
-  const handleDeleteService = async (serviceId: string) => {
-    if (!window.confirm('Are you sure you want to delete this service?')) return;
+  // Open delete confirmation modal
+  const handleDeleteClick = (serviceId: string) => {
+    const service = services.find(s => s.id === serviceId);
+    if (service) {
+      setDeleteModal({
+        isOpen: true,
+        serviceId: serviceId,
+        serviceName: service.name,
+        isDeleting: false,
+      });
+    }
+  };
+
+  // Close delete modal
+  const handleCloseDeleteModal = () => {
+    if (!deleteModal.isDeleting) {
+      setDeleteModal({
+        isOpen: false,
+        serviceId: null,
+        serviceName: '',
+        isDeleting: false,
+      });
+    }
+  };
+
+  // Confirm delete
+  const handleConfirmDelete = async () => {
+    if (!deleteModal.serviceId) return;
+
+    setDeleteModal(prev => ({ ...prev, isDeleting: true }));
+
     try {
-      await api.delete(`/services/${serviceId}`);
-      setServices((prev) => prev.filter((s) => s.id !== serviceId));
+      await api.delete(`/services/${deleteModal.serviceId}`);
+      setServices((prev) => prev.filter((s) => s.id !== deleteModal.serviceId));
+      showNotification("success", "Service deleted successfully!");
+      handleCloseDeleteModal();
     } catch (err) {
       console.error('Failed to delete service', err);
-      alert('Failed to delete service. Please try again.');
+      showNotification("error", "Failed to delete service. Please try again.");
+      setDeleteModal(prev => ({ ...prev, isDeleting: false }));
     }
   };
 
@@ -137,9 +203,10 @@ export default function ManageServices({ muaId }: Props) {
       // Update only isAvailable via PUT
       await api.put(`/services/${serviceToToggle.id}`, { isAvailable: nextActive });
       setServices((prev) => prev.map((s) => (s.id === serviceToToggle.id ? { ...s, isActive: nextActive } : s)));
+      showNotification("success", `Service ${nextActive ? 'activated' : 'deactivated'} successfully!`);
     } catch (err) {
       console.error('Failed to toggle service status', err);
-      alert('Failed to update service status. Please try again.');
+      showNotification("error", "Failed to update service status. Please try again.");
     }
   };
 
@@ -149,6 +216,14 @@ export default function ManageServices({ muaId }: Props) {
 
   return (
     <div className="space-y-6">
+      {/* Notification */}
+      <Notification
+        type={notification.type}
+        message={notification.message}
+        isVisible={notification.isVisible}
+        onClose={() => setNotification({ ...notification, isVisible: false })}
+      />
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Manage Your Services</h1>
@@ -166,10 +241,11 @@ export default function ManageServices({ muaId }: Props) {
       <ServiceTable
         services={services}
         onEdit={handleOpenModal}
-        onDelete={handleDeleteService}
+        onDelete={handleDeleteClick}
         onToggleStatus={handleToggleStatus}
       />
 
+      {/* Service Form Modal */}
       {isModalOpen && (
         <ServiceFormModal
           service={editingService}
@@ -177,6 +253,15 @@ export default function ManageServices({ muaId }: Props) {
           onSave={handleSaveService}
         />
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ServiceDeleteConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleConfirmDelete}
+        serviceName={deleteModal.serviceName}
+        isDeleting={deleteModal.isDeleting}
+      />
     </div>
   );
 }

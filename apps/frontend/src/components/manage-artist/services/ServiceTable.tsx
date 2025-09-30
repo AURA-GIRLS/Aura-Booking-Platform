@@ -9,6 +9,7 @@ interface ServiceTableProps {
 }
 
 export default function ServiceTable({ services, onEdit, onDelete, onToggleStatus }: ServiceTableProps) {
+  console.log('ServiceTable - services:', services); 
   const formatPrice = (price: string | number) => {
     const numericPrice = typeof price === 'string' ? parseFloat(price.replace(/[^\d]/g, '')) : price;
     if (isNaN(numericPrice)) return price;
@@ -33,18 +34,25 @@ export default function ServiceTable({ services, onEdit, onDelete, onToggleStatu
           <tbody>
             {services.map((service) => (
               <tr key={service.id} className="bg-white border-b hover:bg-gray-50">
-                <td className="px-6 py-4">
-                  {service.imageUrl ? (
-                    <img
-                      src={service.imageUrl}
-                      alt={service.name}
-                      className="h-12 w-16 object-cover rounded-md border border-gray-200"
-                    />
-                  ) : (
-                    <div className="h-12 w-16 bg-gray-100 rounded-md border border-dashed border-gray-300 flex items-center justify-center text-xs text-gray-400">
-                      No image
-                    </div>
-                  )}
+                <td className="px-4 py-3 w-[120px]">
+                  <div className="w-20 h-20 flex items-center justify-center bg-gray-100 rounded-lg overflow-hidden">
+                    {service.imageUrl ? (
+                      <img
+                        src={service.imageUrl}
+                        alt={service.name}
+                        className="w-full h-full object-contain p-1"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                          (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                        }}
+                      />
+                    ) : null}
+                    {!service.imageUrl && (
+                      <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
+                        No image
+                      </div>
+                    )}
+                  </div>
                 </td>
                 <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis">
                   {service.name}

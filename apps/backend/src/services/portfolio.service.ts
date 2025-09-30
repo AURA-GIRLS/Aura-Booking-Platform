@@ -21,6 +21,7 @@ export class PortfolioService {
       muaId: new Types.ObjectId(muaId),
       title: data.title,
       description: data.description,
+      category: data.category,
       tags: data.tags || [],
       images: data.images,
       isPublished: data.isPublished !== undefined ? data.isPublished : true
@@ -252,6 +253,7 @@ export class PortfolioService {
       muaId: portfolio.muaId.toString(),
       title: portfolio.title,
       description: portfolio.description,
+      category: portfolio.category, 
       tags: portfolio.tags || [],
       images: portfolio.images || [],
       createdAt: portfolio.createdAt.toISOString(),

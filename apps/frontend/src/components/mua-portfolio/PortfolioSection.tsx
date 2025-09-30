@@ -116,12 +116,12 @@ export default function PortfolioSection() {
 
                 return (
                   <Card key={item._id} className="overflow-hidden border-rose-200 hover:shadow-lg transition-shadow">
-                    <div className="h-64 bg-rose-100 flex items-center justify-center border-b border-rose-200 relative overflow-hidden">
+                    <div className="h-64 bg-rose-50 flex items-center justify-center border-b border-rose-200 relative overflow-hidden">
                       {item.images?.[0]?.url ? (
                         <img
                           src={item.images[0].url}
                           alt={item.title}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-contain"
                         />
                       ) : (
                         <Camera className="w-16 h-16 text-rose-300" />

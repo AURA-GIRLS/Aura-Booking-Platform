@@ -82,7 +82,7 @@ export default function PortfolioCard({
             src={coverImage}
             alt={portfolio.title}
             fill
-            className="object-cover"
+            className="object-contain"
           />
           
           {/* Category Badge */}
