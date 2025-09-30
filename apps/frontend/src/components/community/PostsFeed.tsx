@@ -7,10 +7,12 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import EditPostModal from './modals/EditPostModal';
 import ImageLightbox from './modals/ImageLightbox';
 import { socket } from '@/config/socket';
+import AttachedServicesDisplay from './AttachedServicesDisplay';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../lib/ui/tooltip';
 import { Badge } from '@/components/lib/ui/badge';
 import DetailModal from './modals/DetailModal';
 import { Separator } from '../lib/ui/separator';
+import DeleteConfirmDialog from '../generalUI/DeleteConfirmDialog';
 
 
 export default function PostsFeed({ posts, setPosts, currentUser: _currentUser, fetchMinimalUser, onOpenUserWall }: Readonly<{ posts: PostResponseDTO[]; setPosts: React.Dispatch<React.SetStateAction<PostResponseDTO[]>>; currentUser: UserWallResponseDTO; fetchMinimalUser: () => Promise<void>; onOpenUserWall?: (userId: string, userName?: string) => void }>) {
@@ -27,6 +29,8 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser, 
   const [activePost, setActivePost] = useState<PostResponseDTO | null>(null);
   const [following, setFollowing] = useState<Record<string, boolean>>({});
   const [followLoading, setFollowLoading] = useState<Record<string, boolean>>({});
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [postToDelete, setPostToDelete] = useState<PostResponseDTO | null>(null);
 
   const formatTimeAgo = (date: string | Date) => {
     const d = new Date(date);
@@ -273,23 +277,21 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser, 
     setEditingPost(null);
   };
 
-  // Save handled inside EditPostModal now
-  const handleLikeComment = async (_postId: string, commentId: string) => {
-    // Only call API; socket events will update UI
-    const list = commentsByPost[_postId] || [];
-    const idx = list.findIndex(c => c._id === commentId);
-    if (idx === -1) return;
-    const isLiked = !!list[idx].isLiked;
+  const handleDeleteConfirm = async () => {
+    if (!postToDelete) return;
+    
     try {
-      if (isLiked) {
-        await CommunityService.unlike({ targetType: TARGET_TYPES.COMMENT, commentId });
-      } else {
-        await CommunityService.like({ targetType: TARGET_TYPES.COMMENT, commentId });
-      }
-    } catch {
-      // optionally toast error
+      await CommunityService.deletePost(postToDelete._id);
+      // The list will be updated by realtime 'postDeleted' event
+    } catch (e) {
+      console.error('Failed to delete post', e);
+    } finally {
+      setPostToDelete(null);
     }
   };
+
+  // Save handled inside EditPostModal now
+  
 
   // Render images with specific layout rules
   const openLightbox = useCallback((images: string[], index: number) => {
@@ -541,13 +543,9 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser, 
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="text-rose-600 cursor-pointer focus:bg-rose-100 focus:text-rose-700 data-[highlighted]:bg-rose-100"
-                            onClick={async () => {
-                              try {
-                                await CommunityService.deletePost(post._id);
-                                // The list will be updated by realtime 'postDeleted' event
-                              } catch (e) {
-                                console.error('Failed to delete post', e);
-                              }
+                            onClick={() => {
+                              setPostToDelete(post);
+                              setDeleteConfirmOpen(true);
                             }}
                           >
                             Delete post
@@ -583,6 +581,12 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser, 
                     ))}
                   </div>
                 )}
+                
+                {/* Attached Services */}
+                {post.attachedServices && post.attachedServices.length > 0 && (
+                  <AttachedServicesDisplay services={post.attachedServices} className="mb-3" />
+                )}
+                
                 {imageUrls.length ? renderImages(imageUrls, post._id) : null}
 
                 <div className="flex items-center space-x-6 text-gray-500">
@@ -635,6 +639,15 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser, 
         formatTimeAgo={formatTimeAgo}
         isSelfUser={isSelfUser}
         _currentUser={_currentUser}
+      />
+      <DeleteConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Post"
+        description="Are you sure you want to delete this post? This action cannot be undone and will remove all comments and likes."
+        confirmText="Delete"
+        cancelText="Cancel"
       />
 
     </>

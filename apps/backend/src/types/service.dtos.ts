@@ -20,6 +20,8 @@ export interface ServiceResponseDTO {
   _id: string;
   muaId: string;
   name: string;
+  muaName?:string;
+  muaAvatarUrl?:string;
   description: string;
   imageUrl?: string;
   duration: number;

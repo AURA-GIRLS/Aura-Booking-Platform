@@ -19,9 +19,13 @@ export interface UpdateServiceDTO {
 export interface ServiceResponseDTO {
   _id: string;
   muaId: string;
+  muaName: string;
+  muaAvatarUrl?: string;
   name: string;
   description: string;
+  category?: string;
   imageUrl?: string;
+  images?: string[];
   duration: number;
   price: number;
   isActive: boolean;

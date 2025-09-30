@@ -7,6 +7,8 @@ import type { CreatePostDTO, PostResponseDTO, TagResponseDTO, UserWallResponseDT
 import { POST_STATUS } from '../../constants';
 import { socket } from '@/config/socket';
 import { UploadService, type ResourceType } from '@/services/upload';
+import ServiceSearchDialog from './ServiceSearchDialog';
+import { ServiceResponseDTO } from '@/types/service.dtos';
 import {
   Select,
   SelectContent,
@@ -57,6 +59,10 @@ export default function PostCreator({
   const [tagsLoading, setTagsLoading] = useState(false);
   const [tagQuery, setTagQuery] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
+  // Services state
+  const [serviceDialogOpen, setServiceDialogOpen] = useState(false);
+  const [selectedServices, setSelectedServices] = useState<ServiceResponseDTO[]>([]);
 
   const prependIfMissing = useCallback((list: PostResponseDTO[], item: PostResponseDTO) => (
     list.some(p => p._id === item._id) ? list : [item, ...list]
@@ -152,6 +158,7 @@ export default function PostCreator({
         media,
         tags: selectedTags,
         status: mapPrivacyToStatus(privacy),
+        attachedServices: selectedServices.map(s => s._id),
       };
 
       await CommunityService.createPost(payload);
@@ -160,6 +167,7 @@ export default function PostCreator({
       setPostText('');
       setFiles([]);
       setSelectedTags([]);
+      setSelectedServices([]);
     } catch (e) {
       console.error('Create post failed', e);
     } finally {
@@ -171,6 +179,7 @@ export default function PostCreator({
     name.split(' ').map(n => n[0]).join('').toUpperCase();
 
   return (
+    <>
     <div className="bg-white rounded-xl p-4 mb-6 shadow-sm">
       <div className="flex items-start space-x-3">
         {currentUser.avatarUrl ? (
@@ -212,6 +221,46 @@ export default function PostCreator({
               ))}
             </div>
           )}
+          
+          {/* Selected services */}
+          {selectedServices.length > 0 && (
+            <div className="mt-2 space-y-2">
+              <div className="text-sm text-gray-600 font-medium">
+                Selected services ({selectedServices.length}):
+              </div>
+              <div className="space-y-2">
+                {selectedServices.map((service) => (
+                  <div key={service._id} className="flex items-center space-x-3 p-2 bg-rose-50 rounded-lg border border-rose-200">
+                    {service.images && service.images.length > 0 ? (
+                      <img
+                        src={service.images[0]}
+                        alt={service.name}
+                        className="w-10 h-10 object-cover rounded-lg"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 bg-gradient-to-br from-rose-500 to-pink-600 rounded-lg flex items-center justify-center">
+                        <span className="text-white text-xs font-semibold">
+                          {service.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{service.name}</p>
+                      <p className="text-xs text-gray-600">by {service.muaName}</p>
+                    </div>
+                    <button
+                      type="button"
+                      title={`Remove ${service.name}`}
+                      onClick={() => setSelectedServices(prev => prev.filter(s => s._id !== service._id))}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           {/* Previews */}
           {previews.length > 0 && (
             <div className="mt-3 grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -232,8 +281,8 @@ export default function PostCreator({
             </div>
           )}
           <div className="flex items-center justify-between mt-4">
-            <div className="flex space-x-4">
-              <label className="flex items-center text-gray-500 hover:text-rose-600 cursor-pointer">
+            <div className="flex space-x-4 ">
+              <label className="flex items-center text-sm text-gray-500 hover:text-rose-600 cursor-pointer">
                 <Image className="w-5 h-5 mr-1" />
                 <span>Image/Video</span>
                 <input
@@ -250,14 +299,22 @@ export default function PostCreator({
               <button
                 type="button"
                 onClick={() => setTagDialogOpen(true)}
-                className="flex items-center text-gray-500 hover:text-rose-600"
+                className="flex items-center text-sm text-gray-500 hover:text-rose-600"
               >
                 <Hash className="w-5 h-5 mr-1" /> Hashtag
               </button>
-            </div>
-            <div className="flex items-center space-x-3">
+              <button
+                type="button"
+                onClick={() => setServiceDialogOpen(true)}
+                className="flex items-center text-sm text-gray-500 hover:text-rose-600"
+              >
+                <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 012 2v6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M8 6a2 2 0 00-2 2v6.002" />
+                </svg>
+                Services
+              </button>
               <Select value={privacy} onValueChange={(v) => setPrivacy(v as Privacy)}>
-                <SelectTrigger className="w-[180px] text-sm text-gray-500 border-none focus:outline-none">
+                <SelectTrigger className="w-[8rem] text-sm text-gray-500 border-none focus:outline-none">
                   <SelectValue placeholder="Select privacy" />
                 </SelectTrigger>
                 <SelectContent>
@@ -265,6 +322,8 @@ export default function PostCreator({
                   <SelectItem value="private">Only Me</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="flex items-center space-x-3">
               <button
                 onClick={handleCreatePost}
                 disabled={isSubmitting || !postText.trim()}
@@ -285,9 +344,11 @@ export default function PostCreator({
         </div>
       </div>
 
-      {/* Tag Command Dialog */}
+     
+    </div>
+     {/* Tag Command Dialog */}
       <CommandDialog
-        className="bg-white text-foreground"
+        className="bg-white text-foreground max-w-2xl w-[40vw]"
         open={tagDialogOpen}
         onOpenChange={(o) => {
           setTagDialogOpen(o);
@@ -351,6 +412,14 @@ export default function PostCreator({
             )}
         </CommandList>
       </CommandDialog>
-    </div>
+
+      {/* Service Search Dialog */}
+      <ServiceSearchDialog
+        open={serviceDialogOpen}
+        onOpenChange={setServiceDialogOpen}
+        selectedServices={selectedServices}
+        onServicesChange={setSelectedServices}
+      />
+    </>
   );
 }

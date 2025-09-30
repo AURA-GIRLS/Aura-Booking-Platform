@@ -12,6 +12,7 @@ import type {
     TagResponseDTO,
     UserWallResponseDTO,
 } from '../types/community.dtos';
+import type { ServiceResponseDTO } from '../types/service.dtos';
 
 export const CommunityService = {
     async createPost(data: CreatePostDTO): Promise<ApiResponseDTO<PostResponseDTO>> {
@@ -282,6 +283,29 @@ export const CommunityService = {
         try {
             const res = await api.get<ApiResponseDTO<{ items: PostResponseDTO[]; total: number; page: number; pages: number }>
             >('/community/feed/following-users', { params });
+            return res.data;
+        } catch (error: any) {
+            throw error?.response?.data || error;
+        }
+    },
+
+    // Search services
+    async searchServices(params?: {
+        q?: string;
+        page?: number;
+        limit?: number;
+    }): Promise<
+        ApiResponseDTO<{
+            items: ServiceResponseDTO[];
+            total: number;
+            page: number;
+            pages: number;
+        }>
+    > {
+        try {
+            const res = await api.get<
+                ApiResponseDTO<{ items: ServiceResponseDTO[]; total: number; page: number; pages: number }>
+            >('/community/services/search', { params });
             return res.data;
         } catch (error: any) {
             throw error?.response?.data || error;

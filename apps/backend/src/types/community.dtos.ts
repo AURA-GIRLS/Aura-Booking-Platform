@@ -1,4 +1,5 @@
 import type { ResourceType, PostStatus, TargetType } from "constants/index"
+import type { ServiceResponseDTO } from "./service.dtos";
 
 
 export interface CreatePostDTO {
@@ -6,6 +7,7 @@ export interface CreatePostDTO {
   media?: { type: ResourceType; url: string }[];
   tags?: string[];
   status?: PostStatus;
+  attachedServices?: string[];
 }
 
 export interface UpdatePostDTO {
@@ -13,17 +15,19 @@ export interface UpdatePostDTO {
   media?: { type: ResourceType; url: string }[];
   tags?: string[];
   status?: PostStatus;
+  attachedServices?: string[];
 }
 
 
 export interface PostResponseDTO {
     _id: string;
     authorId: string;
-    authorName:string;
-    authorRole:string;
-    authorAvatarUrl?:string;
+    authorName: string;
+    authorRole: string;
+    authorAvatarUrl?: string;
     content?: string;
     media: {type: ResourceType; url: string}[];
+    attachedServices?: ServiceResponseDTO[];
     likesCount: number;
     commentsCount: number;
     tags?: string[];

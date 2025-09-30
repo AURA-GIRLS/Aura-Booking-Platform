@@ -1,4 +1,5 @@
 import { PostStatus, ResourceType, TargetType } from "../constants";
+import { ServiceResponseDTO } from "./service.dtos";
 
 
 export interface CreatePostDTO {
@@ -6,6 +7,7 @@ export interface CreatePostDTO {
   media?: { type: ResourceType; url: string }[];
   tags?: string[];
   status?: PostStatus;
+  attachedServices?:string[];
 }
 
 export interface UpdatePostDTO {
@@ -13,6 +15,25 @@ export interface UpdatePostDTO {
   media?: { type: ResourceType; url: string }[];
   tags?: string[];
   status?: PostStatus;
+  attachedServices?:string[];
+}
+
+
+export interface PostResponseDTO {
+    _id: string;
+    authorId: string;
+    authorName:string;
+    authorRole:string;
+    authorAvatarUrl?:string;
+    content?: string;
+    media: {type: ResourceType; url: string}[];
+    attachedServices?:ServiceResponseDTO[];
+    likesCount: number;
+    commentsCount: number;
+    tags?: string[];
+    status?: PostStatus; // default PUBLISHED
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 export interface CreateCommentDTO {
@@ -26,21 +47,7 @@ export interface UpdateCommentDTO {
 }
 
 
-export interface PostResponseDTO {
-    _id: string;
-    authorId: string;
-    authorName:string;
-    authorRole:string;
-    authorAvatarUrl?:string;
-    content?: string;
-    media: {type: ResourceType; url: string}[];
-    likesCount: number;
-    commentsCount: number;
-    tags?: string[];
-    status?: PostStatus; // default PUBLISHED
-    createdAt: Date;
-    updatedAt: Date;
-}
+
 export interface CommentResponseDTO {
     _id: string;
     postId: string;
