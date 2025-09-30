@@ -28,9 +28,22 @@ export const BOOKING_TYPES = {
 export const PORTFOLIO_CATEGORIES = {
   BRIDAL: 'BRIDAL',
   PARTY: 'PARTY',
-  PHOTOSHOOT: 'PHOTOSHOOT',
-  CASUAL: 'CASUAL'
+  WEDDING_GUEST: 'WEDDING_GUEST',
+  GRADUATION: 'GRADUATION',
+  DAILY: 'DAILY',
+  PROM: 'PROM'
 } as const;
+
+// Portfolio Category Labels
+export const PORTFOLIO_CATEGORY_LABELS = {
+  BRIDAL: 'Bridal',
+  PARTY: 'Party',
+  WEDDING_GUEST: 'Wedding Guest',
+  GRADUATION: 'Graduation',
+  DAILY: 'Daily',
+  PROM: 'Prom',
+} as const;
+
 
 // Service Categories for makeup occasions
 export const SERVICE_CATEGORIES = {

@@ -29,11 +29,10 @@ export default function ManageServices({ muaId }: Props) {
           id: s._id,
           name: s.name,
           category: s.category,
-          // duration is number (minutes) in DB; keep UI as "90 minutes"
           duration: typeof s.duration === 'number' ? `${s.duration} minutes` : String(s.duration || ''),
           price: String(s.price ?? ''),
-          // isAvailable in DB -> isActive in UI
           isActive: Boolean(s.isAvailable ?? true),
+          imageUrl: s.imageUrl || '',
         }));
         setServices(mapped);
       } catch (err) {
@@ -71,6 +70,7 @@ export default function ManageServices({ muaId }: Props) {
       duration: durationNumber,
       price: priceNumber,
       isAvailable: Boolean(svc.isActive),
+      imageUrl: svc.imageUrl || undefined,
     };
   };
 
@@ -85,13 +85,14 @@ export default function ManageServices({ muaId }: Props) {
         setServices((prev) => prev.map((s) =>
           s.id === editingService.id
             ? {
-                id: updated?._id || editingService.id,
-                name: updated?.name ?? serviceToSave.name,
-                category: updated?.category ?? serviceToSave.category,
-                duration: typeof updated?.duration === 'number' ? `${updated.duration} minutes` : serviceToSave.duration,
-                price: String(updated?.price ?? serviceToSave.price),
-                isActive: Boolean(updated?.isAvailable ?? serviceToSave.isActive),
-              }
+              id: updated?._id || editingService.id,
+              name: updated?.name ?? serviceToSave.name,
+              category: updated?.category ?? serviceToSave.category,
+              duration: typeof updated?.duration === 'number' ? `${updated.duration} minutes` : serviceToSave.duration,
+              price: String(updated?.price ?? serviceToSave.price),
+              isActive: Boolean(updated?.isAvailable ?? serviceToSave.isActive),
+              imageUrl: updated?.imageUrl ?? serviceToSave.imageUrl,
+            }
             : s
         ));
       } else {
@@ -107,6 +108,7 @@ export default function ManageServices({ muaId }: Props) {
           duration: typeof created?.duration === 'number' ? `${created.duration} minutes` : serviceToSave.duration,
           price: String(created?.price ?? serviceToSave.price),
           isActive: Boolean(created?.isAvailable ?? serviceToSave.isActive),
+          imageUrl: created?.imageUrl ?? serviceToSave.imageUrl,
         };
         setServices((prev) => [...prev, newService]);
       }

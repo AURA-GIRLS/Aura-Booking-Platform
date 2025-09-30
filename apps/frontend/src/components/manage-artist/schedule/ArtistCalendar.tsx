@@ -52,10 +52,7 @@ export function ArtistCalendar({
   const [scheduleLoading, setScheduleLoading] = useState(false);
   const [pendingBookingsLoading, setPendingBookingsLoading] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
-<<<<<<< HEAD
   const [isCompleting, setIsCompleting] = useState(false);
-=======
->>>>>>> origin/main
   const [popupPosition, setPopupPosition] = useState<{ x: number; y: number } | null>(null);
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [modalSlotInfo, setModalSlotInfo] = useState<any>(null);
@@ -927,29 +924,7 @@ if(loading && scheduleLoading && pendingBookingsLoading){
         </div>
        
       </div>
-      
-<<<<<<< HEAD
-        {/* Event Details Popup */}
-    {selectedEvent && popupPosition && (
-      <EventDetailsPopup
-        selectedEvent={selectedEvent}
-        loading={loading}
-        isCompleting={isCompleting}
-        handleMarkCompleted={handleMarkCompleted}
-        onEditEvent={(event) => {
-          console.log("Editing event:", event);
-          const eventToEdit = { ...event };
-          handleOpenEditEvent(eventToEdit, setNewEventForm, setModalSlotInfo, setShowAddEventModal);
-        }}
-        onDeleteEvent={handleDeleteEvent}
-        onClose={() => {
-          setSelectedEvent(null);
-          setPopupPosition(null);
-        }}
-        position={popupPosition}
-      />
-    )}
-=======
+    
       {/* Event Details Popup */}
       {selectedEvent && popupPosition && (
         <EventDetailsPopup
@@ -969,7 +944,6 @@ if(loading && scheduleLoading && pendingBookingsLoading){
           position={popupPosition}
         />
       )}
->>>>>>> origin/main
       
       {/* Event Modal */}
       <EventModal

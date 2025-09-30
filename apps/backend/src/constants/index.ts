@@ -29,8 +29,10 @@ export const BOOKING_TYPES = {
 export const PORTFOLIO_CATEGORIES = {
   BRIDAL: 'BRIDAL',
   PARTY: 'PARTY',
-  PHOTOSHOOT: 'PHOTOSHOOT',
-  CASUAL: 'CASUAL'
+  GRADUATION: 'GRADUATION',    
+  DAILY: 'DAILY',           
+  PROM: 'PROM',             
+  WEDDING_GUEST: 'WEDDING_GUEST',    
 } as const;
 
 // Service Categories for makeup occasions

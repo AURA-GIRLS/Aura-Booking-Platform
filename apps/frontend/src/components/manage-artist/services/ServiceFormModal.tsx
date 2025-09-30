@@ -18,6 +18,7 @@ export default function ServiceFormModal({ service, onClose, onSave }: ServiceFo
     duration: '',
     price: '',
     isActive: true,
+    imageUrl: '',
   });
 
   useEffect(() => {
@@ -32,6 +33,7 @@ export default function ServiceFormModal({ service, onClose, onSave }: ServiceFo
         duration: '',
         price: '',
         isActive: true,
+        imageUrl: '',
       });
     }
   }, [service]);
@@ -94,6 +96,29 @@ export default function ServiceFormModal({ service, onClose, onSave }: ServiceFo
                 <label htmlFor="duration" className="block text-sm font-medium text-gray-700 mb-1">Duration (e.g., 90 minutes)</label>
                 <input type="text" name="duration" id="duration" value={formData.duration} onChange={handleChange} className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-pink-500 focus:border-pink-500 sm:text-sm" required />
               </div>
+            </div>
+
+            <div>
+              <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 mb-1">Image URL (optional)</label>
+              <input
+                type="url"
+                name="imageUrl"
+                id="imageUrl"
+                placeholder="https://..."
+                value={formData.imageUrl || ''}
+                onChange={handleChange}
+                className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-pink-500 focus:border-pink-500 sm:text-sm"
+              />
+              {formData.imageUrl ? (
+                <div className="mt-2">
+                  <img
+                    src={formData.imageUrl}
+                    alt="Preview"
+                    className="h-24 w-24 object-cover rounded-lg border border-gray-200"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                </div>
+              ) : null}
             </div>
 
             <div>

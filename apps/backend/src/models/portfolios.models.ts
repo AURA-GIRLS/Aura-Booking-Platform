@@ -22,6 +22,13 @@ const PortfolioMediaSchema = new Schema({
   }
 });
 
+const PortfolioImageSchema = new Schema({
+  url: { type: String, required: true },
+  publicId: { type: String, required: true },
+  width: { type: Number },
+  height: { type: Number }
+}, { _id: false });
+
 const PortfolioSchema = new Schema({
   muaId: { 
     type: Schema.Types.ObjectId, 
@@ -45,7 +52,8 @@ const PortfolioSchema = new Schema({
   },
   tags: [{
     type: String,
-    trim: true
+    trim: true,
+    maxlength: [20, 'Tag cannot exceed 20 characters']
   }],
   createdAt: { 
     type: Date, 
@@ -55,13 +63,22 @@ const PortfolioSchema = new Schema({
     type: Date,
     default: Date.now
   },
-  media: [PortfolioMediaSchema]
+  media: [PortfolioMediaSchema],
+  images: [PortfolioImageSchema],
+  isPublished: { type: Boolean, default: true }
 });
 
 // Add indexes
 PortfolioSchema.index({ muaId: 1 });
 PortfolioSchema.index({ category: 1 });
 PortfolioSchema.index({ createdAt: -1 });
+PortfolioSchema.index({ muaId: 1, createdAt: -1 });
+
+// Array length validation for tags
+PortfolioSchema.path('tags').validate(function (value: string[]) {
+  if (!Array.isArray(value)) return true;
+  return value.length <= 10;
+}, 'Tags cannot exceed 10 items');
 
 const CertificateSchema = new Schema({
   muaId: { type: Schema.Types.ObjectId, ref: "MUA" },

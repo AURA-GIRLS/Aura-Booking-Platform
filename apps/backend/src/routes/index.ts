@@ -10,6 +10,7 @@ import dashboardRoutes from "./dashboard";
 import profileRoutes from "./profile";
 import feedbackRoutes from "./feedback"; 
 import serviceRoutes from "./services";
+import portfolioRoutes from "./portfolio.routes";
 
 const router = Router();
 
@@ -37,5 +38,6 @@ router.use('/dashboard', dashboardRoutes);
 router.use('/profile', profileRoutes);
 router.use('/feedback', feedbackRoutes); 
 router.use("/services", serviceRoutes);
+router.use("/portfolios", portfolioRoutes);
 
 export default router;
