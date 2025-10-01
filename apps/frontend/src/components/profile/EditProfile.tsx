@@ -265,6 +265,8 @@ const EditProfile: React.FC = () => {
                   {isEditing && (
                     <>
                       <input
+                       title="file"
+                       placeholder="Upload Avatar"
                         type="file"
                         accept="image/*"
                         onChange={handleAvatarUpload}

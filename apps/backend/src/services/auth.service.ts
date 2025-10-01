@@ -16,7 +16,7 @@ import type {
   MuaResponseDTO
 } from '../types/user.dtos';
 import { MUA } from '../models/muas.models';
-import { USER_ROLES } from '../constants';
+import { MUA_STATUS, USER_ROLES } from '../constants';
 import { OAuth2Client } from 'google-auth-library';
 import { Wallet } from '@models/transactions.model';
 
@@ -83,7 +83,7 @@ export class AuthService {
         ratingAverage: 0,
         feedbackCount: 0,
         bookingCount: 0,
-        isVerified: false
+        status: MUA_STATUS.PENDING,
       });
       await mua.save();
 
@@ -114,7 +114,7 @@ export class AuthService {
           ratingAverage: mua.ratingAverage ?? undefined,
           feedbackCount: mua.feedbackCount ?? undefined,
           bookingCount: mua.bookingCount ?? undefined,
-          isVerified: mua.isVerified ?? undefined
+          status: mua.status as any,
         }
       };
     } catch (error) {
@@ -218,7 +218,7 @@ export class AuthService {
         ratingAverage: muaDoc.ratingAverage ?? undefined,
         feedbackCount: muaDoc.feedbackCount ?? undefined,
         bookingCount: muaDoc.bookingCount ?? undefined,
-        isVerified: muaDoc.isVerified ?? undefined
+        status: muaDoc.status as any // Ensure status is MUAStatus type
       } : undefined;
       
       // Return user data without password
@@ -537,6 +537,14 @@ export class AuthService {
           }
         },
         {
+          $lookup: {
+            from: 'transactions',
+            localField: '_id',
+            foreignField: 'bookingId',
+            as: 'transaction'
+          }
+        },
+        {
           $unwind: { path: '$servicePackage', preserveNullAndEmptyArrays: true }
         },
         {
@@ -544,6 +552,9 @@ export class AuthService {
         },
         {
           $unwind: { path: '$muaUser', preserveNullAndEmptyArrays: true }
+        },
+        {
+          $unwind: { path: '$transaction', preserveNullAndEmptyArrays: true }
         },
         {
           $project: {
@@ -568,6 +579,11 @@ export class AuthService {
               fullName: '$muaUser.fullName',
               avatarUrl: '$muaUser.avatarUrl',
               location: '$muaProfile.location'
+            },
+            transaction: {
+              _id: '$transaction._id',
+              status: '$transaction.status',
+              amount: '$transaction.amount'
             }
           }
         },

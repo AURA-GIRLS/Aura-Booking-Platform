@@ -13,6 +13,7 @@ import type {
 } from "../types/artists.dtos";
 
 import type { ServiceResponseDTO } from "../types/service.dtos";
+import { MUA_STATUS } from "../constants/index";
 import { 
   buildArtistMatchQuery,
   buildServiceMatchQuery,
@@ -31,6 +32,11 @@ export class ArtistsService {
   async getArtistServicesPackage(muaId: string): Promise<ServiceResponseDTO[]> {
     if (!mongoose.isValidObjectId(muaId)) return [];
     const _id = new mongoose.Types.ObjectId(muaId);
+    
+    // Check if MUA is approved first
+    const mua = await MUA.findOne({ _id, status: MUA_STATUS.APPROVED });
+    if (!mua) return [];
+    
     const docs = await ServicePackage.find({ muaId: _id, isAvailable: { $ne: false } })
       .select("_id muaId name description price duration imageUrl isAvailable createdAt updatedAt")
       .sort({ price: 1 })
@@ -76,8 +82,8 @@ export class ArtistsService {
         },
         { $unwind: '$user' },
         
-        // Apply artist-level filters
-        { $match: { ...artistMatch, 'user.status': 'ACTIVE' } },
+        // Apply artist-level filters - only approved MUAs
+        { $match: { ...artistMatch, status: MUA_STATUS.APPROVED, 'user.status': 'ACTIVE' } },
         
         // Join with ServicePackage collection
         {
@@ -209,10 +215,13 @@ export class ArtistsService {
     query: GetArtistServicesQueryDTO
   ): Promise<ServicesListResponseDTO> {
     try {
-      // Verify artist exists
-      const artist = await MUA.findById(artistId);
+      // Verify artist exists and is approved
+      const artist = await MUA.findOne({ 
+        _id: artistId, 
+        status: MUA_STATUS.APPROVED 
+      });
       if (!artist) {
-        throw new Error('Artist not found');
+        throw new Error('Artist not found or not approved');
       }
 
       // Normalize pagination
@@ -282,7 +291,7 @@ export class ArtistsService {
   async getArtistById(artistId: string): Promise<ArtistResponseDTO> {
     try {
       const pipeline = [
-        { $match: { _id: artistId } },
+        { $match: { _id: artistId, status: MUA_STATUS.APPROVED } },
         {
           $lookup: {
             from: 'users',
@@ -356,11 +365,14 @@ export class ArtistsService {
     query: { category?: string; page?: number; limit?: number }
   ): Promise<any> {
     try {
-      // Convert string to ObjectId and verify artist exists
+      // Convert string to ObjectId and verify artist exists and is approved
       const objectId = new mongoose.Types.ObjectId(artistId);
-      const artist = await MUA.findById(objectId);
+      const artist = await MUA.findOne({ 
+        _id: objectId, 
+        status: MUA_STATUS.APPROVED 
+      });
       if (!artist) {
-        throw new Error('Artist not found');
+        throw new Error('Artist not found or not approved');
       }
 
       // Normalize pagination
@@ -413,7 +425,7 @@ export class ArtistsService {
       
       // Get artist with user data
       const artistPipeline = [
-        { $match: { _id: objectId } },
+        { $match: { _id: objectId, status: MUA_STATUS.APPROVED } },
         {
           $lookup: {
             from: 'users',

@@ -204,7 +204,7 @@ export default function MyProfilePage() {
                       )}
                     </div>
                     {isEditing && (
-                      <button className="absolute bottom-0 right-0 w-8 h-8 bg-pink-600 rounded-full flex items-center justify-center text-white hover:bg-pink-700 transition">
+                      <button title="Change avatar" className="absolute bottom-0 right-0 w-8 h-8 bg-pink-600 rounded-full flex items-center justify-center text-white hover:bg-pink-700 transition">
                         <Camera size={16} />
                       </button>
                     )}

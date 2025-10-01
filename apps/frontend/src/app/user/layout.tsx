@@ -1,16 +1,17 @@
 'use client';
 
+import AuthGuard from "@/components/auth/AuthGuard";
 import Footer from "@/components/generalUI/Footer";
 import Navbar from "@/components/generalUI/Navbar";
 import ArtistNavbar from "@/components/manage-artist/general-components/ArtistNavbar";
 import { UserResponseDTO } from "@/types/user.dtos";
 import { Poppins } from "next/font/google";
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 
 
 export default function UserLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserResponseDTO | null>(null);
-  
+
   useEffect(() => {
     // Load user from localStorage on mount
     const storedUser = localStorage.getItem('currentUser');
@@ -62,14 +63,14 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
       window.removeEventListener('userUpdated', handleUserUpdated);
     };
   }, []);
-  
+
   return (
-    <main
-      className="flex flex-col min-h-screen bg-white "
-    >
-      <Navbar user={user} setUser={setUser} />
-      <div className="flex-1 ">{children}</div>
-      <Footer />
-    </main>
+    <AuthGuard requiredRole="USER">
+      <main className="flex flex-col min-h-screen bg-white">
+        <Navbar user={user} setUser={setUser} />
+        <div className="flex-1">{children}</div>
+        <Footer />
+      </main>
+    </AuthGuard>
   );
 }

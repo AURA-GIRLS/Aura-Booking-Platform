@@ -42,4 +42,8 @@ router.get("/users/:id/is-following", authenticateToken, (req, res) => controlle
 router.get("/muas/top-active", (req, res) => controller.getTopActiveMuas(req, res));
 router.get("/users/following-user", authenticateToken, (req, res) => controller.getFollowingUsers(req, res));
 router.get("/feed/following-users", authenticateToken, (req, res) => controller.getPostsByFollowingUsers(req, res));
+
+// Services search
+router.get("/services/search", (req, res) => controller.searchServices(req, res));
+
 export default router;

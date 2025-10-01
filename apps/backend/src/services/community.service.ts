@@ -14,6 +14,7 @@ import type {
   TagResponseDTO,
   UserWallResponseDTO,
 } from "types/community.dtos";
+import type { ServiceResponseDTO } from "types/service.dtos";
 import slugify from "slugify";
 import { getIO } from "config/socket";
 import { MUA } from "@models/muas.models";
@@ -70,6 +71,41 @@ const toObjectId = (id: string) => new mongoose.Types.ObjectId(id);
 
 const mapPostToDTO = async (postDoc: any): Promise<PostResponseDTO> => {
   const author = await User.findById(postDoc.authorId).select("fullName role avatarUrl");
+  
+  // Map attached services if they exist
+  let attachedServices: ServiceResponseDTO[] | undefined = undefined;
+  if (Array.isArray(postDoc.attachedServices) && postDoc.attachedServices.length > 0) {
+    const serviceIds = postDoc.attachedServices.filter(Boolean);
+    
+    if (serviceIds.length > 0) {
+      // Always populate service -> MUA -> user data
+      const { ServicePackage } = require('../models');
+      const populatedServices = await ServicePackage.find({
+        _id: { $in: serviceIds }
+      }).populate({
+        path: 'muaId',
+        populate: {
+          path: 'userId',
+          select: 'fullName avatarUrl role'
+        }
+      }).lean();
+      
+      attachedServices = populatedServices.map((service: any) => ({
+        _id: String(service._id),
+        muaId: String(service.muaId._id),
+        muaName: service.muaId.userId?.fullName || 'Unknown MUA',
+        muaAvatarUrl: service.muaId.userId?.avatarUrl,
+        name: service.name,
+        description: service.description,
+        imageUrl: service.imageUrl,
+        duration: service.duration,
+        price: service.price,
+        isActive: service.isAvailable ?? true, // Note: model uses isAvailable, DTO uses isActive
+        createdAt: service.createdAt || new Date(),
+        updatedAt: service.updatedAt || service.createdAt || new Date(),
+      }));
+    }
+  }
 
   return {
     _id: String(postDoc._id),
@@ -79,6 +115,7 @@ const mapPostToDTO = async (postDoc: any): Promise<PostResponseDTO> => {
     authorAvatarUrl: author?.avatarUrl,
     content: postDoc.content ?? undefined,
     media: Array.isArray(postDoc.media) ? postDoc.media : [],   // ✅ đổi từ images → media
+    attachedServices,
     likesCount: postDoc.likesCount ?? 0,
     commentsCount: postDoc.commentsCount ?? 0,
     tags: Array.isArray(postDoc.tags) ? postDoc.tags : undefined,
@@ -140,11 +177,15 @@ async createRealtimePost(authorId: string, dto: CreatePostDTO): Promise<PostResp
   const tagsInput = dto.tags?.filter(Boolean) ?? [];
   const slugs = tagsInput.length ? await handleTags(tagsInput) : [];
 
+  // Process attached services
+  const attachedServiceIds = dto.attachedServices?.filter(Boolean).map(id => toObjectId(id)) ?? [];
+
   const post = await Post.create({
     authorId: toObjectId(authorId),
     content: dto.content,
     media: dto.media ?? [],  // ✅ thay vì images
     tags: slugs,
+    attachedServices: attachedServiceIds,
     status: dto.status ?? POST_STATUS.PUBLISHED,
   });
 
@@ -164,7 +205,7 @@ async createRealtimePost(authorId: string, dto: CreatePostDTO): Promise<PostResp
     if (dto.parentId) {
       const parentComment = await Comment.findById(dto.parentId);
       if (!parentComment) throw new Error("Parent comment not found");
-      if (String(parentComment.postId) !== dto.postId) throw new Error("Parent comment doesn't belong to this post");
+      if ((parentComment.postId as any).toString() !== dto.postId) throw new Error("Parent comment doesn't belong to this post");
     }
 
     const comment = await Comment.create({
@@ -234,12 +275,12 @@ async createRealtimePost(authorId: string, dto: CreatePostDTO): Promise<PostResp
     
     // Emit socket event for realtime updates to specific post room
     const io = getIO();
-    const roomName = `post:${comment.postId}`;
+    const roomName = `post:${(comment.postId as any).toString()}`;
     io.to(roomName).emit("comment:update", {
       commentId: commentId,
       content: dto.content,
       isReply: !!comment.parentId,
-      parentCommentId: comment.parentId?.toString(),
+      parentCommentId: comment.parentId ? (comment.parentId as any).toString() : undefined,
     });
     
     return commentDTO;
@@ -283,11 +324,11 @@ async createRealtimePost(authorId: string, dto: CreatePostDTO): Promise<PostResp
     
     // Emit socket event for realtime updates to specific post room
     const io = getIO();
-    const roomName = `post:${comment.postId}`;
+    const roomName = `post:${(comment.postId as any).toString()}`;
     io.to(roomName).emit("comment:delete", {
       commentId: commentId,
       isReply: !!comment.parentId,
-      parentCommentId: comment.parentId?.toString(),
+      parentCommentId: comment.parentId ? (comment.parentId as any).toString() : undefined,
     });
     
     return { commentId };
@@ -352,7 +393,7 @@ async createRealtimePost(authorId: string, dto: CreatePostDTO): Promise<PostResp
     tag?: string;
     status?: string;
     q?: string;
-    sort?: 'newest' | 'popular' | string;
+    sort?: 'newest' | 'popular';
   }): Promise<{ items: PostResponseDTO[]; total: number; page: number; pages: number }> {
     const page = Math.max(1, Number(query.page) || 1);
     const limit = Math.min(50, Math.max(1, Number(query.limit) || 10));
@@ -374,7 +415,10 @@ async createRealtimePost(authorId: string, dto: CreatePostDTO): Promise<PostResp
     }
 
     const [docs, total] = await Promise.all([
-      Post.find(filter).sort(sort).skip(skip).limit(limit),
+      Post.find(filter)
+        .sort(sort)
+        .skip(skip)
+        .limit(limit),
       Post.countDocuments(filter),
     ]);
 
@@ -403,6 +447,10 @@ async updateRealtimePost(postId: string, authorId: string, dto: UpdatePostDTO): 
 
   if (dto.content !== undefined) post.content = dto.content;
   if (dto.media !== undefined) post.set('media', dto.media);   // ✅ update media thay vì images
+  if (dto.attachedServices !== undefined) {
+    const attachedServiceIds = dto.attachedServices.filter(Boolean).map(id => toObjectId(id));
+    post.set('attachedServices', attachedServiceIds);
+  }
   if (dto.status !== undefined) post.status = dto.status;
 
   await post.save();
@@ -501,9 +549,9 @@ async updateRealtimePost(postId: string, authorId: string, dto: UpdatePostDTO): 
       
       // Emit socket event with updated like count to specific post room
       const io = getIO();
-      const comment = await Comment.findById(payload.commentId).populate('postId');
+      const comment = await Comment.findById(payload.commentId);
       if (comment) {
-        const roomName = `post:${comment.postId}`;
+        const roomName = `post:${(comment.postId as any).toString()}`;
         io.to(roomName).emit("comment:like", {
           commentId: reactionDTO.commentId,
           isLiked: true,
@@ -557,7 +605,7 @@ async updateRealtimePost(postId: string, authorId: string, dto: UpdatePostDTO): 
         const io = getIO();
         const comment = await Comment.findById(query.commentId);
         if (comment) {
-          const roomName = `post:${comment.postId}`;
+          const roomName = `post:${(comment.postId as any).toString()}`;
           io.to(roomName).emit("comment:like", {
             commentId: query.commentId.toString(),
             isLiked: false,
@@ -607,7 +655,10 @@ async updateRealtimePost(postId: string, authorId: string, dto: UpdatePostDTO): 
     const filter: any = { tags: tag };
     const [docs, total] = await Promise.all([
       // Sort by popularity first (likesCount desc), then newest
-      Post.find(filter).sort({ likesCount: -1, createdAt: -1 }).skip(skip).limit(limit),
+      Post.find(filter)
+        .sort({ likesCount: -1, createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
       Post.countDocuments(filter),
     ]);
     const items = await Promise.all(docs.map((d: any) => mapPostToDTO(d)));
@@ -769,6 +820,85 @@ async updateRealtimePost(postId: string, authorId: string, dto: UpdatePostDTO): 
       page,
       pages: Math.ceil(total / limit) || 1,
     }
+  }
+
+  // Search services by name or MUA name
+  async searchServices(query: { 
+    q?: string; 
+    page?: number; 
+    limit?: number; 
+  }): Promise<{ items: ServiceResponseDTO[]; total: number; page: number; pages: number }> {
+    const { ServicePackage, User, MUA } = require('../models');
+    
+    const page = Math.max(1, Number(query.page) || 1);
+    const limit = Math.min(50, Math.max(1, Number(query.limit) || 20));
+    const skip = (page - 1) * limit;
+    
+    let filter: any = { isAvailable: true };
+    
+    if (query.q) {
+      const searchRegex = new RegExp(query.q, 'i');
+      
+      // First find Users with role MUA whose names match the query
+      const matchingUsers = await User.find({
+        role: 'ARTIST',
+        fullName: searchRegex
+      }).select('_id');
+      
+      const userIds = matchingUsers.map((user: any) => user._id);
+      
+      // Then find MUAs based on these user IDs
+      const matchingMuas = await MUA.find({
+        userId: { $in: userIds }
+      }).select('_id');
+      
+      const muaIds = matchingMuas.map((mua: any) => mua._id);
+      
+      // Search services by service name OR MUA name
+      filter.$or = [
+        { name: searchRegex },
+        { description: searchRegex },
+        { muaId: { $in: muaIds } }
+      ];
+    }
+    
+    const total = await ServicePackage.countDocuments(filter);
+    
+    const services = await ServicePackage.find(filter)
+      .populate({
+        path: 'muaId',
+        populate: {
+          path: 'userId',
+          select: 'fullName avatarUrl role'
+        }
+      })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+    
+    const items = services.map((service: any) => ({
+      _id: String(service._id),
+      muaId: String(service.muaId._id),
+      muaName: service.muaId.userId?.fullName || 'Unknown MUA',
+      muaAvatarUrl: service.muaId.userId?.avatarUrl,
+      name: service.name,
+      description: service.description,
+      category: service.category,
+      price: service.price,
+      duration: service.duration,
+      images: service.imageUrl ? [service.imageUrl] : [],
+      isActive: service.isAvailable,
+      createdAt: service.createdAt,
+      updatedAt: service.updatedAt
+    }));
+    
+    return {
+      items,
+      total,
+      page,
+      pages: Math.ceil(total / limit) || 1,
+    };
   }
 }
 

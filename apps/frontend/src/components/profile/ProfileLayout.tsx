@@ -3,7 +3,7 @@
 import React from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { User, History } from "lucide-react";
+import { User, History, CreditCard } from "lucide-react";
 
 interface ProfileLayoutProps {
   children: React.ReactNode;
@@ -19,17 +19,27 @@ const ProfileLayout: React.FC<ProfileLayoutProps> = ({ children }) => {
         icon: User,
         matchPaths: ["/user/profile", "/user/profile/edit-profile"]
         },
+         {
+        href: "/user/profile/bank-account",
+        label: "Bank Account", 
+        icon: CreditCard,
+        matchPaths: ["/user/profile/bank-account"]
+        },
         {
         href: "/user/profile/booking-history",
         label: "Booking History", 
         icon: History,
         matchPaths: ["/user/profile/booking-history"]
-        }
+        },
     ];
 
   const isActive = (item: typeof navigationItems[0]) => {
     if (pathname === "/user/profile/booking-history") {
       return item.href === "/user/profile/booking-history";
+    }
+    
+    if (pathname === "/user/profile/bank-account") {
+      return item.href === "/user/profile/bank-account";
     }
     
     if (item.href === "/user/profile") {

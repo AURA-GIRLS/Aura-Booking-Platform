@@ -3,12 +3,13 @@ import { MUA_WorkingSlot, MUA_OverrideSlot, MUA_BlockedSlot } from "../models/mu
 import { Booking } from "@models/bookings.models";
 import type { IWeeklySlot, ISlot, IFinalSlot } from "../types/schedule.interfaces";
 import { toUTC, fromUTC } from "../utils/timeUtils";
+import mongoose from "mongoose";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
-import { SLOT_TYPES, type SlotType } from "constants/index";
+import { SLOT_TYPES, type SlotType, TRANSACTION_STATUS } from "constants/index";
 import { BOOKING_STATUS, BOOKING_TYPES } from "constants/index";
 import type { BookingResponseDTO } from "types/booking.dtos";
 
@@ -71,23 +72,31 @@ function mapBookingToSlot(booking: any): ISlot {
   const day = dayjs(utcDate).format("YYYY-MM-DD");
   const startTime = dayjs(utcDate).format("HH:mm");
   const endTime = dayjs(utcDate).add(booking.duration, "minutes").format("HH:mm");
+  
+  // Handle both populated documents and aggregation results
+  const customerId = booking.customerId?._id?.toString?.() ?? booking.customerId?._id?.toString() ?? "";
+  const serviceId = booking.serviceId?._id?.toString?.() ?? booking.serviceId?._id?.toString() ?? "";
+  const customerName = booking.customerId?.fullName ?? "";
+  const serviceName = booking.serviceId?.name ?? "";
+  const phoneNumber = booking.customerId?.phoneNumber ?? "";
+  
   return {
-    slotId: booking._id?.toString?.() ?? "",
-    customerId: booking.customerId?._id?.toString?.() ?? "",
-    serviceId: booking.serviceId?._id?.toString?.() ?? "",
-    customerName: booking.customerId?.fullName ?? "",
-    serviceName: booking.serviceId?.name ?? "",
+    slotId: booking._id?.toString?.() ?? booking._id?.toString() ?? "",
+    customerId,
+    serviceId,
+    customerName,
+    serviceName,
     totalPrice: booking.totalPrice || 0,
     status: booking.status,
     address: booking.address ?? "",
-    phoneNumber: booking.customerId?.phoneNumber ?? "",
+    phoneNumber,
     day,
     startTime,
     endTime,
     type: SLOT_TYPES.BOOKING,
     createdAt: booking.createdAt ? fromUTC(booking.createdAt).toISOString() : undefined,
     updatedAt: booking.updatedAt ? fromUTC(booking.updatedAt).toISOString() : undefined,
-    note: `Khách: ${booking.customerId?.fullName || ""}, Dịch vụ: ${booking.serviceId?.name || ""}`
+    note: `Khách: ${customerName}, Dịch vụ: ${serviceName}`
   };
 }
 async function getWeeklySlotsFromDB(muaId: string, weekStart: string): Promise<ISlot[]> {
@@ -237,11 +246,66 @@ export async function computeMUAFinalSlots(data: IWeeklySlot): Promise<ISlot[]> 
 async function getConfirmedBookingSlots(muaId: string, weekStart: string): Promise<ISlot[]> {
    const weekStartDate =  toUTC(weekStart, "Asia/Ho_Chi_Minh").toDate();
   const weekEndDate = dayjs(weekStartDate).add(6, "day").endOf("day").toDate();
-  const bookings = await Booking.find({
-    muaId,
-    status: { $in: [BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.COMPLETED, BOOKING_STATUS.PENDING] },
-    bookingDate: { $gte: weekStartDate, $lte: weekEndDate }
-  }).populate("customerId serviceId muaId");
+  
+  // Use aggregation to exclude bookings with PENDING_REFUND transactions
+  const bookings = await Booking.aggregate([
+    {
+      $match: {
+        muaId,
+        status: { $in: [BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.COMPLETED, BOOKING_STATUS.PENDING] },
+        bookingDate: { $gte: weekStartDate, $lte: weekEndDate }
+      }
+    },
+    {
+      $lookup: {
+        from: 'transactions',
+        localField: '_id',
+        foreignField: 'bookingId',
+        as: 'transaction'
+      }
+    },
+    {
+      $match: {
+        $or: [
+          { transaction: { $size: 0 } }, // No transaction
+          { 'transaction.status': { $ne: TRANSACTION_STATUS.PENDING_REFUND } } // Transaction not PENDING_REFUND
+        ]
+      }
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'customerId',
+        foreignField: '_id',
+        as: 'customerId'
+      }
+    },
+    {
+      $lookup: {
+        from: 'servicepackages',
+        localField: 'serviceId',
+        foreignField: '_id',
+        as: 'serviceId'
+      }
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'muaId',
+        foreignField: '_id',
+        as: 'muaId'
+      }
+    },
+    {
+      $unwind: { path: '$customerId', preserveNullAndEmptyArrays: true }
+    },
+    {
+      $unwind: { path: '$serviceId', preserveNullAndEmptyArrays: true }
+    },
+    {
+      $unwind: { path: '$muaId', preserveNullAndEmptyArrays: true }
+    }
+  ]);
 
   return bookings.map(mapBookingToSlot);
 }
@@ -249,24 +313,126 @@ async function getConfirmedBookingSlots(muaId: string, weekStart: string): Promi
 export async function getPendingBookingSlots(muaId: string, pageNumber:number,pageSize:number): Promise<BookingResponseDTO[]> {
   const skip = (pageNumber - 1) * pageSize;
   
-  const bookings = await Booking.find({
+  console.log("🔍 getPendingBookingSlots - Input:", { muaId, pageNumber, pageSize, skip });
+  console.log("🔍 Current date:", new Date());
+  console.log("🔍 BOOKING_STATUS.PENDING:", BOOKING_STATUS.PENDING);
+  
+  // Check what muaId we're looking for
+  console.log("🔍 Looking for muaId:", muaId, typeof muaId);
+  
+  // Check all bookings for this MUA (without date filter)
+  const allMuaBookings = await Booking.find({ muaId });
+  console.log("🔍 All bookings for MUA:", allMuaBookings.length);
+  
+  // Check all pending bookings (without MUA filter)
+  const allPendingBookings = await Booking.find({ 
+    status: BOOKING_STATUS.PENDING 
+  });
+  console.log("🔍 All pending bookings:", allPendingBookings.length);
+  
+  // First, let's check basic bookings without aggregation
+  const basicBookings = await Booking.find({
     muaId,
     status: BOOKING_STATUS.PENDING,
-    bookingDate:{$gte: new Date()}
-  })
-  .populate("customerId serviceId")
-  .skip(skip)
-  .limit(pageSize)
-  .sort({ bookingDate: -1 }); // Sort by booking date ascending
+    bookingDate: { $gte: new Date() }
+  });
+  
+  console.log("🔍 Basic bookings found:", basicBookings.length);
+  basicBookings.forEach(booking => {
+    console.log("📋 Basic Booking:", {
+      _id: booking._id,
+      status: booking.status,
+      bookingDate: booking.bookingDate,
+      muaId: booking.muaId,
+      muaIdType: typeof booking.muaId
+    });
+  });
+  
+  // Use aggregation to exclude bookings with PENDING_REFUND transactions
+  console.log("🔍 Starting aggregation pipeline...");
+  const bookings = await Booking.aggregate([
+    {
+      $match: {
+        muaId: new mongoose.Types.ObjectId(muaId),
+        status: BOOKING_STATUS.PENDING,
+        bookingDate: { $gte: new Date() }
+      }
+    },
+    {
+      $lookup: {
+        from: 'transactions',
+        localField: '_id',
+        foreignField: 'bookingId',
+        as: 'transaction'
+      }
+    },
+    {
+      $addFields: {
+        transactionCount: { $size: "$transaction" },
+        transactionStatuses: "$transaction.status"
+      }
+    },
+    {
+      $match: {
+        $or: [
+          { transaction: { $size: 0 } }, // No transaction
+          { 'transaction.status': { $ne: TRANSACTION_STATUS.PENDING_REFUND } } // Transaction not PENDING_REFUND
+        ]
+      }
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'customerId',
+        foreignField: '_id',
+        as: 'customerId'
+      }
+    },
+    {
+      $lookup: {
+        from: 'servicepackages',
+        localField: 'serviceId',
+        foreignField: '_id',
+        as: 'serviceId'
+      }
+    },
+    {
+      $unwind: { path: '$customerId', preserveNullAndEmptyArrays: true }
+    },
+    {
+      $unwind: { path: '$serviceId', preserveNullAndEmptyArrays: true }
+    },
+    {
+      $sort: { bookingDate: -1 }
+    },
+    {
+      $skip: skip
+    },
+    {
+      $limit: pageSize
+    }
+  ]);
+
+  console.log("🔍 Aggregation results:", bookings.length);
+  bookings.forEach((booking, index) => {
+    console.log(`📋 Aggregated Booking ${index + 1}:`, {
+      _id: booking._id,
+      status: booking.status,
+      bookingDate: booking.bookingDate,
+      customerName: booking.customerId?.fullName,
+      serviceName: booking.serviceId?.name,
+      transactions: booking.transaction
+    });
+  });
 
   return bookings.map(b => ({
       _id: b._id.toString(),
-      customerId: (b.customerId as any)?._id?.toString() || '',
-      artistId: b.muaId?._id.toString() || '',
-      serviceId: (b.serviceId as any)?._id?.toString() || '',
-      customerName: (b.customerId as any)?.fullName ?? "",
-      serviceName: (b.serviceId as any)?.name ?? "",
-      servicePrice: (b.serviceId as any)?.price || 0,
+      customerId: b.customerId?._id?.toString() || '',
+      artistId: b.muaId?._id?.toString() || '',
+      serviceId: b.serviceId?._id?.toString() || '',
+      customerName: b.customerId?.fullName ?? "",
+      serviceName: b.serviceId?.name ?? "",
+      servicePrice: b.serviceId?.price || 0,
       bookingDate: fromUTC(b.bookingDate!).format("YYYY-MM-DD"),
       startTime: fromUTC(b.bookingDate!).format("hh:mm A"),
       endTime: fromUTC(b.bookingDate!).add(b.duration!,'minute').format("hh:mm A"),

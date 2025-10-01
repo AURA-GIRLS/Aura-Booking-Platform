@@ -16,7 +16,7 @@ export interface MuaResponseDTO {
   ratingAverage?: number;
   feedbackCount?: number;
   bookingCount?: number;
-  isVerified?: boolean;
+  status?:MUAStatus;
   // Optional populated user object when available
   user?: {
     _id: string;
@@ -27,6 +27,7 @@ export interface MuaResponseDTO {
 }
 
 import { 
+  MUAStatus,
   type UserRole
 } from "../constants/index";
 

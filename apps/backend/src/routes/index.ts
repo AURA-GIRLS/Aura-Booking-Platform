@@ -10,7 +10,13 @@ import dashboardRoutes from "./dashboard";
 import profileRoutes from "./profile";
 import feedbackRoutes from "./feedback"; 
 import serviceRoutes from "./services";
+import portfolioRoutes from "./portfolio.routes";
+import certificateRoutes from "./certificate.routes";
 
+import adminTransactionRoutes from "./admin.transaction";
+import adminUserRoutes from "./admin.user";
+import refundRoutes from "./admin.refund";
+import withdrawalRoutes from "./admin.withdrawal";
 const router = Router();
 
 // API routes
@@ -37,5 +43,11 @@ router.use('/dashboard', dashboardRoutes);
 router.use('/profile', profileRoutes);
 router.use('/feedback', feedbackRoutes); 
 router.use("/services", serviceRoutes);
+router.use("/portfolios", portfolioRoutes);
+router.use("/certificates", certificateRoutes);
+router.use('/admin/transactions', adminTransactionRoutes);
+router.use('/admin', adminUserRoutes);
+router.use('/admin/refunds', refundRoutes);
+router.use('/admin/withdrawals', withdrawalRoutes);
 
 export default router;

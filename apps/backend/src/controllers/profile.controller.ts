@@ -3,6 +3,8 @@ import type { ApiResponseDTO } from '../types/common.dtos';
 import { cloudinary } from '../config/cloudinary';
 import { AuthService } from '../services/auth.service';
 import type { UploadApiResponse } from 'cloudinary';
+import { bankAccountService } from '@services/bankaccount.service';
+import type { CreateBankAccountDTO, UpdateBankAccountDTO } from 'types/bankaccount.dtos';
 
 const authService = new AuthService();
 
@@ -76,4 +78,149 @@ export class ProfileController {
       res.status(status).json(response);
     }
   }
+  async getBankAccount(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = (req as any).user?.userId;
+      if (!userId) {
+        const response: ApiResponseDTO = {
+          success: false,
+          message: 'Unauthorized',
+        };
+        res.status(401).json(response);
+        return;
+      }
+      const data = await bankAccountService.getBankAccountByUserId(userId);
+      const response: ApiResponseDTO = {
+        status: 200,
+        success: true,
+        message: 'Bank account retrieved successfully',
+        data,
+      };
+      res.status(200).json(response);
+    } catch (error) {
+      const response: ApiResponseDTO = {
+        status: 500,
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to get bank account',
+      };
+      res.status(500).json(response);
+    }
+  }
+  
+  async addBankAccount(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = (req as any).user?.userId;
+      if (!userId) {
+        const response: ApiResponseDTO = {
+          success: false,
+          message: 'Unauthorized',
+        };
+        res.status(401).json(response);
+        return;
+      }
+
+      const bankAccountData: CreateBankAccountDTO = req.body;
+      const createdAccount = await bankAccountService.createBankAccount({
+        ...bankAccountData,
+        userId
+      });
+
+      if (!createdAccount) {
+        const response: ApiResponseDTO = {
+          success: false,
+          message: 'Failed to add bank account',
+        };
+        res.status(500).json(response);
+        return;
+      }
+
+      const response: ApiResponseDTO = {
+        success: true,
+        message: 'Bank account added successfully',
+        data: createdAccount,
+      };
+      res.status(200).json(response);
+    } catch (error) {
+      const response: ApiResponseDTO = {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to add bank account',
+      };
+      res.status(500).json(response);
+    }
+  }
+  async updateBankAccount(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = (req as any).user?.userId;
+      if (!userId) {
+        const response: ApiResponseDTO = {
+          success: false,
+          message: 'Unauthorized',
+        };
+        res.status(401).json(response);
+        return;
+      }
+
+      const bankAccountData: UpdateBankAccountDTO = req.body;
+      const updatedAccount = await bankAccountService.updateBankAccount(userId, bankAccountData);
+
+      if (!updatedAccount) {
+        const response: ApiResponseDTO = {
+          success: false,
+          message: 'Failed to update bank account',
+        };
+        res.status(500).json(response);
+        return;
+      }
+
+      const response: ApiResponseDTO = {
+        success: true,
+        message: 'Bank account updated successfully',
+        data: updatedAccount,
+      };
+      res.status(200).json(response);
+    } catch (error) {
+      const response: ApiResponseDTO = {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to update bank account',
+      };
+      res.status(500).json(response);
+    }
+  }
+  async deleteBankAccount(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = (req as any).user?.userId;
+      if (!userId) {
+        const response: ApiResponseDTO = {
+          success: false,
+          message: 'Unauthorized',
+        };
+        res.status(401).json(response);
+        return;
+      }
+
+      const deletedAccount = await bankAccountService.deleteBankAccount(userId);
+
+      if (!deletedAccount) {
+        const response: ApiResponseDTO = {
+          success: false,
+          message: 'Failed to delete bank account',
+        };
+        res.status(500).json(response);
+        return;
+      }
+
+      const response: ApiResponseDTO = {
+        success: true,
+        message: 'Bank account deleted successfully',
+      };
+      res.status(200).json(response);
+    } catch (error) {
+      const response: ApiResponseDTO = {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to delete bank account',
+      };
+      res.status(500).json(response);
+    }
+  }
+
 }

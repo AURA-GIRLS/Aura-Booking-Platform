@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import type { ApiResponseDTO } from "types";
-import { createPayOSPaymentLink, getMUAWallet, getTransactionsByMuaId, handlePayOSWebhook, makeRefund } from "../services/transaction.service";
+import { createPayOSPaymentLink, getMUAWallet, getTransactionsByMuaId, getWithdrawalsByMuaId, handlePayOSWebhook, handleRefundBookingBeforeConfirm, handleWithdrawalMUA, makeRefund } from "../services/transaction.service";
 import type { PaymentWebhookResponse, PayOSCreateLinkInput } from "types/transaction.dto";
 import type { TransactionStatus } from "constants/index";
 export class TransactionController {
@@ -85,9 +85,10 @@ export class TransactionController {
     });
   }
 }
-async makeRefund(req: Request, res: Response): Promise<void> {
+async makeRefundBeforeConfirm(req: Request, res: Response): Promise<void> {
   try {
     const { bookingId } = req.params as { bookingId: string };
+    const { bookingStatus } = req.query as { bookingStatus: string };
     if (!bookingId) {
       res.status(400).json({
         status: 400,
@@ -96,7 +97,8 @@ async makeRefund(req: Request, res: Response): Promise<void> {
       }); 
       return;
     }
-    const data = await makeRefund(bookingId);
+    // const data = await makeRefund(bookingId);
+    const data = await handleRefundBookingBeforeConfirm(bookingId,bookingStatus);
     const response: ApiResponseDTO = {
       status: 200,
       success: true,
@@ -113,6 +115,36 @@ async makeRefund(req: Request, res: Response): Promise<void> {
       res.status(500).json(response);
     }
   }
+async makeWithdrawal(req: Request, res: Response): Promise<void> {
+    try {
+      const { muaId } = req.params as { muaId: string };
+      if (!muaId) {
+        res.status(400).json({
+          status: 400,
+          success: false,
+          message: "Missing muaId"
+        }); 
+        return;
+      }
+      const data = await handleWithdrawalMUA(muaId);
+      const response: ApiResponseDTO = {
+        status: 200,
+        success: true,
+        data: data,
+        message: 'Withdrawal successfully'
+      };
+      res.status(200).json(response);
+    }
+    catch (error) {
+      const response: ApiResponseDTO = {
+        status: 500,
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to process withdrawal'
+      };
+      res.status(500).json(response);
+    }
+  }
+
 async fetchTransactionsByMuaId(req: Request, res: Response): Promise<void> {
   try {
     const { muaId } = req.params as { muaId: string };
@@ -166,6 +198,36 @@ async fetchWalletByMuaId(req: Request, res: Response): Promise<void> {
       status: 500,
       success: false,
       message: error instanceof Error ? error.message : 'Failed to get wallet'
+    };
+    res.status(500).json(response);
+  }
+}
+async fetchWithdrawalsByMuaId(req: Request, res: Response): Promise<void> {
+  try {
+    const { muaId } = req.params as { muaId: string };
+    const {page, pageSize, status} = req.query as {page?: string, pageSize?: string, status?: string};
+    if (!muaId) {
+      res.status(400).json({
+        status: 400,
+        success: false,
+        message: "Missing muaId"
+      }); 
+      return;
+    }
+    const data = await getWithdrawalsByMuaId(muaId, page ? parseInt(page) : 1, pageSize ? parseInt(pageSize) : 10, status);
+    const response: ApiResponseDTO = {
+      status: 200,
+      success: true,
+      data: data,
+      message: 'Get withdrawal successfully'
+    };
+    res.status(200).json(response);
+  }
+  catch (error) {
+    const response: ApiResponseDTO = {
+      status: 500,
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to get withdrawal'
     };
     res.status(500).json(response);
   }

@@ -15,7 +15,7 @@ export {
 } from "./feedbacks.models";
 
 export {
-  Booking,
+  Booking
 } from "./bookings.models";
 
 // services

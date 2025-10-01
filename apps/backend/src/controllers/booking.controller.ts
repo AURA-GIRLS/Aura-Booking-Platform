@@ -19,7 +19,7 @@ import {
 } from "../services/booking.service";
 import type { CreateBookingDTO, UpdateBookingDTO } from "../types/booking.dtos";
 import type { ApiResponseDTO } from "types";
-import { handleBalanceConfirmBooking } from "@services/transaction.service";
+import { handleBalanceConfirmBooking, handleRefundBookingBeforeConfirm } from "@services/transaction.service";
 import { BOOKING_STATUS } from "constants/index";
 import { MUA } from "@models/muas.models";
 
@@ -462,8 +462,8 @@ export class BookingController {
     try {
       const { id } = req.params;
       
+      await handleRefundBookingBeforeConfirm(id,BOOKING_STATUS.REJECTED);
       const data = await updateBookingStatus(id, BOOKING_STATUS.REJECTED);
-
       if (!data) {
         const response: ApiResponseDTO = {
           status: 404,
@@ -473,7 +473,6 @@ export class BookingController {
         res.status(404).json(response);
         return;
       }
-
       const response: ApiResponseDTO = {
         status: 200,
         success: true,

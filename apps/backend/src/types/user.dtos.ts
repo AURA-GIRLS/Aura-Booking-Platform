@@ -1,4 +1,5 @@
 import { 
+  type MUAStatus,
   type UserRole
 } from "../constants/index";
 // ===== MUA DTOs =====
@@ -19,7 +20,7 @@ export interface MuaResponseDTO {
   ratingAverage?: number;
   feedbackCount?: number;
   bookingCount?: number;
-  isVerified?: boolean;
+  status?: MUAStatus;
 }
 
 

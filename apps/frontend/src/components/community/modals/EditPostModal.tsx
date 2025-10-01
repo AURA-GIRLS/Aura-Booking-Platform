@@ -8,6 +8,8 @@ import { CommunityService } from "@/services/community";
 import { Badge } from "@/components/lib/ui/badge";
 import { Button } from "@/components/lib/ui/button";
 import { socket } from "@/config/socket";
+import ServiceSearchDialog from '../ServiceSearchDialog';
+import { ServiceResponseDTO } from '@/types/service.dtos';
 import {
     Dialog,
     DialogContent,
@@ -61,6 +63,10 @@ export default function EditPostModal({
     >([]);
     const [tagsLoading, setTagsLoading] = useState(false);
 
+    // Services state
+    const [serviceDialogOpen, setServiceDialogOpen] = useState(false);
+    const [selectedServices, setSelectedServices] = useState<ServiceResponseDTO[]>([]);
+
     // Hydrate state from post
     useEffect(() => {
         if (isOpen && post) {
@@ -74,6 +80,9 @@ export default function EditPostModal({
             setImagesText(urls.join("\n"));
             setSelectedTags(
                 Array.isArray((post as any).tags) ? ((post as any).tags as string[]) : []
+            );
+            setSelectedServices(
+                Array.isArray((post as any).attachedServices) ? ((post as any).attachedServices as ServiceResponseDTO[]) : []
             );
         }
     }, [isOpen, post]);
@@ -197,6 +206,7 @@ export default function EditPostModal({
                 tags: selectedTags,
                 status:
                     status === "PUBLISHED" ? POST_STATUS.PUBLISHED : POST_STATUS.PRIVATE,
+                attachedServices: selectedServices.map(s => s._id),
             });
         } catch (e) {
             console.error("Failed to update post", e);
@@ -264,6 +274,16 @@ export default function EditPostModal({
                             >
                                 <Hash className="w-4 h-4 mr-1" /> Edit tags
                             </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setServiceDialogOpen(true)}
+                            >
+                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 012 2v6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M8 6a2 2 0 00-2 2v6.002" />
+                                </svg>
+                                Edit services
+                            </Button>
                         </div>
                         {selectedTags.length > 0 && (
                             <div className="mt-2 flex flex-wrap gap-2">
@@ -280,6 +300,46 @@ export default function EditPostModal({
                                         </button>
                                     </Badge>
                                 ))}
+                            </div>
+                        )}
+
+                        {/* Selected services */}
+                        {selectedServices.length > 0 && (
+                            <div className="mt-3 space-y-2">
+                                <div className="text-sm text-gray-600 font-medium">
+                                    Selected services ({selectedServices.length}):
+                                </div>
+                                <div className="space-y-2">
+                                    {selectedServices.map((service) => (
+                                        <div key={service._id} className="flex items-center space-x-3 p-2 bg-rose-50 rounded-lg border border-rose-200">
+                                            {service.images && service.images.length > 0 ? (
+                                                <img
+                                                    src={service.images[0]}
+                                                    alt={service.name}
+                                                    className="w-10 h-10 object-cover rounded-lg"
+                                                />
+                                            ) : (
+                                                <div className="w-10 h-10 bg-gradient-to-br from-rose-500 to-pink-600 rounded-lg flex items-center justify-center">
+                                                    <span className="text-white text-xs font-semibold">
+                                                        {service.name.charAt(0).toUpperCase()}
+                                                    </span>
+                                                </div>
+                                            )}
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium text-gray-900 truncate">{service.name}</p>
+                                                <p className="text-xs text-gray-600">by {service.muaName}</p>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                title={`Remove ${service.name}`}
+                                                onClick={() => setSelectedServices(prev => prev.filter(s => s._id !== service._id))}
+                                                className="text-gray-400 hover:text-gray-600"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         )}
                     </div>
@@ -428,6 +488,14 @@ export default function EditPostModal({
                         )}
                 </CommandList>
             </CommandDialog>
+
+            {/* Service Search Dialog */}
+            <ServiceSearchDialog
+                open={serviceDialogOpen}
+                onOpenChange={setServiceDialogOpen}
+                selectedServices={selectedServices}
+                onServicesChange={setSelectedServices}
+            />
         </Dialog>
     );
 }

@@ -6,29 +6,68 @@ import { UserIcon, BrushIcon, Sparkles } from 'lucide-react';
 
 export default function RegisterOptions() {
 	const router = useRouter();
-					return (
-						<div className="flex flex-col items-center justify-center gap-8 py-16 px-8 bg-white/90 rounded-[2.5rem] shadow-2xl border-4 border-pink-200/60 max-w-lg w-full animate-fade-in">
-							<div className="flex items-center gap-2 mb-2">
-								<Sparkles className="w-7 h-7 text-pink-400 animate-bounce" />
-								<h2 className="text-3xl font-extrabold text-pink-500 tracking-tight drop-shadow-pink">Welcome to Aura!</h2>
+	
+	return (
+		<div className="relative w-full max-w-md bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20 p-8">
+				{/* Header */}
+				<div className="text-center mb-8">
+					<div className="relative inline-block">
+						<div className="w-16 h-16 bg-gradient-to-r from-rose-400 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+							<div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center animate-pulse">
+								<Sparkles className="w-6 h-6 text-white" />
 							</div>
-							<p className="text-pink-600 text-lg mb-4 text-center font-medium">Choose your role to start your beauty journey</p>
-							<Button
-								className="w-72 py-7 text-xl rounded-2xl shadow-lg bg-gradient-to-r from-pink-100 via-pink-200 to-pink-100 hover:from-pink-200 hover:to-pink-300 text-pink-700 font-bold mb-4 flex items-center gap-4 justify-center border-2 border-pink-300 hover:scale-105 transition-transform duration-200"
-								onClick={() => router.push('/auth/register/customer' as any)}
-								variant="outline"
-							>
-								<UserIcon className="w-7 h-7 text-pink-400 drop-shadow" />
-								<span>Customer</span>
-							</Button>
-							<Button
-								className="w-72 py-7 text-xl rounded-2xl shadow-lg bg-gradient-to-r from-pink-100 via-pink-200 to-pink-100 hover:from-pink-200 hover:to-pink-300 text-pink-700 font-bold flex items-center gap-4 justify-center border-2 border-pink-300 hover:scale-105 transition-transform duration-200"
-								onClick={() => router.push('/auth/register/mua' as any)}
-								variant="outline"
-							>
-								<BrushIcon className="w-7 h-7 text-pink-400 drop-shadow" />
-								<span>Makeup Artist</span>
-							</Button>
 						</div>
-					);
+						<div className="absolute -top-1 -right-1 w-4 h-4 bg-rose-400 rounded-full animate-ping"></div>
+					</div>
+					<h1 className="text-3xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent mb-2">
+						Welcome to Aura
+					</h1>
+					<p className="text-gray-600 text-sm">
+						Choose your role to start your beauty journey
+					</p>
+				</div>
+
+				{/* Options */}
+				<div className="space-y-4">
+					<Button
+						onClick={() => router.push('/auth/register/customer' as any)}
+						className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg group"
+						variant="default"
+					>
+						<div className="flex items-center justify-center gap-3">
+							<div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center group-hover:rotate-12 transition-transform duration-300">
+								<UserIcon className="w-5 h-5 text-white" />
+							</div>
+							<span className="text-lg">Join as Customer</span>
+						</div>
+					</Button>
+
+					<Button
+						onClick={() => router.push('/auth/register/mua' as any)}
+						className="w-full bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg group"
+						variant="default"
+					>
+						<div className="flex items-center justify-center gap-3">
+							<div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center group-hover:rotate-12 transition-transform duration-300">
+								<BrushIcon className="w-5 h-5 text-white" />
+							</div>
+							<span className="text-lg">Join as Artist</span>
+						</div>
+					</Button>
+				</div>
+
+				{/* Footer */}
+				<div className="text-center mt-6">
+					<p className="text-sm text-gray-600">
+						Already have an account?{' '}
+						<a 
+							href="/auth/login" 
+							className="text-rose-600 hover:text-rose-700 font-medium hover:underline transition-colors"
+						>
+							Sign In
+						</a>
+					</p>
+				</div>
+			</div>
+	);
 }

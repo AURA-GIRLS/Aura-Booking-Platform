@@ -13,7 +13,8 @@ const PostSchema = new Schema({
   tags:     [{ type: String, index: true }], // lưu slug hoặc name (multikey index)
   likesCount:    { type: Number, default: 0 },
   commentsCount: { type: Number, default: 0 },
-  status:  { type: String, enum: Object.values(POST_STATUS), default:POST_STATUS.PUBLISHED}
+  status:  { type: String, enum: Object.values(POST_STATUS), default:POST_STATUS.PUBLISHED},
+  attachedServices: [{ type: Types.ObjectId, ref: "ServicePackage" }], // nếu cần
 }, { timestamps: true });
 
 const CommentSchema = new Schema({

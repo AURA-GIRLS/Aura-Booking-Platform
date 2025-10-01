@@ -31,7 +31,7 @@ api.interceptors.request.use((config) => {
       const token = localStorage.getItem('token');
       if (token) {
         config.headers = config.headers || {};
-        config.headers['Authorization'] = `Bearer ${token}`;
+        (config.headers as any)['Authorization'] = `Bearer ${token}`;
       }
     }
   }
@@ -103,7 +103,7 @@ api.interceptors.response.use(
         addRefreshSubscriber((newToken: string) => {
           try {
             originalRequest.headers = originalRequest.headers || {};
-            originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
+            (originalRequest.headers as any)['Authorization'] = `Bearer ${newToken}`;
             resolve(api(originalRequest));
           } catch (e) {
             reject(e);
@@ -130,19 +130,24 @@ api.interceptors.response.use(
       if (typeof window !== 'undefined') {
         localStorage.setItem('token', newToken);
       }
-      api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+      (api.defaults.headers.common as any)['Authorization'] = `Bearer ${newToken}`;
       onRrefreshed(newToken);
 
       // Thử lại request gốc
       originalRequest.headers = originalRequest.headers || {};
-      originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
+      (originalRequest.headers as any)['Authorization'] = `Bearer ${newToken}`;
       return api(originalRequest);
     } catch (refreshErr) {
       console.error("❌ Token refresh failed:", refreshErr);
       
       // Nếu refresh thất bại, xóa token và đăng xuất
+      try {
+        await refreshClient.post('/auth/logout');
+      } catch {}
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token');
+        //TODO: check lai
+        window.dispatchEvent(new CustomEvent('auth:logout'));
         delete api.defaults.headers.common['Authorization'];
       }
       

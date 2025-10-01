@@ -1,3 +1,4 @@
+import { MUA_STATUS } from "constants/index";
 import { Schema, model } from "mongoose";
 
 const MUASchema = new Schema({
@@ -8,8 +9,9 @@ const MUASchema = new Schema({
   ratingAverage: Number,
   feedbackCount: Number,
   bookingCount: Number,
-  isVerified: Boolean
-});
+  status: {type: String, enum: Object.values(MUA_STATUS), default: MUA_STATUS.PENDING},
+  rejectionReason: String,
+}, { timestamps: true });
 
 const WorkingSlotSchema = new Schema({
   muaId: { type: Schema.Types.ObjectId, ref: "MUA" },

@@ -579,4 +579,32 @@ export class CommunityController {
                 res.status(400).json(response);
             }
         }
+
+        // GET /api/community/services/search
+        async searchServices(req: Request, res: Response): Promise<void> {
+            try {
+                const { q, page, limit } = req.query as any;
+                const data = await this.service.searchServices({
+                    q: q as string,
+                    page: page ? Number(page) : undefined,
+                    limit: limit ? Number(limit) : undefined,
+                });
+                const response: ApiResponseDTO = {
+                    success: true,
+                    data: {
+                        items: data.items,
+                        total: data.total,
+                        page: data.page,
+                        pages: data.pages,
+                    },
+                };
+                res.status(200).json(response);
+            } catch (err) {
+                const response: ApiResponseDTO = {
+                    success: false,
+                    message: err instanceof Error ? err.message : "Failed to search services",
+                };
+                res.status(500).json(response);
+            }
+        }
     }

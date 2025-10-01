@@ -9,7 +9,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/lib/ui/dropdown-menu";
 import { CommunityService } from "@/services/community";
 import { socket } from "@/config/socket";
-import DeleteConfirmDialog from "../dialogs/DeleteConfirmDialog";
+import DeleteConfirmDialog from "../../generalUI/DeleteConfirmDialog";
 
 type UIComment = CommentResponseDTO & { 
     isLiked?: boolean; 

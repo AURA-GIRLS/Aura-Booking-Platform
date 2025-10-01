@@ -1,12 +1,11 @@
 'use client';
 
-
 import React, { useState } from 'react';
 import { Input } from '@/components/lib/ui/input';
 import { Button } from '@/components/lib/ui/button';
 import { Label } from '@radix-ui/react-label';
 import { authService } from '@/services/auth';
-import { MailCheckIcon } from 'lucide-react';
+import { MailCheck, Send } from 'lucide-react';
 
 const ResendForm: React.FC = () => {
 	const [email, setEmail] = useState('');
@@ -22,7 +21,7 @@ const ResendForm: React.FC = () => {
 		try {
 			const res = await authService.sendEmailVerification({ email });
 			if (res.success) {
-				setSuccess('Verification email sent!');
+				setSuccess('Verification email sent successfully!');
 			} else {
 				setError(res.message || 'Failed to send verification email');
 			}
@@ -33,21 +32,32 @@ const ResendForm: React.FC = () => {
 		}
 	};
 
-		return (
-			<div className="min-h-screen flex items-center justify-center">
-				<form
-					onSubmit={handleSubmit}
-					className="w-full max-w-lg rounded-[2.5rem] shadow-2xl bg-white/90 border-4 border-pink-200/60 px-10 py-12 flex flex-col gap-7 animate-fade-in"
-				>
-					<div className="flex flex-col items-center gap-2 mb-2">
-						<span className="w-16 h-16 rounded-full bg-pink-200 flex items-center justify-center mb-2 shadow-inner animate-bounce">
-							<MailCheckIcon className="w-8 h-8 text-pink-500" />
-						</span>
-						<h2 className="text-3xl font-extrabold text-pink-500 tracking-tight drop-shadow-pink">Resend Verification Email</h2>
-						<p className="text-pink-600 text-lg text-center font-medium">Enter your email and we'll resend the verification link instantly.</p>
+	return (
+		<div className="relative w-full max-w-md bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20 p-8">
+				{/* Header */}
+				<div className="text-center mb-8">
+					<div className="relative inline-block">
+						<div className="w-16 h-16 bg-gradient-to-r from-rose-400 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+							<div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center animate-pulse">
+								<MailCheck className="w-6 h-6 text-white" />
+							</div>
+						</div>
+						<div className="absolute -top-1 -right-1 w-4 h-4 bg-rose-400 rounded-full animate-ping"></div>
 					</div>
-					<div>
-						<Label htmlFor="email" className="block mb-1 font-medium text-pink-500">Email address*</Label>
+					<h1 className="text-2xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent mb-2">
+						Resend Verification
+					</h1>
+					<p className="text-gray-600 text-sm">
+						Enter your email to receive a new verification link
+					</p>
+				</div>
+
+				{/* Form */}
+				<form onSubmit={handleSubmit} className="space-y-6">
+					<div className="space-y-2">
+						<Label htmlFor="email" className="text-sm font-medium text-gray-700">
+							Email Address
+						</Label>
 						<Input
 							id="email"
 							type="email"
@@ -55,27 +65,53 @@ const ResendForm: React.FC = () => {
 							value={email}
 							onChange={e => setEmail(e.target.value)}
 							required
-							placeholder="example@gmail.com" 
-							className="bg-pink-50 border border-pink-200 focus:border-pink-400 focus:ring-pink-200 text-pink-700"
+							placeholder="Enter your email address"
+							className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all duration-200"
 						/>
 					</div>
-					{error && <div className="text-red-500 text-sm text-center">{error}</div>}
-					{success && <div className="text-green-600 text-sm text-center">{success}</div>}
+
+					{/* Status Messages */}
+					{error && (
+						<div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl text-sm text-center">
+							{error}
+						</div>
+					)}
+					{success && (
+						<div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-xl text-sm text-center">
+							{success}
+						</div>
+					)}
+
+					{/* Submit Button */}
 					<Button
 						type="submit"
-						className="w-full bg-gradient-to-r from-pink-400 via-pink-300 to-pink-400 hover:from-pink-500 hover:to-pink-400 text-white py-3 rounded-2xl font-bold hover:scale-105 transition-transform duration-200 shadow-lg flex items-center justify-center gap-2"
+						className="w-full bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
 						disabled={loading}
 					>
-						<svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>
-						{loading ? 'Resending...' : 'Resend Email'}
+						{loading ? (
+							<div className="flex items-center justify-center gap-2">
+								<div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+								Sending...
+							</div>
+						) : (
+							<div className="flex items-center justify-center gap-2">
+								<Send className="w-5 h-5" />
+								Resend Email
+							</div>
+						)}
 					</Button>
-					<div className="flex justify-center mt-2">
-						<span className="text-xs text-pink-400">Already have an account?</span>
-						<a href="/auth/login" className="ml-1 text-xs text-pink-500 font-semibold hover:underline">Sign In</a>
+
+					{/* Footer Links */}
+					<div className="text-center text-sm text-gray-600">
+						Remember your password?{' '}
+						<a href="/auth/login" className="text-rose-600 hover:text-rose-700 font-medium hover:underline transition-colors">
+							Sign In
+						</a>
 					</div>
 				</form>
 			</div>
-		);
+	);
 };
+
 
 export default ResendForm;

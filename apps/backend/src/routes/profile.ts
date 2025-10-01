@@ -18,4 +18,10 @@ const upload = multer({
 // Upload avatar (multipart/form-data) - field name: "file"
 router.post('/avatar', authenticateToken, upload.single('file'), (req, res) => ctrl.uploadAvatar(req, res));
 
+// Bank Account routes
+router.get('/bank-account', authenticateToken, (req, res) => ctrl.getBankAccount(req, res));
+router.post('/bank-account', authenticateToken, (req, res) => ctrl.addBankAccount(req, res));
+router.put('/bank-account', authenticateToken, (req, res) => ctrl.updateBankAccount(req, res));
+router.delete('/bank-account', authenticateToken, (req, res) => ctrl.deleteBankAccount(req, res));
+
 export default router;
