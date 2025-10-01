@@ -25,6 +25,7 @@ export interface MuaService {
   duration: string;
   price: string;
   isActive: boolean;
+  imageUrl?: string;
 }
 
 export interface CalendarEvent {

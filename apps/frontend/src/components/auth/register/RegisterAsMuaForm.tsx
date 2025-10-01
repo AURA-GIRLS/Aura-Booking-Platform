@@ -4,8 +4,9 @@ import { authService } from '@/services/auth';
 import { Input } from '@/components/lib/ui/input';
 import { Label } from '@/components/lib/ui/label';
 import { Button } from '@/components/lib/ui/button';
-import { Alert, AlertDescription } from '@/components/lib/ui/alert';
-import { BrushIcon, Sparkles } from 'lucide-react';
+import { BrushIcon } from 'lucide-react';
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/lib/ui/select';
+import { PROVINCES } from '@/constants/constants';
 
 export default function RegisterAsMuaForm() {
 	const [form, setForm] = useState({
@@ -23,6 +24,10 @@ export default function RegisterAsMuaForm() {
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
 		setForm({ ...form, [e.target.name]: e.target.value });
+	};
+
+	const handleLocationChange = (value: string) => {
+		setForm({ ...form, location: value });
 	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -138,15 +143,16 @@ export default function RegisterAsMuaForm() {
 						</div>
 						<div>
 							<Label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">Location</Label>
-							<Input
-								id="location"
-								name="location"
-								type="text"
-								placeholder="City/Province"
-								className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all duration-200"
-								value={form.location}
-								onChange={handleChange}
-							/>
+							<Select value={form.location} onValueChange={handleLocationChange}>
+								<SelectTrigger className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all duration-200">
+									<SelectValue placeholder="Select your province/city" />
+								</SelectTrigger>
+								<SelectContent className="bg-white">
+									{PROVINCES.map((province) => (
+										<SelectItem key={province} value={province}>{province}</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
 						</div>
 						<div>
 							<Label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-2">Short Bio</Label>

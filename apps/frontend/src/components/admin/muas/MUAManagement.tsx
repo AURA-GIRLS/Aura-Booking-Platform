@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Users,
-  UserCheck,
   UserX,
   Clock,
   Star,
@@ -13,22 +12,18 @@ import {
   Phone,
   Eye,
   Shield,
-  ShieldOff,
   Search,
   Filter,
   Download,
   BarChart3,
   Activity,
   TrendingUp,
-  Brush,
   Award,
   Calendar,
   DollarSign,
-  ThumbsUp,
   Camera,
   CheckCircle,
   XCircle,
-  AlertCircle,
   Ban,
   Check
 } from 'lucide-react';
@@ -43,18 +38,35 @@ import {
   bulkRejectMUAs
 } from '@/services/admin.user';
 import type { AdminMUAResponseDTO, MUAStatisticsDTO } from '@/types/admin.user.dto';
+import { getPublicCertificates } from '@/lib/api/certificate';
+import type { Certificate } from '@/types/certificate';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/lib/ui/dialog';
+import { Button } from '@/components/lib/ui/button';
 
 const MUAManagement: React.FC = () => {
   const [filter, setFilter] = useState<'all' | 'active' | 'banned' | 'pending' | 'reviewing'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMUAs, setSelectedMUAs] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize] = useState(10);
   const [totalMUAs, setTotalMUAs] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [muas, setMuas] = useState<AdminMUAResponseDTO[]>([]);
   const [statistics, setStatistics] = useState<MUAStatisticsDTO | null>(null);
+  
+  // Certificate Dialog State
+  const [showCertificateDialog, setShowCertificateDialog] = useState(false);
+  const [selectedMUA, setSelectedMUA] = useState<AdminMUAResponseDTO | null>(null);
+  const [certificates, setCertificates] = useState<Certificate[]>([]);
+  const [loadingCertificates, setLoadingCertificates] = useState(false);
 
   // Load data from API
   useEffect(() => {
@@ -217,6 +229,64 @@ const MUAManagement: React.FC = () => {
       }
     } catch (error) {
       console.error(`Failed to ${action} MUAs:`, error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Certificate functions
+  const handleViewCertificates = async (mua: AdminMUAResponseDTO) => {
+    setSelectedMUA(mua);
+    setShowCertificateDialog(true);
+    setLoadingCertificates(true);
+    
+    try {
+      // Get MUA's certificates
+      const response = await getPublicCertificates(mua._id, { limit: 10 });
+      setCertificates(response.data);
+    } catch (error) {
+      console.error('Failed to load certificates:', error);
+      setCertificates([]);
+    } finally {
+      setLoadingCertificates(false);
+    }
+  };
+
+  const handleApproveMUAFromDialog = async () => {
+    if (!selectedMUA) return;
+    
+    try {
+      setIsLoading(true);
+      const response = await approveMUA(selectedMUA._id, { 
+        adminNotes: 'Approved after certificate review' 
+      });
+      
+      if (response.success) {
+        setShowCertificateDialog(false);
+        await loadMUAs();
+      }
+    } catch (error) {
+      console.error('Failed to approve MUA:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRejectMUAFromDialog = async () => {
+    if (!selectedMUA) return;
+    
+    try {
+      setIsLoading(true);
+      const response = await rejectMUA(selectedMUA._id, { 
+        reason: 'Rejected after certificate review' 
+      });
+      
+      if (response.success) {
+        setShowCertificateDialog(false);
+        await loadMUAs();
+      }
+    } catch (error) {
+      console.error('Failed to reject MUA:', error);
     } finally {
       setIsLoading(false);
     }
@@ -641,13 +711,25 @@ const MUAManagement: React.FC = () => {
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-xs font-medium">
                     <div className="flex items-center gap-2">
-                      <button className="flex items-center gap-1 text-purple-600 hover:text-purple-900 transition-colors">
+                      <button 
+                        onClick={() => handleViewCertificates(mua)}
+                        className="flex items-center gap-1 text-purple-600 hover:text-purple-900 transition-colors"
+                        disabled={isLoading}
+                      >
                         <Eye className="w-3 h-3" />
                         View
                       </button>
                       
                       {mua.status === 'PENDING' && (
                         <>
+                          <button 
+                            onClick={() => handleViewCertificates(mua)}
+                            className="flex items-center gap-1 text-blue-600 hover:text-blue-900 transition-colors"
+                            disabled={isLoading}
+                          >
+                            <Award className="w-3 h-3" />
+                            Certificates
+                          </button>
                           <button 
                             onClick={() => handleApproveMUA(mua._id)}
                             className="flex items-center gap-1 text-green-600 hover:text-green-900 transition-colors"
@@ -725,6 +807,149 @@ const MUAManagement: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Certificate Dialog */}
+      <Dialog open={showCertificateDialog} onOpenChange={setShowCertificateDialog}>
+        <DialogContent className="max-w-4xl max-h-[95vh] overflow-hidden bg-white rounded-2xl shadow-lg">
+          <DialogHeader className="bg-gradient-to-r from-purple-600 to-pink-700 p-6 text-white rounded-t-lg -m-6 mb-4">
+            <DialogTitle className="text-2xl font-bold text-white">
+              {selectedMUA?.name || 'MUA'} - Certificates
+            </DialogTitle>
+            <DialogDescription className="text-purple-100 mt-1">
+              Review certificates and approve/reject application
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Dialog Content */}
+          <div className="overflow-y-auto max-h-[60vh] px-1">
+            {selectedMUA && (
+              <>
+                {/* MUA Info */}
+                <div className="bg-gray-50 rounded-xl p-4 mb-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600">Status</p>
+                      <div className="mt-1">{getStatusBadge(selectedMUA.status)}</div>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Experience</p>
+                      <p className="font-medium">{selectedMUA.experience || 0} years</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Location</p>
+                      <p className="font-medium">{selectedMUA.location || 'N/A'}</p>
+                    </div>
+                  </div>
+                  {selectedMUA.bio && (
+                    <div className="mt-4">
+                      <p className="text-sm text-gray-600">Bio</p>
+                      <p className="text-gray-900 mt-1">{selectedMUA.bio}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Certificates */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <Award className="w-5 h-5 text-blue-600" />
+                    Certificates ({certificates.length})
+                  </h3>
+
+                  {loadingCertificates && (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                      <span className="ml-2 text-gray-600">Loading certificates...</span>
+                    </div>
+                  )}
+
+                  {!loadingCertificates && certificates.length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      <Award className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+                      <p>No certificates found</p>
+                    </div>
+                  )}
+
+                  {!loadingCertificates && certificates.length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {certificates.map((cert) => (
+                        <div key={cert._id} className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                          {/* Certificate Image */}
+                          {cert.image && (
+                            <div className="mb-3">
+                              <img
+                                src={cert.image.url}
+                                alt={cert.title}
+                                className="w-full h-40 object-cover rounded-lg border"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = '/images/placeholder-cert.png';
+                                }}
+                              />
+                            </div>
+                          )}
+
+                          {/* Certificate Info */}
+                          <div>
+                            <h4 className="font-semibold text-gray-900 mb-2">{cert.title}</h4>
+                            <p className="text-sm text-gray-600 mb-2">
+                              <strong>Issuer:</strong> {cert.issuer}
+                            </p>
+                            
+                            <div className="grid grid-cols-2 gap-2 text-xs text-gray-500 mb-2">
+                              <div>
+                                <strong>Issue Date:</strong><br />
+                                {formatDate(cert.issueDate)}
+                              </div>
+                              {cert.expireDate && (
+                                <div>
+                                  <strong>Expire Date:</strong><br />
+                                  {formatDate(cert.expireDate)}
+                                </div>
+                              )}
+                            </div>
+
+                            {cert.description && (
+                              <p className="text-sm text-gray-600 mt-2">{cert.description}</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Dialog Actions */}
+          {selectedMUA?.status === 'PENDING' && (
+            <DialogFooter className="bg-gray-50 -mx-6 -mb-6 px-6 py-4 mt-6 border-t flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                Review the certificates and make a decision
+              </div>
+              <div className="flex items-center gap-3">
+                <Button
+                  onClick={handleRejectMUAFromDialog}
+                  disabled={isLoading}
+                  variant="destructive"
+                  className="flex items-center gap-2 bg-red-600 hover:bg-red-700"
+                >
+                  <XCircle className="w-4 h-4" />
+                  {isLoading ? 'Rejecting...' : 'Reject Artist'}
+                </Button>
+                <Button
+                  onClick={handleApproveMUAFromDialog}
+                  disabled={isLoading}
+                  variant="default"
+                  className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  {isLoading ? 'Approving...' : 'Approve Artist'}
+                </Button>
+              </div>
+            </DialogFooter>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

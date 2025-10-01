@@ -2,7 +2,7 @@ import type {ISlot } from "types/schedule.interfaces";
 import { getMondayOfWeek } from "utils/calendarUtils";
 import { getFinalSlots } from "./schedule.service";
 import { fromUTC, toUTC } from "utils/timeUtils";
-import { SLOT_TYPES, BOOKING_STATUS, BOOKING_TYPES, TRANSACTION_STATUS } from "constants/index";
+import { SLOT_TYPES, BOOKING_STATUS, BOOKING_TYPES, TRANSACTION_STATUS, MUA_STATUS } from "constants/index";
 import { Booking } from "models/bookings.models";
 import type { CreateBookingDTO, UpdateBookingDTO, BookingResponseDTO, IBookingSlot, IAvailableMuaServices, PendingBookingResponseDTO } from "types/booking.dtos";
 import dayjs from "dayjs";
@@ -95,9 +95,9 @@ async function mapToMuaResponse(ele:any):Promise<MuaResponseDTO>{
         bio:ele.bio,
         location:ele.location,
         ratingAverage:ele.ratingAverage,
+        status:ele.status,
         feedbackCount:ele.feedbackCount,
         bookingCount:ele.bookingCount,
-        isVerified:ele.isVerified
     }
 }
 
@@ -311,7 +311,7 @@ export async function getAvailableMonthlySlots(muaId: string, day: string, durat
 }
 
 export async function getAvailableMuaServicesByDay(day:string):Promise<IAvailableMuaServices[]>{
-    const muaIds = await MUA.find({}).populate('userId', '_id fullName').exec();
+    const muaIds = await MUA.find({ status: MUA_STATUS.APPROVED }).populate('userId', '_id fullName').exec();
     const result = await Promise.all(muaIds.map(async (element:any) => {
         const validAvailableSlots = await getAvailableServicesOfMuaByDay(element._id,day);
         if(!validAvailableSlots.length) return null;

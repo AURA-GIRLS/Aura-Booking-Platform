@@ -1,0 +1,122 @@
+// User Roles
+export const USER_ROLES = {
+    USER: 'USER',
+    ARTIST: 'ARTIST',
+    ADMIN: 'ADMIN'
+};
+// User Status
+export const USER_STATUS = {
+    ACTIVE: 'ACTIVE',
+    INACTIVE: 'INACTIVE',
+    BANNED: 'BANNED'
+};
+// MUA Status
+export const MUA_STATUS = {
+    PENDING: 'PENDING',
+    APPROVED: 'APPROVED',
+    REJECTED: 'REJECTED'
+};
+// Booking Status
+export const BOOKING_STATUS = {
+    PENDING: 'PENDING',
+    CONFIRMED: 'CONFIRMED',
+    REJECTED: 'REJECTED',
+    CANCELLED: 'CANCELLED',
+    COMPLETED: 'COMPLETED'
+};
+// booking type
+export const BOOKING_TYPES = {
+    HOME: 'HOME',
+    STUDIO: 'STUDIO',
+};
+// Portfolio Categories
+export const PORTFOLIO_CATEGORIES = {
+    BRIDAL: 'BRIDAL',
+    PARTY: 'PARTY',
+    GRADUATION: 'GRADUATION',
+    DAILY: 'DAILY',
+    PROM: 'PROM',
+    WEDDING_GUEST: 'WEDDING_GUEST',
+};
+// Service Categories for makeup occasions
+export const SERVICE_CATEGORIES = {
+    BRIDAL: 'BRIDAL',
+    PARTY: 'PARTY',
+    WEDDING_GUEST: 'WEDDING_GUEST',
+    GRADUATION: 'GRADUATION',
+    PROM: 'PROM',
+    DAILY: 'DAILY',
+    SPECIAL_EVENT: 'SPECIAL_EVENT'
+};
+// Service Add-ons for makeup services
+export const SERVICE_ADDONS = {
+    HAIR_STYLING: 'HAIR_STYLING',
+    FALSE_LASHES: 'FALSE_LASHES',
+    SKINCARE_PREP: 'SKINCARE_PREP',
+    PHOTOGRAPHY: 'PHOTOGRAPHY',
+    TOUCH_UP_KIT: 'TOUCH_UP_KIT',
+    TRAVEL_SERVICE: 'TRAVEL_SERVICE',
+    AIRBRUSH_MAKEUP: 'AIRBRUSH_MAKEUP',
+    CONTOURING: 'CONTOURING'
+};
+//Media types
+export const RESOURCE_TYPES = {
+    image: 'image',
+    video: 'video',
+    raw: 'raw'
+};
+// Payment Status
+export const PAYMENT_STATUS = {
+    PENDING: 'PENDING',
+    PAID: 'PAID',
+    FAILED: 'FAILED',
+    REFUNDED: 'REFUNDED'
+};
+// Notification Types
+export const NOTIFICATION_TYPES = {
+    BOOKING_CONFIRMED: 'BOOKING_CONFIRMED',
+    BOOKING_CANCELLED: 'BOOKING_CANCELLED',
+    BOOKING_REMINDER: 'BOOKING_REMINDER',
+    PAYMENT_SUCCESS: 'PAYMENT_SUCCESS',
+    PAYMENT_FAILED: 'PAYMENT_FAILED'
+};
+export const SLOT_TYPES = {
+    ORIGINAL_WORKING: 'ORIGINAL_WORKING',
+    OVERRIDE: 'OVERRIDE',
+    BLOCKED: 'BLOCKED',
+    NEW_WORKING: 'NEW_WORKING',
+    NEW_OVERRIDE: 'NEW_OVERRIDE',
+    BOOKING: 'BOOKING'
+};
+export const TRANSACTION_STATUS = {
+    HOLD: 'HOLD',
+    CAPTURED: 'CAPTURED',
+    PENDING_REFUND: 'PENDING_REFUND',
+    REFUNDED: 'REFUNDED'
+};
+export const REFUND_REASON = {
+    CANCELLED: 'CANCELLED',
+    REJECTED: 'REJECTED',
+};
+export const WITHDRAW_STATUS = {
+    PENDING: 'PENDING',
+    PROCESSING: 'PROCESSING',
+    SUCCESS: 'SUCCESS',
+    FAILED: 'FAILED'
+};
+export const PAYOUT_CATEGORIES = {
+    REFUND: 'REFUND',
+    WITHDRAWAL: 'WITHDRAWAL'
+};
+export const PAYMENT_METHODS = {
+    BANK_TRANSFER: 'BANK_TRANSFER',
+};
+//COMUNITY
+export const POST_STATUS = {
+    PUBLISHED: 'PUBLISHED',
+    PRIVATE: 'PRIVATE'
+};
+export const TARGET_TYPES = {
+    POST: 'POST',
+    COMMENT: 'COMMENT'
+};

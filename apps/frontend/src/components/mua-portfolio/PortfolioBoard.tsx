@@ -98,7 +98,7 @@ export default function MakeupArtistPortfolio() {
    <PortfolioSection/>
 
       {/* Testimonials */}
-     <TestimonialsSection/>
+     <TestimonialsSection muaId={artistId}/>
 
     </div>
   )

@@ -118,8 +118,11 @@ export default function ArtistNavbar({ mua, setMua }:  Readonly<ArtistNavbarProp
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild  className="cursor-pointer focus:bg-rose-100">
                     <Link href={`/manage-artist/${id}/public-portfolio`}>My Public Portfolio</Link>
-                  </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleLogout} className="px-2 py-2 text-red-500 cursor-pointer focus:bg-rose-100">Logout</DropdownMenuItem>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href={`/manage-artist/${id}/certificates` as any} className="cursor-pointer focus:bg-rose-100">My Certificates</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout} className="px-2 py-2 text-red-500 cursor-pointer">Logout</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           )}
@@ -166,7 +169,10 @@ export default function ArtistNavbar({ mua, setMua }:  Readonly<ArtistNavbarProp
                   <DropdownMenuItem asChild  className="cursor-pointer focus:bg-rose-100">
                     <Link href={`/manage-artist/${id}/public-portfolio`}>My Public Portfolio</Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleLogout} className="px-2 py-2 text-red-500 cursor-pointer focus:bg-rose-100">Logout</DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href={`/manage-artist/${id}/certificates` as any} className="cursor-pointer focus:bg-rose-100">My Certificates</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleLogout} className="px-2 py-2 text-red-500 cursor-pointer">Logout</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             )}

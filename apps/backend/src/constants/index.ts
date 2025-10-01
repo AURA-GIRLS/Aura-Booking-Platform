@@ -37,8 +37,10 @@ export const BOOKING_TYPES = {
 export const PORTFOLIO_CATEGORIES = {
   BRIDAL: 'BRIDAL',
   PARTY: 'PARTY',
-  PHOTOSHOOT: 'PHOTOSHOOT',
-  CASUAL: 'CASUAL'
+  GRADUATION: 'GRADUATION',    
+  DAILY: 'DAILY',           
+  PROM: 'PROM',             
+  WEDDING_GUEST: 'WEDDING_GUEST',    
 } as const;
 
 // Service Categories for makeup occasions
@@ -113,6 +115,7 @@ export const WITHDRAW_STATUS = {
   SUCCESS:'SUCCESS',
   FAILED:'FAILED'
 } as const;
+
 export const PAYOUT_CATEGORIES={
   REFUND:'REFUND',
   WITHDRAWAL:'WITHDRAWAL'

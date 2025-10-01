@@ -30,6 +30,7 @@ import type {
   UserStatisticsDTO,
   MUAStatisticsDTO
 } from "../types/admin.user.dto";
+import { isNativeError } from "util/types";
 
 // ==================== USER MANAGEMENT ====================
 
@@ -526,7 +527,6 @@ export async function getMUAs(query: AdminMUAQueryDTO = {}): Promise<AdminMUALis
         totalEarnings: earnings.totalEarnings,
         pendingWithdrawal: pendingWithdrawal,
         profilePicture: populatedUser?.avatarUrl || '',
-        isAvailable: mua.isVerified || false,
         status: (mua as any).status || MUA_STATUS.PENDING,
         joinedAt: mua.createdAt,
         lastActive: populatedUser?.updatedAt || mua.updatedAt,
@@ -538,7 +538,7 @@ export async function getMUAs(query: AdminMUAQueryDTO = {}): Promise<AdminMUALis
         verification: {
           identity: populatedUser?.isEmailVerified || false,
           portfolio: portfolioCount.total > 0,
-          background: mua.isVerified || false
+          background: populatedUser?.avatarUrl ? true : false
         },
         specialties: [], // TODO: Add specialties field to MUA model if needed
         createdAt: mua.createdAt,
@@ -620,7 +620,6 @@ export async function getMUAById(muaId: string): Promise<AdminMUAResponseDTO | n
       bookingCount,
       profilePicture: populatedUser?.avatarUrl || '',
       location: mua.location || '',
-      isAvailable: (mua as any).isVerified || false,
       status: (mua as any).status || MUA_STATUS.PENDING,
       createdAt: mua.createdAt,
       updatedAt: mua.updatedAt,
@@ -684,7 +683,6 @@ export async function approveMUA(muaId: string, approveData: ApproveMUADTO = {})
       bookingCount,
       profilePicture: populatedUser?.avatarUrl || '',
       location: mua.location || '',
-      isAvailable: (mua as any).isVerified || false,
       status: (mua as any).status || MUA_STATUS.APPROVED,
       createdAt: mua.createdAt,
       updatedAt: mua.updatedAt,
@@ -742,7 +740,6 @@ export async function rejectMUA(muaId: string, rejectData: RejectMUADTO): Promis
       bookingCount,
       profilePicture: populatedUser?.avatarUrl || '',
       location: mua.location || '',
-      isAvailable: (mua as any).isVerified || false,
       status: (mua as any).status || MUA_STATUS.REJECTED,
       createdAt: mua.createdAt,
       updatedAt: mua.updatedAt,

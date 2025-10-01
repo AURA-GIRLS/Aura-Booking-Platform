@@ -9,8 +9,7 @@ const MUASchema = new Schema({
   ratingAverage: Number,
   feedbackCount: Number,
   bookingCount: Number,
-  isVerified: Boolean,
-  status: {type: Object.values(MUA_STATUS), default: MUA_STATUS.PENDING},
+  status: {type: String, enum: Object.values(MUA_STATUS), default: MUA_STATUS.PENDING},
   rejectionReason: String,
 }, { timestamps: true });
 

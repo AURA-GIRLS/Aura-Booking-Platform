@@ -49,7 +49,6 @@ export interface AdminMUAResponseDTO extends MuaResponseDTO {
   pendingWithdrawal?: number;
   profilePicture?: string;
   location?: string;
-  isAvailable?: boolean;
   status: MUAStatus;
   joinedAt?: Date;
   lastActive?: Date;
