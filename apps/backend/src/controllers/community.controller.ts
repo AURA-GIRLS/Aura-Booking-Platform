@@ -41,7 +41,7 @@ export class CommunityController {
                 tag: tag as string,
                 status: status as string,
                 q: q as string,
-                sort: sort as string,
+                sort: sort === "newest" || sort === "popular" ? sort : undefined,
             });
             const response: ApiResponseDTO = {
                 success: true,
