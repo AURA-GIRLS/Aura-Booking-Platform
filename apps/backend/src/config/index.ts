@@ -35,10 +35,8 @@ export const config = {
   jwtSecret: process.env.JWT_SECRET!,
   
   // Email Service
-  smtpHost: process.env.SMTP_HOST || '',
-  smtpPort: Number(process.env.SMTP_PORT || ''),
   smtpUser: process.env.SMTP_USER || '',
-  smtpPass: process.env.SMTP_PASS || '',
+  sendgridApiKey: process.env.SENDGRID_API_KEY || '',
   
   // Third-party services
   googleClientId: process.env.GOOGLE_CLIENT_ID || '',

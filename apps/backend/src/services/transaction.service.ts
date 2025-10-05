@@ -196,17 +196,17 @@ const refundReason: RefundReason = bookingStatus === BOOKING_STATUS.CANCELLED ? 
    const customer = await User.findById(transaction?.customerId).exec();
    const service = await ServicePackage.findById(booking?.serviceId).exec();
    
-  //  if (customer && customer.email) {
-  //    const emailService = new EmailService();
-  //    await emailService.sendRefundSuccessNotification(
-  //      customer.email,
-  //      customer.fullName || 'Customer',
-  //      transaction?.amount || 0,
-  //      bookingId,
-  //      service?.name || 'Service',
-  //      refundResponse.data.id
-  //    );
-  //  }
+   if (customer && customer.email) {
+     const emailService = new EmailService();
+     await emailService.sendRefundSuccessNotification(
+       customer.email,
+       customer.fullName || 'Customer',
+       transaction?.amount || 0,
+       bookingId,
+       service?.name || 'Service',
+       refundResponse.data.id
+     );
+   }
  } catch (emailError) {
    console.error('Failed to send refund success notification:', emailError);
    // Don't throw error here to avoid breaking the refund process

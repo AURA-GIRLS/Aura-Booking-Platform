@@ -18,10 +18,8 @@ export interface Config {
   jwtSecret: string;
   
   // Email Service
-  smtpHost: string;
-  smtpPort: number;
   smtpUser: string;
-  smtpPass: string;
+  sendgridApiKey:string;
   
   // Third-party services
   googleClientId: string;
