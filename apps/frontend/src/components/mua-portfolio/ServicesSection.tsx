@@ -4,26 +4,37 @@ import { Button } from "../lib/ui/button"
 import { Badge } from "../lib/ui/badge"
 import { services } from "./data"
 import { ServiceDetail } from "@/types/artist.dto"
+import { useAuthCheck } from "../../utils/auth"
 
 export default function ServicesSection({services,handleBook}:Readonly<{services: ServiceDetail[], handleBook?: (serviceId?: string) => void}>) {
- function formatPrice(price?: number) {
-  return typeof price === "number" ? `${price.toLocaleString("vi-VN")} VND` : "Contact";
-}
+  const { checkAuthAndExecute } = useAuthCheck();
 
-function formatDuration(duration?: number) {
-  if (typeof duration !== "number") return "Contact";
-
-  const hours = Math.floor(duration / 60); // số giờ
-  const minutes = duration % 60;           // số phút còn lại
-
-  if (hours > 0 && minutes > 0) {
-    return `${hours}h ${minutes}m`;
-  } else if (hours > 0) {
-    return `${hours}h`;
-  } else {
-    return `${minutes}m`;
+  function formatPrice(price?: number) {
+    return typeof price === "number" ? `${price.toLocaleString("vi-VN")} VND` : "Contact";
   }
-}
+
+  function formatDuration(duration?: number) {
+    if (typeof duration !== "number") return "Contact";
+
+    const hours = Math.floor(duration / 60); // số giờ
+    const minutes = duration % 60;           // số phút còn lại
+
+    if (hours > 0 && minutes > 0) {
+      return `${hours}h ${minutes}m`;
+    } else if (hours > 0) {
+      return `${hours}h`;
+    } else {
+      return `${minutes}m`;
+    }
+  }
+
+  const handleBookService = (serviceId?: string) => {
+    checkAuthAndExecute(() => {
+      if (handleBook) {
+        handleBook(serviceId);
+      }
+    });
+  };
 
     return (
     <section id="services" className="py-16 bg-white min-h-[45rem]">
@@ -69,7 +80,7 @@ function formatDuration(duration?: number) {
                       <span className="text-gray-500 text-sm ml-1">{formatDuration(service.duration)}</span>
                     </div>
                     <Button 
-                    onClick={() => handleBook && handleBook(service._id)}
+                    onClick={() => handleBookService(service._id)}
                     size="sm" className="bg-rose-500 hover:bg-rose-600 text-white">
                       Book now
                     </Button>

@@ -81,7 +81,7 @@ export default function Navbar({ user, setUser }: Readonly<NavbarProps>)  {
           <button aria-label="Notifications" className="p-2 hover:bg-gray-100 rounded">🔔</button>
           {!user ? (
             <Link href="/auth/login">
-              <button className="h-8 px-4 rounded-full bg-pink-400 text-white font-semibold hover:bg-pink-500 transition">Login</button>
+              <button className="h-8 px-4 rounded-full bg-rose-500 text-white font-semibold hover:bg-rose-600 transition">Login</button>
             </Link>
           ) : (
             <DropdownMenu>
@@ -125,7 +125,7 @@ export default function Navbar({ user, setUser }: Readonly<NavbarProps>)  {
             <button aria-label="Notifications" className="p-2 hover:bg-gray-100 rounded">🔔</button>
             {!user ? (
               <Link href="/auth/login">
-                <button className="h-8 px-4 rounded-full bg-pink-400 text-white font-semibold hover:bg-pink-500 transition">Login</button>
+                <button className="h-8 px-4 rounded-full bg-rose-500 text-white font-semibold hover:bg-rose-600 transition">Login</button>
               </Link>
             ) : (
             <DropdownMenu>

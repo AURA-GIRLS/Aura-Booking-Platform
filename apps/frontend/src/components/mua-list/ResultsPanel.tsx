@@ -9,6 +9,7 @@ import ArtistCard from "./ArtistCard";
 import { MapPin, Star } from "lucide-react";
 import { Artist, SortKey } from "@/types/artist.dto";
 import { Button } from "../lib/ui/button";
+import { useAuthCheck } from "../../utils/auth";
 
 export interface ResultsPanelProps {
   occasion: ServiceCategory;
@@ -51,7 +52,14 @@ export default function ResultsPanel({
   totalPages,
   onPageChange,
 }: ResultsPanelProps) {
+  const { checkAuthAndExecute } = useAuthCheck();
   const occasionTabs = Object.entries(SERVICE_CATEGORY_LABELS);
+
+  const handleBookService = (artistId: string, serviceId: string) => {
+    checkAuthAndExecute(() => {
+      onBookService(artistId, serviceId);
+    });
+  };
   const sortOptions: { value: SortKey; label: string }[] = [
     { value: "rating_desc", label: "Featured" },
     { value: "price_asc", label: "Price: Low to High" },
@@ -63,10 +71,6 @@ export default function ResultsPanel({
   const handleViewProfile = (artistId: string) => {
     // Navigate to artist portfolio page
     window.location.href = `/user/artists/portfolio/${artistId}`;
-  };
-
-  const handleBookService = (artistId: string, serviceId: string) => {
-    window.location.href = `/user/booking/${artistId}/${serviceId}`;
   };
 
   return (
@@ -94,6 +98,7 @@ export default function ResultsPanel({
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-600">Sort by:</span>
           <select
+          title="sort by ..."
             value={sort}
             onChange={(e) => onSortChange(e.target.value as SortKey)}
             className="h-10 px-3 rounded-lg border border-gray-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 focus:border-rose-400 hover:border-rose-400 hover:shadow-md transition-all duration-300"

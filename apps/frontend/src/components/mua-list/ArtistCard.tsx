@@ -4,6 +4,7 @@ import { SERVICE_ADDON_LABELS } from "../../constants/constants";
 import { Artist } from "@/types/artist.dto";
 import { ArtistService } from "@/services/artist";
 import { Button } from "../lib/ui/button";
+import { useAuthCheck } from "../../utils/auth";
 
 interface ArtistCardProps {
   artist: Artist;
@@ -12,6 +13,8 @@ interface ArtistCardProps {
 }
 
 export default function ArtistCard({ artist, onViewProfile, onBookService }: ArtistCardProps) {
+  const { checkAuthAndExecute } = useAuthCheck();
+  
   const {
     _id,
     fullName,
@@ -28,6 +31,12 @@ export default function ArtistCard({ artist, onViewProfile, onBookService }: Art
 
   // Display up to 3 services as preview
   const servicePreview = services.slice(0, 3);
+
+  const handleBookService = (artistId: string, serviceId: string) => {
+    checkAuthAndExecute(() => {
+      onBookService(artistId, serviceId);
+    });
+  };
   
 
   return (
@@ -149,7 +158,7 @@ export default function ArtistCard({ artist, onViewProfile, onBookService }: Art
                             </p>
                           </div>
                           <button
-                            onClick={() => onBookService(_id, service._id)}
+                            onClick={() => handleBookService(_id, service._id)}
                             className="px-3 py-1 bg-rose-500 text-white text-xs rounded-md hover:bg-rose-600 transition-colors flex-shrink-0"
                           >
                             Book

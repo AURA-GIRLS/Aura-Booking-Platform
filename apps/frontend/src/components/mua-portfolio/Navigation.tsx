@@ -2,6 +2,7 @@
 import { useState } from "react"
 import { Button } from "../lib/ui/button"
 import { Calendar } from "lucide-react"
+import { useAuthCheck } from "../../utils/auth"
 
 const tabs = [
   { id: "about", label: "About" },
@@ -13,6 +14,13 @@ const tabs = [
 
 export default function Navigation({ handleBook }: { handleBook: (serviceId?: string) => void }) {
   const [selectedTab, setSelectedTab] = useState<string>("about")
+  const { checkAuthAndExecute } = useAuthCheck();
+
+  const handleBookNow = () => {
+    checkAuthAndExecute(() => {
+      handleBook();
+    });
+  };
 
   return (
     <section className="sticky top-0 z-50 bg-white shadow-sm py-2">
@@ -38,7 +46,7 @@ export default function Navigation({ handleBook }: { handleBook: (serviceId?: st
       {/* Floating button */}
       <div className="fixed bottom-6 right-6 z-50 hover:scale-105 transform transition-transform">
         <Button
-          onClick={() => handleBook()}
+          onClick={handleBookNow}
           className="bg-rose-500 hover:bg-rose-600 text-white shadow-lg rounded-full px-6"
         >
           <Calendar className="w-4 h-4 mr-2" />

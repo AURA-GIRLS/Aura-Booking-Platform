@@ -2,8 +2,19 @@ import { Star, MapPin, Calendar, MessageCircle, User, Check } from "lucide-react
 import { Badge } from "../lib/ui/badge"
 import { Button } from "../lib/ui/button"
 import { ArtistDetail } from "@/types/artist.dto"
+import { useAuthCheck } from "../../utils/auth"
 
 export default function HeroSection({muaDetail,handleBook}:{muaDetail:ArtistDetail, handleBook?: (serviceId?: string) => void}) {
+  const { checkAuthAndExecute } = useAuthCheck();
+
+  const handleBookNow = () => {
+    checkAuthAndExecute(() => {
+      if (handleBook) {
+        handleBook();
+      }
+    });
+  };
+
   return (
      <section id="about" className="bg-gradient-to-br from-rose-50 to-pink-50 py-12">
         <div className="max-w-7xl mx-auto px-4">
@@ -104,7 +115,7 @@ export default function HeroSection({muaDetail,handleBook}:{muaDetail:ArtistDeta
                 {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Button
-                  onClick={() => handleBook && handleBook()}
+                  onClick={handleBookNow}
                   className="flex-1 bg-rose-500 hover:bg-rose-600 text-white">
                     <Calendar className="w-4 h-4 mr-2" />
                     Book Now

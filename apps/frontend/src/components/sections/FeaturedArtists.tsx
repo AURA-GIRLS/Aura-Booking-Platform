@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { Star, Heart, Award, Sparkles, Calendar } from "lucide-react";
 import Link from "next/link";
+import { useAuthCheck } from "../../utils/auth";
 
 export default function FeaturedArtists() {
+  const { checkAuthAndExecute } = useAuthCheck();
   const [artists] = useState([
     { 
       id: "1",
@@ -49,8 +51,10 @@ export default function FeaturedArtists() {
   ]);
 
   const handleBooking = (artist: any) => {
-    // TODO: redirect to artist portfolio page
-    window.location.href = `/artists/portfolio/${artist.id}`;
+    checkAuthAndExecute(() => {
+      // TODO: redirect to artist portfolio page
+      window.location.href = `/artists/portfolio/${artist.id}`;
+    });
   };
 
   return (
