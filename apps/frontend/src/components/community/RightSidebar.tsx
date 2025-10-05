@@ -1,6 +1,7 @@
 import { Search } from 'lucide-react';
 import type { Conversation, User, Event } from './community.types';
 import { Input } from '../lib/ui/input';
+import { useAuthCheck } from '../../utils/auth';
 
 export default function RightSidebar({ selectedTab, setSelectedTab, conversations, currentUser, events }: Readonly<{
   selectedTab: string;
@@ -10,9 +11,10 @@ export default function RightSidebar({ selectedTab, setSelectedTab, conversation
   events: Event[];
 }>) {
   const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
+  const { isAuthenticated } = useAuthCheck();
 
   return (
-    <div className="w-80 bg-white h-screen sticky top-0 border-l border-gray-200">
+    <div className="w-80 bg-white h-screen sticky top-0 border-l border-gray-200 relative">
       <div className="px-4 relative w-full max-w-sm mt-4 mb-2">
       <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
       <Input
@@ -70,6 +72,17 @@ export default function RightSidebar({ selectedTab, setSelectedTab, conversation
           ))}
         </div>
       </div> */}
+      
+      {!isAuthenticated() && (
+        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center">
+          <button 
+            onClick={() => window.location.href = '/auth/login'}
+            className="bg-rose-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-rose-700 transition-colors"
+          >
+            Login to experience
+          </button>
+        </div>
+      )}
     </div>
   );
 }

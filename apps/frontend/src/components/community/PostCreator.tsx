@@ -26,6 +26,7 @@ import {
   CommandSeparator,
 } from "@/components/lib/ui/command";
 import { Badge } from "@/components/lib/ui/badge";
+import { useAuthCheck } from '../../utils/auth';
 
 type Privacy = 'public' | 'friends' | 'private';
 
@@ -63,6 +64,8 @@ export default function PostCreator({
   // Services state
   const [serviceDialogOpen, setServiceDialogOpen] = useState(false);
   const [selectedServices, setSelectedServices] = useState<ServiceResponseDTO[]>([]);
+
+  const { checkAuthAndExecute, isAuthenticated } = useAuthCheck();
 
   const prependIfMissing = useCallback((list: PostResponseDTO[], item: PostResponseDTO) => (
     list.some(p => p._id === item._id) ? list : [item, ...list]
@@ -130,49 +133,51 @@ export default function PostCreator({
     (p === 'private' ? POST_STATUS.PRIVATE : POST_STATUS.PUBLISHED);
 
   const handleCreatePost = async () => {
-    const content = postText.trim();
-    if (!content) return;
+    checkAuthAndExecute(async () => {
+      const content = postText.trim();
+      if (!content) return;
 
-    setIsSubmitting(true);
-    try {
-      // Upload files
-      let media: { type: ResourceType; url: string }[] = [];
-      if (files.length > 0) {
-        const uploadOne = async (file: File) => {
-          let guessedType: ResourceType = 'raw';
-          if (file.type.startsWith('video/')) guessedType = 'video';
-          else if (file.type.startsWith('image/')) guessedType = 'image';
-          const res = await UploadService.uploadFile(file, {
-            resourceType: guessedType,
-            folder: 'community/posts'
-          });
-          if (res.success && res.data) return { type: res.data.resourceType, url: res.data.url };
-          return null;
+      setIsSubmitting(true);
+      try {
+        // Upload files
+        let media: { type: ResourceType; url: string }[] = [];
+        if (files.length > 0) {
+          const uploadOne = async (file: File) => {
+            let guessedType: ResourceType = 'raw';
+            if (file.type.startsWith('video/')) guessedType = 'video';
+            else if (file.type.startsWith('image/')) guessedType = 'image';
+            const res = await UploadService.uploadFile(file, {
+              resourceType: guessedType,
+              folder: 'community/posts'
+            });
+            if (res.success && res.data) return { type: res.data.resourceType, url: res.data.url };
+            return null;
+          };
+          const results = await Promise.all(files.map(uploadOne));
+          media = results.filter((x): x is { type: ResourceType; url: string } => !!x);
+        }
+
+        const payload: CreatePostDTO = {
+          content,
+          media,
+          tags: selectedTags,
+          status: mapPrivacyToStatus(privacy),
+          attachedServices: selectedServices.map(s => s._id),
         };
-        const results = await Promise.all(files.map(uploadOne));
-        media = results.filter((x): x is { type: ResourceType; url: string } => !!x);
+
+        await CommunityService.createPost(payload);
+
+        // Clear inputs
+        setPostText('');
+        setFiles([]);
+        setSelectedTags([]);
+        setSelectedServices([]);
+      } catch (e) {
+        console.error('Create post failed', e);
+      } finally {
+        setIsSubmitting(false);
       }
-
-      const payload: CreatePostDTO = {
-        content,
-        media,
-        tags: selectedTags,
-        status: mapPrivacyToStatus(privacy),
-        attachedServices: selectedServices.map(s => s._id),
-      };
-
-      await CommunityService.createPost(payload);
-
-      // Clear inputs
-      setPostText('');
-      setFiles([]);
-      setSelectedTags([]);
-      setSelectedServices([]);
-    } catch (e) {
-      console.error('Create post failed', e);
-    } finally {
-      setIsSubmitting(false);
-    }
+    });
   };
 
   const getInitials = (name: string) =>
@@ -180,7 +185,7 @@ export default function PostCreator({
 
   return (
     <>
-    <div className="bg-white rounded-xl p-4 mb-6 shadow-sm">
+    <div className="bg-white rounded-xl p-4 mb-6 shadow-sm relative">
       <div className="flex items-start space-x-3">
         {currentUser.avatarUrl ? (
           <img
@@ -343,8 +348,17 @@ export default function PostCreator({
           </div>
         </div>
       </div>
-
-     
+      
+      {!isAuthenticated() && (
+        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm rounded-xl flex items-center justify-center">
+          <button 
+            onClick={() => window.location.href = '/auth/login'}
+            className="bg-rose-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-rose-700 transition-colors"
+          >
+            Login to experience
+          </button>
+        </div>
+      )}
     </div>
      {/* Tag Command Dialog */}
       <CommandDialog

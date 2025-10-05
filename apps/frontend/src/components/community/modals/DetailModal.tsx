@@ -10,6 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { CommunityService } from "@/services/community";
 import { socket } from "@/config/socket";
 import DeleteConfirmDialog from "../../generalUI/DeleteConfirmDialog";
+import { useAuthCheck } from "../../../utils/auth";
 
 type UIComment = CommentResponseDTO & { 
     isLiked?: boolean; 
@@ -45,6 +46,8 @@ export default function DetailModal({
     const [editContent, setEditContent] = React.useState("");
     const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
     const [commentToDelete, setCommentToDelete] = React.useState<string | null>(null);
+
+    const { checkAuthAndExecute, isAuthenticated } = useAuthCheck();
 
     // Load comments when post changes
     React.useEffect(() => {
@@ -252,124 +255,77 @@ export default function DetailModal({
     };
 
     const onAddComment = async () => {
-        if (!commentInput.trim() || !post?._id) return;
-        
-        try {
-            const response = await CommunityService.createComment({
-                postId: post._id,
-                content: commentInput.trim(),
-            });
+        checkAuthAndExecute(async () => {
+            if (!commentInput.trim() || !post?._id) return;
+            
+            try {
+                const response = await CommunityService.createComment({
+                    postId: post._id,
+                    content: commentInput.trim(),
+                });
 
-            if (response.success && response.data) {
-                // Clear input - server will emit socket event for realtime update
-                setCommentInput("");
+                if (response.success && response.data) {
+                    // Clear input - server will emit socket event for realtime update
+                    setCommentInput("");
+                }
+            } catch (error) {
+                console.error('Error creating comment:', error);
             }
-        } catch (error) {
-            console.error('Error creating comment:', error);
-        }
+        });
     };
 
     const onAddReply = async (parentCommentId: string) => {
-        const replyContent = replyInputs[parentCommentId]?.trim();
-        if (!replyContent || !post?._id) return;
+        checkAuthAndExecute(async () => {
+            const replyContent = replyInputs[parentCommentId]?.trim();
+            if (!replyContent || !post?._id) return;
 
-        try {
-            const response = await CommunityService.createComment({
-                postId: post._id,
-                parentId: parentCommentId,
-                content: replyContent,
-            });
-
-            if (response.success && response.data) {
-                // Don't add to local state immediately, wait for socket event
-                setReplyInputs(prev => ({ ...prev, [parentCommentId]: "" }));
-                
-                // Emit socket event to notify other users
-                socket.emit('comment:reply', {
+            try {
+                const response = await CommunityService.createComment({
                     postId: post._id,
-                    parentCommentId,
-                    reply: response.data,
+                    parentId: parentCommentId,
+                    content: replyContent,
                 });
+
+                if (response.success && response.data) {
+                    // Don't add to local state immediately, wait for socket event
+                    setReplyInputs(prev => ({ ...prev, [parentCommentId]: "" }));
+                    
+                    // Emit socket event to notify other users
+                    socket.emit('comment:reply', {
+                        postId: post._id,
+                        parentCommentId,
+                        reply: response.data,
+                    });
+                }
+            } catch (error) {
+                console.error('Error creating reply:', error);
             }
-        } catch (error) {
-            console.error('Error creating reply:', error);
-        }
+        });
     };
 
     const onLikeComment = async (commentId: string, isReply: boolean = false) => {
-        // Check current like status from likedComments state
-        const isCurrentlyLiked = likedComments.has(commentId);
+        checkAuthAndExecute(async () => {
+            // Check current like status from likedComments state
+            const isCurrentlyLiked = likedComments.has(commentId);
 
-        // Optimistically update UI immediately
-        setLikedComments(prev => {
-            const newSet = new Set(prev);
-            if (isCurrentlyLiked) {
-                newSet.delete(commentId);
-            } else {
-                newSet.add(commentId);
-            }
-            return newSet;
-        });
-
-        // Optimistically update like count in comments
-        setComments(prev => prev.map(comment => {
-            if (comment._id === commentId) {
-                return {
-                    ...comment,
-                    likeCount: comment.likeCount + (isCurrentlyLiked ? -1 : 1),
-                    isLiked: !isCurrentlyLiked,
-                };
-            }
-            // Check in replies
-            if (comment.replies) {
-                return {
-                    ...comment,
-                    replies: comment.replies.map(reply => 
-                        reply._id === commentId 
-                            ? { 
-                                ...reply, 
-                                likeCount: reply.likeCount + (isCurrentlyLiked ? -1 : 1),
-                                isLiked: !isCurrentlyLiked 
-                            }
-                            : reply
-                    )
-                };
-            }
-            return comment;
-        }));
-
-        try {
-            if (isCurrentlyLiked) {
-                await CommunityService.unlike({
-                    targetType: 'COMMENT',
-                    commentId,
-                });
-            } else {
-                await CommunityService.like({
-                    targetType: 'COMMENT',
-                    commentId,
-                });
-            }
-        } catch (error) {
-            console.error('Error liking comment:', error);
-            // Revert optimistic updates on error
+            // Optimistically update UI immediately
             setLikedComments(prev => {
                 const newSet = new Set(prev);
                 if (isCurrentlyLiked) {
-                    newSet.add(commentId);
-                } else {
                     newSet.delete(commentId);
+                } else {
+                    newSet.add(commentId);
                 }
                 return newSet;
             });
 
-            // Revert like count
+            // Optimistically update like count in comments
             setComments(prev => prev.map(comment => {
                 if (comment._id === commentId) {
                     return {
                         ...comment,
-                        likeCount: comment.likeCount + (isCurrentlyLiked ? 1 : -1),
-                        isLiked: isCurrentlyLiked,
+                        likeCount: comment.likeCount + (isCurrentlyLiked ? -1 : 1),
+                        isLiked: !isCurrentlyLiked,
                     };
                 }
                 // Check in replies
@@ -380,8 +336,8 @@ export default function DetailModal({
                             reply._id === commentId 
                                 ? { 
                                     ...reply, 
-                                    likeCount: reply.likeCount + (isCurrentlyLiked ? 1 : -1),
-                                    isLiked: isCurrentlyLiked 
+                                    likeCount: reply.likeCount + (isCurrentlyLiked ? -1 : 1),
+                                    isLiked: !isCurrentlyLiked 
                                 }
                                 : reply
                         )
@@ -389,7 +345,60 @@ export default function DetailModal({
                 }
                 return comment;
             }));
-        }
+
+            try {
+                if (isCurrentlyLiked) {
+                    await CommunityService.unlike({
+                        targetType: 'COMMENT',
+                        commentId,
+                    });
+                } else {
+                    await CommunityService.like({
+                        targetType: 'COMMENT',
+                        commentId,
+                    });
+                }
+            } catch (error) {
+                console.error('Error liking comment:', error);
+                // Revert optimistic updates on error
+                setLikedComments(prev => {
+                    const newSet = new Set(prev);
+                    if (isCurrentlyLiked) {
+                        newSet.add(commentId);
+                    } else {
+                        newSet.delete(commentId);
+                    }
+                    return newSet;
+                });
+
+                // Revert like count
+                setComments(prev => prev.map(comment => {
+                    if (comment._id === commentId) {
+                        return {
+                            ...comment,
+                            likeCount: comment.likeCount + (isCurrentlyLiked ? 1 : -1),
+                            isLiked: isCurrentlyLiked,
+                        };
+                    }
+                    // Check in replies
+                    if (comment.replies) {
+                        return {
+                            ...comment,
+                            replies: comment.replies.map(reply => 
+                                reply._id === commentId 
+                                    ? { 
+                                        ...reply, 
+                                        likeCount: reply.likeCount + (isCurrentlyLiked ? 1 : -1),
+                                        isLiked: isCurrentlyLiked 
+                                    }
+                                    : reply
+                            )
+                        };
+                    }
+                    return comment;
+                }));
+            }
+        });
     };
 
     const toggleReplies = (commentId: string) => {
@@ -500,33 +509,45 @@ export default function DetailModal({
                 {/* Comments Section */}
                 <div className="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
                     {/* Main Comment Input */}
-                    <div className="flex items-start space-x-3 mb-4">
-                        {_currentUser.avatarUrl ? (
-                            <img src={_currentUser.avatarUrl} alt="avatar" className="w-8 h-8 rounded-full object-cover" />
-                        ) : (
-                            <div className="w-8 h-8 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full flex items-center justify-center">
-                                <span className="text-white text-xs font-semibold">{getInitials(_currentUser.fullName)}</span>
-                            </div>
-                        )}
-                        <div className="flex-1">
-                            <div className="flex items-center border border-gray-200 rounded-lg px-3">
-                                <input
-                                    value={commentInput}
-                                    onChange={(e) => setCommentInput(e.target.value)}
-                                    placeholder="Write a comment..."
-                                    className="flex-1 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none"
-                                    onKeyDown={(e) => e.key === 'Enter' && onAddComment()}
-                                />
-                                <button
-                                    onClick={onAddComment}
-                                    disabled={!commentInput.trim()}
-                                    aria-label="Send comment"
-                                    className="p-1 text-rose-600 disabled:opacity-40"
-                                >
-                                    <Send className="w-5 h-5" />
-                                </button>
+                    <div className="relative">
+                        <div className="flex items-start space-x-3 mb-4">
+                            {_currentUser.avatarUrl ? (
+                                <img src={_currentUser.avatarUrl} alt="avatar" className="w-8 h-8 rounded-full object-cover" />
+                            ) : (
+                                <div className="w-8 h-8 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full flex items-center justify-center">
+                                    <span className="text-white text-xs font-semibold">{getInitials(_currentUser.fullName)}</span>
+                                </div>
+                            )}
+                            <div className="flex-1">
+                                <div className="flex items-center border border-gray-200 rounded-lg px-3">
+                                    <input
+                                        value={commentInput}
+                                        onChange={(e) => setCommentInput(e.target.value)}
+                                        placeholder="Write a comment..."
+                                        className="flex-1 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none"
+                                        onKeyDown={(e) => e.key === 'Enter' && onAddComment()}
+                                    />
+                                    <button
+                                        onClick={onAddComment}
+                                        disabled={!commentInput.trim()}
+                                        aria-label="Send comment"
+                                        className="p-1 text-rose-600 disabled:opacity-40"
+                                    >
+                                        <Send className="w-5 h-5" />
+                                    </button>
+                                </div>
                             </div>
                         </div>
+                        {!isAuthenticated() && (
+                            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm rounded-lg flex items-center justify-center">
+                                <button 
+                                    onClick={() => window.location.href = '/auth/login'}
+                                    className="bg-rose-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-rose-700 transition-colors"
+                                >
+                                    Login to experience
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {/* Loading State */}

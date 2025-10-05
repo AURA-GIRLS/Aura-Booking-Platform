@@ -5,6 +5,7 @@ import { useCallback, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { CommunityService } from "@/services/community";
 import { FilterState } from "./MainContent";
+import { useAuthCheck } from "../../utils/auth";
 
 interface LeftSidebarProps {
   userWalls: UserWallResponseDTO[]; // 🆕 danh sách user walls để hiển thị ở StoriesSectio
@@ -34,6 +35,7 @@ export default function LeftSidebar({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { isAuthenticated } = useAuthCheck();
 
   // Track which nav is active locally: 'feed' | 'following' | 'none'
   const [navActive, setNavActive] = useState<"feed" | "following" | "none">("feed");
@@ -169,7 +171,7 @@ export default function LeftSidebar({
   }, [clearWallParams, fetchFollowingUsers, fetchPostOfFollowingUser, setActiveFilter]);
 
   return (
-    <div className="w-64 bg-white h-screen sticky top-0 border-r border-gray-200 p-4">
+    <div className="w-64 bg-white h-screen sticky top-0 border-r border-gray-200 p-4 relative">
       {/* Profile */}
       <div className="flex items-center mb-6">
         <button
@@ -252,6 +254,17 @@ export default function LeftSidebar({
           ))}
         </div>
       </div>
+      
+      {!isAuthenticated() && (
+        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center">
+          <button 
+            onClick={() => window.location.href = '/auth/login'}
+            className="bg-rose-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-rose-700 transition-colors"
+          >
+            Login to experience
+          </button>
+        </div>
+      )}
     </div>
   );
 }

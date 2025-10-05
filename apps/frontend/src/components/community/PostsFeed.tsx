@@ -13,6 +13,7 @@ import { Badge } from '@/components/lib/ui/badge';
 import DetailModal from './modals/DetailModal';
 import { Separator } from '../lib/ui/separator';
 import DeleteConfirmDialog from '../generalUI/DeleteConfirmDialog';
+import { useAuthCheck } from '../../utils/auth';
 
 
 export default function PostsFeed({ posts, setPosts, currentUser: _currentUser, fetchMinimalUser, onOpenUserWall }: Readonly<{ posts: PostResponseDTO[]; setPosts: React.Dispatch<React.SetStateAction<PostResponseDTO[]>>; currentUser: UserWallResponseDTO; fetchMinimalUser: () => Promise<void>; onOpenUserWall?: (userId: string, userName?: string) => void }>) {
@@ -32,6 +33,8 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser, 
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [postToDelete, setPostToDelete] = useState<PostResponseDTO | null>(null);
 
+  const { checkAuthAndExecute, isAuthenticated } = useAuthCheck();
+
   const formatTimeAgo = (date: string | Date) => {
     const d = new Date(date);
     const diffInHours = Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60));
@@ -43,19 +46,21 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser, 
   };
 
   const handleLikePost = async (postId: string) => {
-    // Only call API; socket events will update UI
-    const post = posts.find(p => p._id === postId);
-    if (!post) return;
-    const isLikedLocally = (post as any)._isLiked === true;
-    try {
-      if (isLikedLocally) {
-        await CommunityService.unlike({ targetType: TARGET_TYPES.POST, postId });
-      } else {
-        await CommunityService.like({ targetType: TARGET_TYPES.POST, postId });
+    checkAuthAndExecute(async () => {
+      // Only call API; socket events will update UI
+      const post = posts.find(p => p._id === postId);
+      if (!post) return;
+      const isLikedLocally = (post as any)._isLiked === true;
+      try {
+        if (isLikedLocally) {
+          await CommunityService.unlike({ targetType: TARGET_TYPES.POST, postId });
+        } else {
+          await CommunityService.like({ targetType: TARGET_TYPES.POST, postId });
+        }
+      } catch {
+        // optional: toast error
       }
-    } catch {
-      // optional: toast error
-    }
+    });
   };
 
 
@@ -66,20 +71,22 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser, 
   }, [_currentUser]);
 
   const toggleFollow = useCallback(async (authorId: string) => {
-    const me = (_currentUser as any)?._id as string | undefined;
-    if (!authorId || (me && authorId === me)) return;
-    setFollowLoading((prev) => ({ ...prev, [authorId]: true }));
-    try {
-      const isFollowing = !!following[authorId];
-      if (isFollowing) await CommunityService.unfollowUser(authorId);
-      else await CommunityService.followUser(authorId);
-    } catch (e) {
-      // optional: toast error; revert optimistic state if needed
-      console.error('Failed to toggle follow', e);
-    } finally {
-      setFollowLoading((prev) => ({ ...prev, [authorId]: false }));
-    }
-  }, [_currentUser, following]);
+    checkAuthAndExecute(async () => {
+      const me = (_currentUser as any)?._id as string | undefined;
+      if (!authorId || (me && authorId === me)) return;
+      setFollowLoading((prev) => ({ ...prev, [authorId]: true }));
+      try {
+        const isFollowing = !!following[authorId];
+        if (isFollowing) await CommunityService.unfollowUser(authorId);
+        else await CommunityService.followUser(authorId);
+      } catch (e) {
+        // optional: toast error; revert optimistic state if needed
+        console.error('Failed to toggle follow', e);
+      } finally {
+        setFollowLoading((prev) => ({ ...prev, [authorId]: false }));
+      }
+    });
+  }, [_currentUser, following, checkAuthAndExecute]);
 
   // Helpers to update posts list with minimal nesting
   const updateOnePost = useCallback((list: (PostResponseDTO & { _isLiked?: boolean })[], id: string, builder: (p: PostResponseDTO & { _isLiked?: boolean }) => PostResponseDTO & { _isLiked?: boolean }) => {
