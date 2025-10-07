@@ -265,7 +265,17 @@ const BookingHistory: React.FC = () => {
         }
       </p>
       {selectedStatus === 'ALL' && (
-        <button className="rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 px-4 py-2 text-sm font-semibold text-white shadow-md transition-transform hover:scale-[1.02]">
+        <button 
+          type="button" 
+          onClick={(e) => {
+            //TODO
+            e.preventDefault();
+            e.stopPropagation();
+            router.push('/');
+          }}
+          className="relative z-10 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 px-4 py-2 text-sm font-semibold text-white shadow-md transition-transform hover:scale-[1.02] cursor-pointer"
+          style={{ pointerEvents: 'auto' }}
+        >
           Browse Artists
         </button>
       )}
@@ -392,8 +402,13 @@ const BookingHistory: React.FC = () => {
               {canCancelBooking(booking) ? (
                 <button
                   type="button"
-                  onClick={() => onCancelBooking(booking._id, booking.servicePackage.name)}
-                  className="relative z-30 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold shadow-sm transition-colors border border-red-200 bg-white text-red-700 hover:bg-red-50"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onCancelBooking(booking._id, booking.servicePackage.name);
+                  }}
+                  className="relative z-30 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold shadow-sm transition-colors border border-red-200 bg-white text-red-700 hover:bg-red-50 cursor-pointer"
+                  style={{ pointerEvents: 'auto' }}
                 >
                   <X size={16} /> Cancel Booking
                 </button>
@@ -413,17 +428,26 @@ const BookingHistory: React.FC = () => {
           {/* Book Again Button */}
           <button
             type="button"
-            onClick={() => onBookAgain(booking.mua._id, booking.servicePackage._id)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (booking.status !== BOOKING_STATUS.PENDING && 
+                  booking.status !== BOOKING_STATUS.CONFIRMED && 
+                  booking.status !== BOOKING_STATUS.REJECTED) {
+                onBookAgain(booking.mua._id, booking.servicePackage._id);
+              }
+            }}
             disabled={booking.status === BOOKING_STATUS.PENDING || booking.status === BOOKING_STATUS.CONFIRMED || booking.status === BOOKING_STATUS.REJECTED}
             title={
               booking.status === BOOKING_STATUS.PENDING || booking.status === BOOKING_STATUS.CONFIRMED || booking.status === BOOKING_STATUS.REJECTED
                 ? 'Available after this booking is completed or cancelled'
                 : 'Book this service again'
             }
-            className={`inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold shadow-sm transition-colors
+            className={`relative z-10 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold shadow-sm transition-colors cursor-pointer
               ${booking.status === BOOKING_STATUS.PENDING || booking.status === BOOKING_STATUS.CONFIRMED || booking.status === BOOKING_STATUS.REJECTED
                 ? 'border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed hover:bg-gray-100'
                 : 'border border-pink-200 bg-white text-pink-700 hover:bg-pink-50'}`}
+            style={{ pointerEvents: 'auto' }}
           >
             <RefreshCcw size={16} /> Book Again
           </button>
@@ -538,12 +562,17 @@ const BookingHistory: React.FC = () => {
               {STATUS_OPTIONS.map((option) => (
                 <button
                   key={option.value}
-                  onClick={() => setSelectedStatus(option.value)}
-                  className={`whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setSelectedStatus(option.value);
+                  }}
+                  className={`relative z-10 whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition-all cursor-pointer ${
                     selectedStatus === option.value
                       ? 'bg-white text-pink-700 shadow'
                       : 'text-pink-700/80 hover:bg-white/60'
                   }`}
+                  style={{ pointerEvents: 'auto' }}
                 >
                   {option.label}
                 </button>

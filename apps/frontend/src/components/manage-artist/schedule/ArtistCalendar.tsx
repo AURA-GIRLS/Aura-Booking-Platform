@@ -135,7 +135,7 @@ export function ArtistCalendar({
     }
   }, [id, pageNumber, pageSize, showError])
 
-  // Handle accept booking
+  // Handle  accept booking
   const handleAcceptBooking = useCallback(async (bookingId: string) => {
     setLoading(true);
     try {
@@ -148,7 +148,7 @@ export function ArtistCalendar({
         await fetchSchedule(weekStart);
         setCurrentDate(new Date(response.data?.bookingDate || new Date()));
       } else {
-        showError(response.message || 'Failed to accept booking');
+        showError( response.message || 'Failed to accept booking');
       }
     } catch (error: any) {
       showError(error.message || 'Failed to accept booking');
