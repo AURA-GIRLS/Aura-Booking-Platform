@@ -83,7 +83,7 @@ export default function FeedbackActions({ booking }: { booking: BookingLite }) {
   );
 
   return (
-    <div className="relative z-20">
+    <div className="relative z-10">
       {loading ? (
         <div className="h-8 w-24 animate-pulse rounded-lg bg-gray-200" />
       ) : feedback ? (
@@ -106,7 +106,7 @@ export default function FeedbackActions({ booking }: { booking: BookingLite }) {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-[1000] flex animate-fade-in-fast items-center justify-center p-4"
+          className="fixed inset-0 z-[9999] flex animate-fade-in-fast items-center justify-center p-4"
         >
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setOpen(false)} />
           <div className="relative z-10 w-full max-w-lg rounded-3xl bg-white/70 p-6 shadow-2xl backdrop-blur-xl">

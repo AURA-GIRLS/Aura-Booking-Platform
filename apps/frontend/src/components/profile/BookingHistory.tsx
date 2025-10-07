@@ -393,7 +393,7 @@ const BookingHistory: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => onCancelBooking(booking._id, booking.servicePackage.name)}
-                  className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold shadow-sm transition-colors border border-red-200 bg-white text-red-700 hover:bg-red-50"
+                  className="relative z-30 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold shadow-sm transition-colors border border-red-200 bg-white text-red-700 hover:bg-red-50"
                 >
                   <X size={16} /> Cancel Booking
                 </button>
