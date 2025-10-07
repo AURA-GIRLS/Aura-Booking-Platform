@@ -3,7 +3,7 @@ import { MUA_WorkingSlot, MUA_OverrideSlot, MUA_BlockedSlot } from "../models/mu
 import { Booking } from "@models/bookings.models";
 import type { IWeeklySlot, ISlot, IFinalSlot } from "../types/schedule.interfaces";
 import { toUTC, fromUTC } from "../utils/timeUtils";
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
@@ -246,66 +246,67 @@ export async function computeMUAFinalSlots(data: IWeeklySlot): Promise<ISlot[]> 
 async function getConfirmedBookingSlots(muaId: string, weekStart: string): Promise<ISlot[]> {
    const weekStartDate =  toUTC(weekStart, "Asia/Ho_Chi_Minh").toDate();
   const weekEndDate = dayjs(weekStartDate).add(6, "day").endOf("day").toDate();
-  
+  const bpp = await Booking.countDocuments({ muaId });
   // Use aggregation to exclude bookings with PENDING_REFUND transactions
-  const bookings = await Booking.aggregate([
-    {
-      $match: {
-        muaId,
-        status: { $in: [BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.COMPLETED, BOOKING_STATUS.PENDING] },
-        bookingDate: { $gte: weekStartDate, $lte: weekEndDate }
-      }
-    },
-    {
-      $lookup: {
-        from: 'transactions',
-        localField: '_id',
-        foreignField: 'bookingId',
-        as: 'transaction'
-      }
-    },
-    {
-      $match: {
-        $or: [
-          { transaction: { $size: 0 } }, // No transaction
-          { 'transaction.status': { $ne: TRANSACTION_STATUS.PENDING_REFUND } } // Transaction not PENDING_REFUND
-        ]
-      }
-    },
-    {
-      $lookup: {
-        from: 'users',
-        localField: 'customerId',
-        foreignField: '_id',
-        as: 'customerId'
-      }
-    },
-    {
-      $lookup: {
-        from: 'servicepackages',
-        localField: 'serviceId',
-        foreignField: '_id',
-        as: 'serviceId'
-      }
-    },
-    {
-      $lookup: {
-        from: 'users',
-        localField: 'muaId',
-        foreignField: '_id',
-        as: 'muaId'
-      }
-    },
-    {
-      $unwind: { path: '$customerId', preserveNullAndEmptyArrays: true }
-    },
-    {
-      $unwind: { path: '$serviceId', preserveNullAndEmptyArrays: true }
-    },
-    {
-      $unwind: { path: '$muaId', preserveNullAndEmptyArrays: true }
+ const bookings = await Booking.aggregate([
+  // 1. Lọc theo muaId, status và khoảng thời gian
+  {
+    $match: {
+    muaId: new Types.ObjectId(muaId),
+      status: { $in: [BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.COMPLETED, BOOKING_STATUS.PENDING] },
+      bookingDate: { $gte: weekStartDate, $lte: weekEndDate }
     }
-  ]);
+  },
+  // 2. Join transaction
+  {
+    $lookup: {
+      from: 'transactions',
+      localField: '_id',
+      foreignField: 'bookingId',
+      as: 'transaction'
+    }
+  },
+  // // 3. Loại bỏ booking có bất kỳ transaction nào đang PENDING_REFUND
+  {
+    $match: {
+      transaction: {
+        $not: { $elemMatch: { status: TRANSACTION_STATUS.PENDING_REFUND } }
+      }
+    }
+  },
+  // 4. Join customer
+  {
+    $lookup: {
+      from: 'users',
+      localField: 'customerId',
+      foreignField: '_id',
+      as: 'customerId'
+    }
+  },
+  // 5. Join service packages
+  {
+    $lookup: {
+      from: 'servicepackages',
+      localField: 'serviceId',
+      foreignField: '_id',
+      as: 'serviceId'
+    }
+  },
+  // 6. Join MUA
+  {
+    $lookup: {
+      from: 'muas',
+      localField: 'muaId',
+      foreignField: '_id',
+      as: 'muaId'
+    }
+  },
+  // // 7. Unwind các mảng để dễ truy cập
+  { $unwind: { path: '$customerId', preserveNullAndEmptyArrays: true } },
+  { $unwind: { path: '$serviceId', preserveNullAndEmptyArrays: true } },
+  { $unwind: { path: '$muaId', preserveNullAndEmptyArrays: true } }
+]);
+
 
   return bookings.map(mapBookingToSlot);
 }
