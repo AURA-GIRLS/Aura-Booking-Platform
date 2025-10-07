@@ -174,6 +174,7 @@ export class ArtistsService {
                         _id: '$$service._id',
                         name: '$$service.name',
                         price: '$$service.price',
+                        duration: '$$service.duration',
                         benefits: '$$service.benefits',
                         addons: '$$service.addons',
                         images: '$$service.images'

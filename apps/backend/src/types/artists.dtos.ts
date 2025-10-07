@@ -64,6 +64,7 @@ export interface ServicePreviewDTO {
   benefits?: string[];
   addons?: ServiceAddon[];
   images?: string[];
+  duration: number
 }
 
 export interface ArtistServiceResponseDTO {

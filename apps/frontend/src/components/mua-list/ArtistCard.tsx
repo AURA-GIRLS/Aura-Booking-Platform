@@ -154,7 +154,7 @@ export default function ArtistCard({ artist, onViewProfile, onBookService }: Art
                               {ArtistService.formatVND(service.price)}
                             </p>
                             <p className="text-xs text-gray-500">
-                              60 mins
+                              {service.duration} mins
                             </p>
                           </div>
                           <button

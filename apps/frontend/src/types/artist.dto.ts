@@ -20,6 +20,7 @@ export interface ServicePreview {
   benefits?: string[];
   addons?: ServiceAddon[];
   images?: string[];
+  duration: number;
 }
 
 // Updated Artist type with service preview
