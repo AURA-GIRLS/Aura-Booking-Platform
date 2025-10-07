@@ -69,7 +69,7 @@ export default function ReviewsModal({ service, muaId, onClose }: Props) {
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
         <div className="p-5 border-b flex justify-between items-center">
           <h2 className="text-xl font-bold text-gray-800 truncate">Reviews for {service.serviceName}</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-800">
+          <button title="Close" onClick={onClose} className="text-gray-500 hover:text-gray-800">
             <X size={24} />
           </button>
         </div>

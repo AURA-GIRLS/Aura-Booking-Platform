@@ -11,7 +11,8 @@ import {
   Calendar,
   User,
   Eye,
-  TrendingUp
+  TrendingUp,
+  AlertTriangle
 } from 'lucide-react';
 import {
   getRefunds,
@@ -24,6 +25,15 @@ import type {
   AdminRefundQueryDTO,
   RefundSummaryDTO
 } from '@/types/admin.refund.dto';
+import NotificationDialog from '@/components/generalUI/NotificationDialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/lib/ui/dialog";
+import { Button } from "@/components/lib/ui/button";
 
 const RefundManagementNew: React.FC = () => {
   const [filter, setFilter] = useState<'all' | 'PENDING_REFUND' | 'REFUNDED'>('all');
@@ -46,6 +56,29 @@ const RefundManagementNew: React.FC = () => {
       PENDING_REFUND: { count: 0, amount: 0 },
       REFUNDED: { count: 0, amount: 0 }
     }
+  });
+
+  // Dialog states
+  const [notification, setNotification] = useState<{
+    open: boolean;
+    type: 'success' | 'error' | 'warning' | 'info';
+    title: string;
+    description: string;
+  }>({
+    open: false,
+    type: 'info',
+    title: '',
+    description: ''
+  });
+
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    refundId: string;
+    action: 'single' | 'bulk';
+  }>({
+    open: false,
+    refundId: '',
+    action: 'single'
   });
 
   // Load data from API
@@ -150,6 +183,23 @@ const RefundManagementNew: React.FC = () => {
     );
   };
 
+  const showNotification = (type: 'success' | 'error' | 'warning' | 'info', title: string, description: string) => {
+    setNotification({
+      open: true,
+      type,
+      title,
+      description
+    });
+  };
+
+  const showConfirmDialog = (refundId: string, action: 'single' | 'bulk') => {
+    setConfirmDialog({
+      open: true,
+      refundId,
+      action
+    });
+  };
+
   const handleProcessRefund = async (refundId: string) => {
     setIsProcessing(true);
     try {
@@ -157,14 +207,16 @@ const RefundManagementNew: React.FC = () => {
       if (response.success) {
         await loadRefunds();
         await loadSummary();
+        showNotification('success', 'Refund Processed', 'The refund has been processed successfully.');
       } else {
-        alert(`Failed to process refund: ${response.message}`);
+        showNotification('error', 'Refund Failed', response.message || 'Failed to process refund. Please try again.');
       }
     } catch (error) {
       console.error('Error processing refund:', error);
-      alert('Failed to process refund');
+      showNotification('error', 'Refund Failed', 'An error occurred while processing the refund. Please try again.');
     } finally {
       setIsProcessing(false);
+      setConfirmDialog({ open: false, refundId: '', action: 'single' });
     }
   };
 
@@ -178,14 +230,24 @@ const RefundManagementNew: React.FC = () => {
         await loadRefunds();
         await loadSummary();
         setSelectedRefunds([]);
+        showNotification('success', 'Bulk Processing Complete', `Successfully processed ${selectedRefunds.length} refund requests.`);
       } else {
-        alert(`Bulk processing failed: ${response.message}`);
+        showNotification('error', 'Bulk Processing Failed', response.message || 'Failed to process refunds. Please try again.');
       }
     } catch (error) {
       console.error('Error bulk processing refunds:', error);
-      alert('Failed to bulk process refunds');
+      showNotification('error', 'Bulk Processing Failed', 'An error occurred while processing refunds. Please try again.');
     } finally {
       setIsProcessing(false);
+      setConfirmDialog({ open: false, refundId: '', action: 'bulk' });
+    }
+  };
+
+  const handleConfirmAction = () => {
+    if (confirmDialog.action === 'single') {
+      handleProcessRefund(confirmDialog.refundId);
+    } else if (confirmDialog.action === 'bulk') {
+      handleBulkProcess();
     }
   };
 
@@ -318,7 +380,7 @@ const RefundManagementNew: React.FC = () => {
           <div className="flex items-center gap-3">
             {selectedRefunds.length > 0 && (
               <button 
-                onClick={handleBulkProcess}
+                onClick={() => showConfirmDialog('', 'bulk')}
                 disabled={isProcessing}
                 className="flex items-center gap-2 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50"
               >
@@ -350,10 +412,21 @@ const RefundManagementNew: React.FC = () => {
           </button>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full table-fixed">
+            <colgroup>
+              <col className="w-[5%]" />
+              <col className="w-[12%]" />
+              <col className="w-[16%]" />
+              <col className="w-[14%]" />
+              <col className="w-[12%]" />
+              <col className="w-[12%]" />
+              <col className="w-[10%]" />
+              <col className="w-[10%]" />
+              <col className="w-[9%]" />
+            </colgroup>
             <thead className="bg-orange-50">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                   <input 
                     type="checkbox" 
                     title="Select all refunds"
@@ -362,20 +435,20 @@ const RefundManagementNew: React.FC = () => {
                     checked={selectedRefunds.length === refunds.filter(r => r.status === 'PENDING_REFUND').length}
                   />
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Refund</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Booking</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Method</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Refund</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Booking</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Method</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {refunds.map((refund) => (
                 <tr key={refund._id} className="hover:bg-orange-50 transition-colors">
-                  <td className="px-4 py-4 whitespace-nowrap">
+                  <td className="px-2 py-3">
                     <input 
                       type="checkbox" 
                       title={`Select refund ${refund._id.slice(-8)}`}
@@ -385,62 +458,56 @@ const RefundManagementNew: React.FC = () => {
                       disabled={refund.status !== 'PENDING_REFUND'}
                     />
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">#{refund._id.slice(-8)}</div>
-                      <div className="text-sm text-gray-500">Original: {refund.originalTransactionId.slice(-8)}</div>
-                      <div className="text-xs text-gray-400 mt-1">{refund.refundReason}</div>
-                      {refund.notes && (
-                        <div className="text-xs text-orange-600 mt-1">{refund.notes}</div>
-                      )}
-                    </div>
+                  <td className="px-2 py-3">
+                    <div className="text-xs font-medium text-gray-900 truncate">#{refund._id.slice(-8)}</div>
+                    <div className="text-xs text-gray-500 truncate">Orig: {refund.originalTransactionId.slice(-8)}</div>
+                    <div className="text-xs text-gray-400 truncate">{refund.refundReason}</div>
+                    {refund.notes && (
+                      <div className="text-xs text-orange-600 truncate">{refund.notes}</div>
+                    )}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                        <User className="w-4 h-4 text-orange-600" />
+                  <td className="px-2 py-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <User className="w-3 h-3 text-orange-600" />
                       </div>
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{refund.customerName}</div>
-                        <div className="text-sm text-gray-500">{refund.customerEmail}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-medium text-gray-900 truncate">{refund.customerName}</div>
+                        <div className="text-xs text-gray-500 truncate">{refund.customerEmail}</div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{refund.bookingId.slice(-8)}</div>
-                      <div className="text-sm text-gray-500">with {refund.muaName}</div>
-                      {refund.serviceName && (
-                        <div className="text-xs text-gray-400">{refund.serviceName}</div>
-                      )}
+                  <td className="px-2 py-3">
+                    <div className="text-xs font-medium text-gray-900 truncate">{refund.bookingId.slice(-8)}</div>
+                    <div className="text-xs text-gray-500 truncate">with {refund.muaName}</div>
+                    {refund.serviceName && (
+                      <div className="text-xs text-gray-400 truncate">{refund.serviceName}</div>
+                    )}
+                  </td>
+                  <td className="px-2 py-3">
+                    <div className="text-xs font-medium text-gray-900">{formatCurrency(refund.refundAmount)}</div>
+                    <div className="text-xs text-gray-500">
+                      Orig: {formatCurrency(refund.originalAmount)}
                     </div>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{formatCurrency(refund.refundAmount)}</div>
-                      <div className="text-xs text-gray-500">
-                        Original: {formatCurrency(refund.originalAmount)}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
+                  <td className="px-2 py-3">
                     {getRefundMethodBadge(refund.refundMethod)}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
+                  <td className="px-2 py-3">
                     {getStatusBadge(refund.status)}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <div>
-                      Requested: {formatDate(refund.requestedAt)}
+                  <td className="px-2 py-3 text-xs text-gray-500">
+                    <div className="truncate">
+                      Req: {formatDate(refund.requestedAt)}
                       {refund.processedAt && (
-                        <div className="text-xs text-gray-400">
-                          Processed: {formatDate(refund.processedAt)}
+                        <div className="text-xs text-gray-400 truncate">
+                          Proc: {formatDate(refund.processedAt)}
                         </div>
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center gap-2">
+                  <td className="px-2 py-3 text-xs font-medium">
+                    <div className="flex flex-col gap-1">
                       <button className="flex items-center gap-1 text-orange-600 hover:text-orange-900 transition-colors text-xs">
                         <Eye className="w-3 h-3" />
                         View
@@ -448,12 +515,12 @@ const RefundManagementNew: React.FC = () => {
                       
                       {refund.status === 'PENDING_REFUND' && (
                         <button 
-                          onClick={() => handleProcessRefund(refund._id)}
+                          onClick={() => showConfirmDialog(refund._id, 'single')}
                           disabled={isProcessing}
                           className="flex items-center gap-1 text-green-600 hover:text-green-900 transition-colors text-xs disabled:opacity-50"
                         >
                           <CheckCircle className="w-3 h-3" />
-                          Approve
+                          {isProcessing ? 'Processing...' : 'Approve'}
                         </button>
                       )}
                     </div>
@@ -495,6 +562,77 @@ const RefundManagementNew: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Confirmation Dialog */}
+      <Dialog open={confirmDialog.open} onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}>
+        <DialogContent className="bg-white max-w-md">
+          <DialogHeader>
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-orange-100 rounded-full">
+                <AlertTriangle className="w-5 h-5 text-orange-600" />
+              </div>
+              <DialogTitle>
+                {confirmDialog.action === 'bulk' ? 'Confirm Bulk Refund Processing' : 'Confirm Refund Processing'}
+              </DialogTitle>
+            </div>
+            <DialogDescription>
+              {confirmDialog.action === 'bulk' 
+                ? `Are you sure you have transferred all daily collected funds to the expense account before processing these ${selectedRefunds.length} refunds? This action cannot be undone.`
+                : 'Are you sure you have transferred all daily collected funds to the expense account before processing this refund? This action cannot be undone.'
+              }
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex items-start space-x-2 p-3 bg-amber-50 border border-amber-200 rounded-lg mt-4">
+            <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+            <div className="text-sm text-amber-700">
+              <strong>Important Notice:</strong> Please ensure that all daily collected funds have been fully transferred from the collection account to the expense account before processing refunds.
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-2 mt-6">
+            <Button 
+              variant="outline" 
+              onClick={() => setConfirmDialog({ open: false, refundId: '', action: 'single' })}
+              disabled={isProcessing}
+              className="px-4 py-2"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleConfirmAction}
+              disabled={isProcessing}
+              className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 space-x-2"
+            >
+              {isProcessing ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>Processing...</span>
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4" />
+                  <span>
+                    {confirmDialog.action === 'bulk' 
+                      ? `Process ${selectedRefunds.length} Refunds` 
+                      : 'Process Refund'
+                    }
+                  </span>
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Notification Dialog */}
+      <NotificationDialog
+        open={notification.open}
+        onOpenChange={(open) => setNotification(prev => ({ ...prev, open }))}
+        type={notification.type}
+        title={notification.title}
+        description={notification.description}
+      />
     </div>
   );
 };

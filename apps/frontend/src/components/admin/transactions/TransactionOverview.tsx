@@ -496,49 +496,59 @@ const TransactionOverview: React.FC = () => {
           </h3>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full table-fixed">
+            <colgroup>
+              <col className="w-[12%]" />
+              <col className="w-[16%]" />
+              <col className="w-[16%]" />
+              <col className="w-[14%]" />
+              <col className="w-[12%]" />
+              <col className="w-[10%]" />
+              <col className="w-[10%]" />
+              <col className="w-[10%]" />
+            </colgroup>
             <thead className="bg-rose-50">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Transaction</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">MUA</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Service</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Transaction</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">MUA</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Service</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {transactions.map((transaction) => (
                 <tr key={transaction._id} className="hover:bg-rose-50 transition-colors">
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">#{transaction._id.slice(-8)}</div>
-                    <div className="text-xs text-gray-500">Booking: {transaction.bookingId.slice(-8)}</div>
+                  <td className="px-2 py-3">
+                    <div className="text-xs font-medium text-gray-900 truncate">#{transaction._id.slice(-8)}</div>
+                    <div className="text-xs text-gray-500 truncate">Book: {transaction.bookingId.slice(-8)}</div>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{transaction.customerName}</div>
-                    <div className="text-xs text-gray-500">{transaction.customerEmail}</div>
+                  <td className="px-2 py-3">
+                    <div className="text-xs font-medium text-gray-900 truncate">{transaction.customerName}</div>
+                    <div className="text-xs text-gray-500 truncate">{transaction.customerEmail}</div>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{transaction.muaName}</div>
-                    <div className="text-xs text-gray-500">{transaction.muaEmail}</div>
+                  <td className="px-2 py-3">
+                    <div className="text-xs font-medium text-gray-900 truncate">{transaction.muaName}</div>
+                    <div className="text-xs text-gray-500 truncate">{transaction.muaEmail}</div>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{transaction.serviceName}</div>
-                    <div className="text-xs text-gray-500">{transaction.serviceCategory}</div>
+                  <td className="px-2 py-3">
+                    <div className="text-xs font-medium text-gray-900 truncate">{transaction.serviceName}</div>
+                    <div className="text-xs text-gray-500 truncate">{transaction.serviceCategory}</div>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{formatCurrency(transaction.amount)}</div>
+                  <td className="px-2 py-3">
+                    <div className="text-xs font-medium text-gray-900">{formatCurrency(transaction.amount)}</div>
                     <div className="text-xs text-gray-500">{transaction.paymentMethod}</div>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
+                  <td className="px-2 py-3">
                     {getTransactionStatusBadge(transaction.status)}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-2 py-3 text-xs text-gray-500">
                     {formatDate(transaction.createdAt)}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                  <td className="px-2 py-3 text-xs font-medium">
                     <button className="flex items-center gap-1 text-rose-600 hover:text-rose-900 transition-colors">
                       <Eye className="w-3 h-3" />
                       View
@@ -602,54 +612,63 @@ const TransactionOverview: React.FC = () => {
           </h3>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full table-fixed">
+            <colgroup>
+              <col className="w-[15%]" />
+              <col className="w-[18%]" />
+              <col className="w-[20%]" />
+              <col className="w-[12%]" />
+              <col className="w-[10%]" />
+              <col className="w-[15%]" />
+              <col className="w-[10%]" />
+            </colgroup>
             <thead className="bg-rose-50">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Withdrawal</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">MUA</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Bank Info</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Requested</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Withdrawal</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">MUA</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Bank Info</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Requested</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {withdrawals.map((withdrawal) => (
                 <tr key={withdrawal._id} className="hover:bg-rose-50 transition-colors">
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">#{withdrawal._id.slice(-8)}</div>
-                    <div className="text-xs text-gray-500">Ref: {withdrawal.reference}</div>
+                  <td className="px-2 py-3">
+                    <div className="text-xs font-medium text-gray-900 truncate">#{withdrawal._id.slice(-8)}</div>
+                    <div className="text-xs text-gray-500 truncate">Ref: {withdrawal.reference}</div>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{withdrawal.muaName}</div>
-                    <div className="text-xs text-gray-500">{withdrawal.muaEmail}</div>
+                  <td className="px-2 py-3">
+                    <div className="text-xs font-medium text-gray-900 truncate">{withdrawal.muaName}</div>
+                    <div className="text-xs text-gray-500 truncate">{withdrawal.muaEmail}</div>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
+                  <td className="px-2 py-3">
                     {withdrawal.bankInfo ? (
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{withdrawal.bankInfo.bankName}</div>
-                        <div className="text-xs text-gray-500">{withdrawal.bankInfo.accountNumber}</div>
-                        <div className="text-xs text-gray-500">{withdrawal.bankInfo.accountName}</div>
+                        <div className="text-xs font-medium text-gray-900 truncate">{withdrawal.bankInfo.bankName}</div>
+                        <div className="text-xs text-gray-500 truncate">{withdrawal.bankInfo.accountNumber}</div>
+                        <div className="text-xs text-gray-500 truncate">{withdrawal.bankInfo.accountName}</div>
                       </div>
                     ) : (
-                      <div className="text-sm text-gray-500">No bank info</div>
+                      <div className="text-xs text-gray-500">No bank info</div>
                     )}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{formatCurrency(withdrawal.amount)}</div>
+                  <td className="px-2 py-3">
+                    <div className="text-xs font-medium text-gray-900">{formatCurrency(withdrawal.amount)}</div>
                     <div className="text-xs text-gray-500">{withdrawal.currency}</div>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
+                  <td className="px-2 py-3">
                     {getWithdrawalStatusBadge(withdrawal.status)}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <div>{formatDate(withdrawal.requestedAt)}</div>
+                  <td className="px-2 py-3 text-xs text-gray-500">
+                    <div className="truncate">{formatDate(withdrawal.requestedAt)}</div>
                     {withdrawal.processedAt && withdrawal.processedAt !== withdrawal.requestedAt && (
-                      <div className="text-xs">Processed: {formatDate(withdrawal.processedAt)}</div>
+                      <div className="text-xs truncate">Proc: {formatDate(withdrawal.processedAt)}</div>
                     )}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                  <td className="px-2 py-3 text-xs font-medium">
                     <button className="flex items-center gap-1 text-rose-600 hover:text-rose-900 transition-colors">
                       <Eye className="w-3 h-3" />
                       View

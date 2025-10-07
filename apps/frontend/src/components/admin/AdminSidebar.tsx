@@ -102,6 +102,10 @@ const AdminSidebar = () => {
     if (href === '/admin') {
       return pathname === '/admin';
     }
+    // For exact match on parent routes to avoid always active issue
+    if (href === '/admin/transactions') {
+      return pathname === '/admin/transactions';
+    }
     return pathname.startsWith(href);
   };
 

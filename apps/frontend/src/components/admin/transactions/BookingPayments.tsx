@@ -17,15 +17,27 @@ import {
   MapPin,
   Calendar,
   User,
-  Briefcase
+  Briefcase,
+  RefreshCw
 } from 'lucide-react';
 import {
-  getTransactions
+  getTransactions,
+  capturePayment
 } from '@/services/admin.transaction';
+import { processRefund } from '@/services/admin.refund';
 import type {
   AdminTransactionResponseDTO,
   AdminTransactionQueryDTO
 } from '@/types/admin.transaction.dto';
+import NotificationDialog from '@/components/generalUI/NotificationDialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/lib/ui/dialog";
+import { Button } from "@/components/lib/ui/button";
 
 const BookingPayments: React.FC = () => {
   const [filter, setFilter] = useState<'all' | 'HOLD' | 'PENDING_REFUND' | 'CAPTURED' | 'REFUNDED'>('all');
@@ -34,11 +46,35 @@ const BookingPayments: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
   const [isLoading, setIsLoading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   
   // Data states
   const [transactions, setTransactions] = useState<AdminTransactionResponseDTO[]>([]);
   const [totalTransactions, setTotalTransactions] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+
+  // Dialog states
+  const [notification, setNotification] = useState<{
+    open: boolean;
+    type: 'success' | 'error' | 'warning' | 'info';
+    title: string;
+    description: string;
+  }>({
+    open: false,
+    type: 'info',
+    title: '',
+    description: ''
+  });
+
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    transactionId: string;
+    action: 'refund' | 'capture';
+  }>({
+    open: false,
+    transactionId: '',
+    action: 'refund'
+  });
 
   // Load data from API
   useEffect(() => {
@@ -110,14 +146,67 @@ const BookingPayments: React.FC = () => {
     );
   };
 
-  const handleProcessRefund = (transactionId: string) => {
-    // Process refund logic
-    console.log('Processing refund for:', transactionId);
+  const showNotification = (type: 'success' | 'error' | 'warning' | 'info', title: string, description: string) => {
+    setNotification({
+      open: true,
+      type,
+      title,
+      description
+    });
   };
 
-  const handleCapturePayment = (transactionId: string) => {
-    // Capture payment logic
-    console.log('Capturing payment for:', transactionId);
+  const showConfirmDialog = (transactionId: string, action: 'refund' | 'capture') => {
+    setConfirmDialog({
+      open: true,
+      transactionId,
+      action
+    });
+  };
+
+  const handleProcessRefund = async (transactionId: string) => {
+    setIsProcessing(true);
+    try {
+      const response = await processRefund(transactionId);
+      if (response.success) {
+        await loadTransactions();
+        showNotification('success', 'Refund Processed', 'The refund has been processed successfully.');
+      } else {
+        showNotification('error', 'Refund Failed', response.message || 'Failed to process refund. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error processing refund:', error);
+      showNotification('error', 'Refund Failed', 'An error occurred while processing the refund. Please try again.');
+    } finally {
+      setIsProcessing(false);
+      setConfirmDialog({ open: false, transactionId: '', action: 'refund' });
+    }
+  };
+
+  const handleCapturePayment = async (transactionId: string) => {
+    setIsProcessing(true);
+    try {
+      const response = await capturePayment(transactionId);
+      if (response.success) {
+        await loadTransactions();
+        showNotification('success', 'Payment Captured', 'The payment has been captured successfully.');
+      } else {
+        showNotification('error', 'Capture Failed', response.message || 'Failed to capture payment. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error capturing payment:', error);
+      showNotification('error', 'Capture Failed', 'An error occurred while capturing the payment. Please try again.');
+    } finally {
+      setIsProcessing(false);
+      setConfirmDialog({ open: false, transactionId: '', action: 'capture' });
+    }
+  };
+
+  const handleConfirmAction = () => {
+    if (confirmDialog.action === 'refund') {
+      handleProcessRefund(confirmDialog.transactionId);
+    } else if (confirmDialog.action === 'capture') {
+      handleCapturePayment(confirmDialog.transactionId);
+    }
   };
 
   // Summary calculations from actual data
@@ -273,98 +362,97 @@ const BookingPayments: React.FC = () => {
           </h3>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full table-fixed">
+            <colgroup>
+              <col className="w-[12%]" />
+              <col className="w-[18%]" />
+              <col className="w-[16%]" />
+              <col className="w-[14%]" />
+              <col className="w-[10%]" />
+              <col className="w-[10%]" />
+              <col className="w-[10%]" />
+              <col className="w-[10%]" />
+            </colgroup>
             <thead className="bg-rose-50">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Transaction</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">MUA & Service</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Booking</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Transaction</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">MUA & Service</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Booking</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {transactions.map((transaction) => (
                 <tr key={transaction._id} className="hover:bg-rose-50 transition-colors">
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">#{transaction._id.slice(-8)}</div>
-                    <div className="text-xs text-gray-500">
+                  <td className="px-2 py-3">
+                    <div className="text-xs font-medium text-gray-900 truncate">#{transaction._id.slice(-8)}</div>
+                    <div className="text-xs text-gray-500 truncate">
                       {transaction.paymentReference && `Ref: ${transaction.paymentReference.slice(-8)}`}
                     </div>
-                    <div className="text-xs text-gray-400">
-                      Booking: {transaction.bookingId.slice(-8)}
+                    <div className="text-xs text-gray-400 truncate">
+                      Book: {transaction.bookingId.slice(-8)}
                     </div>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-gradient-to-r from-rose-500 to-pink-600 rounded-full flex items-center justify-center">
-                        <User className="w-4 h-4 text-white" />
+                  <td className="px-2 py-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-gradient-to-r from-rose-500 to-pink-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <User className="w-3 h-3 text-white" />
                       </div>
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{transaction.customerName}</div>
-                        <div className="text-xs text-gray-500 flex items-center gap-1">
-                          <Mail className="w-3 h-3" />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-medium text-gray-900 truncate">{transaction.customerName}</div>
+                        <div className="text-xs text-gray-500 truncate">
                           {transaction.customerEmail}
                         </div>
                         {transaction.customerPhone && (
-                          <div className="text-xs text-gray-500 flex items-center gap-1">
-                            <Phone className="w-3 h-3" />
+                          <div className="text-xs text-gray-500 truncate">
                             {transaction.customerPhone}
                           </div>
                         )}
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{transaction.muaName}</div>
-                      <div className="text-xs text-gray-500 flex items-center gap-1">
-                        <Briefcase className="w-3 h-3" />
-                        {transaction.serviceName}
-                      </div>
-                      <div className="text-xs text-gray-400">{transaction.serviceCategory}</div>
-                    </div>
+                  <td className="px-2 py-3">
+                    <div className="text-xs font-medium text-gray-900 truncate">{transaction.muaName}</div>
+                    <div className="text-xs text-gray-500 truncate">{transaction.serviceName}</div>
+                    <div className="text-xs text-gray-400 truncate">{transaction.serviceCategory}</div>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3 text-gray-400" />
-                        {formatDate(transaction.bookingDate)}
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        Status: {transaction.bookingStatus}
-                      </div>
-                      {transaction.bookingAddress && (
-                        <div className="text-xs text-gray-400 flex items-center gap-1 mt-1">
-                          <MapPin className="w-3 h-3" />
-                          {transaction.bookingAddress.length > 30 
-                            ? transaction.bookingAddress.substring(0, 30) + '...' 
-                            : transaction.bookingAddress}
-                        </div>
-                      )}
+                  <td className="px-2 py-3">
+                    <div className="text-xs text-gray-900 truncate">
+                      {formatDate(transaction.bookingDate)}
                     </div>
+                    <div className="text-xs text-gray-500 truncate">
+                      {transaction.bookingStatus}
+                    </div>
+                    {transaction.bookingAddress && (
+                      <div className="text-xs text-gray-400 truncate">
+                        {transaction.bookingAddress.length > 20 
+                          ? transaction.bookingAddress.substring(0, 20) + '...' 
+                          : transaction.bookingAddress}
+                      </div>
+                    )}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="text-sm font-semibold text-gray-900">{formatCurrency(transaction.amount)}</div>
+                  <td className="px-2 py-3">
+                    <div className="text-xs font-semibold text-gray-900">{formatCurrency(transaction.amount)}</div>
                     <div className="text-xs text-gray-500">{transaction.paymentMethod || 'Card'}</div>
                     <div className="text-xs text-gray-400">{transaction.currency}</div>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
+                  <td className="px-2 py-3">
                     {getStatusBadge(transaction.status)}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{formatDate(transaction.createdAt)}</div>
+                  <td className="px-2 py-3">
+                    <div className="text-xs text-gray-900">{formatDate(transaction.createdAt)}</div>
                     {transaction.updatedAt !== transaction.createdAt && (
                       <div className="text-xs text-gray-500">
                         Updated: {formatDate(transaction.updatedAt)}
                       </div>
                     )}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
+                  <td className="px-2 py-3">
+                    <div className="flex flex-col gap-1">
                       <button className="flex items-center gap-1 text-rose-600 hover:text-rose-900 transition-colors text-xs">
                         <Eye className="w-3 h-3" />
                         View
@@ -372,7 +460,7 @@ const BookingPayments: React.FC = () => {
                       
                       {transaction.status === 'HOLD' && (
                         <button 
-                          onClick={() => handleCapturePayment(transaction._id)}
+                          onClick={() => showConfirmDialog(transaction._id, 'capture')}
                           className="flex items-center gap-1 text-green-600 hover:text-green-900 transition-colors text-xs"
                         >
                           <CheckCircle className="w-3 h-3" />
@@ -382,11 +470,12 @@ const BookingPayments: React.FC = () => {
                       
                       {transaction.status === 'PENDING_REFUND' && (
                         <button 
-                          onClick={() => handleProcessRefund(transaction._id)}
-                          className="flex items-center gap-1 text-orange-600 hover:text-orange-900 transition-colors text-xs"
+                          onClick={() => showConfirmDialog(transaction._id, 'refund')}
+                          disabled={isProcessing}
+                          className="flex items-center gap-1 text-green-600 hover:text-green-900 transition-colors text-xs disabled:opacity-50"
                         >
-                          <AlertTriangle className="w-3 h-3" />
-                          Process
+                          <RefreshCw className={`w-3 h-3 ${isProcessing ? 'animate-spin' : ''}`} />
+                          {isProcessing ? 'Processing...' : 'Approve'}
                         </button>
                       )}
                     </div>
@@ -428,6 +517,87 @@ const BookingPayments: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Confirmation Dialog */}
+      <Dialog open={confirmDialog.open} onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}>
+        <DialogContent className="bg-white max-w-md">
+          <DialogHeader>
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-orange-100 rounded-full">
+                <AlertTriangle className="w-5 h-5 text-orange-600" />
+              </div>
+              <DialogTitle>
+                {confirmDialog.action === 'refund' ? 'Confirm Refund Processing' : 'Confirm Payment Capture'}
+              </DialogTitle>
+            </div>
+            <DialogDescription>
+              {confirmDialog.action === 'refund' 
+                ? 'Are you sure you have transferred all daily collected funds to the expense account before processing this refund? This action cannot be undone.'
+                : 'Are you sure you want to capture this payment? This action cannot be undone.'
+              }
+            </DialogDescription>
+          </DialogHeader>
+          
+          {confirmDialog.action === 'refund' && (
+            <div className="flex items-start space-x-2 p-3 bg-amber-50 border border-amber-200 rounded-lg mt-4">
+              <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-amber-700">
+                <strong>Important Notice:</strong> Please ensure that all daily collected funds have been fully transferred from the collection account to the expense account before processing the refund.
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end space-x-2 mt-6">
+            <Button 
+              variant="outline" 
+              onClick={() => setConfirmDialog({ open: false, transactionId: '', action: 'refund' })}
+              disabled={isProcessing}
+              className="px-4 py-2"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleConfirmAction}
+              disabled={isProcessing}
+              className={`px-4 py-2 space-x-2 ${
+                confirmDialog.action === 'refund' 
+                  ? 'bg-orange-600 hover:bg-orange-700' 
+                  : 'bg-green-600 hover:bg-green-700'
+              } text-white`}
+            >
+              {isProcessing ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>Processing...</span>
+                </>
+              ) : (
+                <>
+                  {confirmDialog.action === 'refund' ? (
+                    <>
+                      <RefreshCw className="w-4 h-4" />
+                      <span>Process Refund</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-4 h-4" />
+                      <span>Capture Payment</span>
+                    </>
+                  )}
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Notification Dialog */}
+      <NotificationDialog
+        open={notification.open}
+        onOpenChange={(open) => setNotification(prev => ({ ...prev, open }))}
+        type={notification.type}
+        title={notification.title}
+        description={notification.description}
+      />
     </div>
   );
 };

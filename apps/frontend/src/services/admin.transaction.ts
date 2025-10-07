@@ -194,6 +194,18 @@ export async function exportTransactions(query: {
   return response.data;
 }
 
+/**
+ * Capture a payment that is on hold
+ */
+export async function capturePayment(transactionId: string): Promise<ApiResponseDTO<any>> {
+  try {
+    const response = await api.post<ApiResponseDTO<any>>(`/admin/transactions/${transactionId}/capture`);
+    return response.data;
+  } catch (error: any) {
+    throw error?.response?.data || error;
+  }
+}
+
 // ==================== ADVANCED FILTERING ====================
 
 /**
