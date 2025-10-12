@@ -21,7 +21,7 @@ export const config = {
   clientOrigin: process.env.CLIENT_ORIGIN || '',
   
   // Database
-  mongoUri: process.env.MONGO_URI!,
+  mongoUri: process.env.MONGO_URI_LAUNCHING!,
   redisHost: process.env.REDIS_HOST || '',
   redisPort: Number(process.env.REDIS_PORT || 0),
   redisPassword: process.env.REDIS_PASSWORD || '',
