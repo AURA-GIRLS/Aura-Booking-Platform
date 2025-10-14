@@ -5,6 +5,7 @@ import FeedbackForm from "./FeedbackForm";
 import FeedbackCard from "./FeedbackCard";
 import { deleteFeedback, getMyFeedback } from "../../lib/api";
 import { StarIcon, XIcon } from "lucide-react";
+import Notification from "../generalUI/Notification";
 
 type BookingLite = {
   _id: string;
@@ -20,6 +21,17 @@ export default function FeedbackActions({ booking }: { booking: BookingLite }) {
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<any | null>(null);
   const [mode, setMode] = useState<"view" | "create" | "edit">("create");
+
+  // Notification state (reuse pattern from ManageServices)
+  const [notification, setNotification] = useState<{
+    type: "success" | "error";
+    message: string;
+    isVisible: boolean;
+  }>({ type: "success", message: "", isVisible: false });
+
+  const showNotification = (type: "success" | "error", message: string) => {
+    setNotification({ type, message, isVisible: true });
+  };
 
   useEffect(() => {
     if (!isCompleted) return;
@@ -69,8 +81,10 @@ export default function FeedbackActions({ booking }: { booking: BookingLite }) {
       await deleteFeedback(feedback._id);
       setFeedback(null);
       setMode("create");
+      showNotification("success", "Feedback deleted successfully!");
     } catch (e: any) {
-      alert(e?.message || e?.code || "Error");
+      console.error(e);
+      showNotification("error", e?.message || e?.code || "Failed to delete feedback. Please try again.");
     }
   };
 
@@ -84,6 +98,13 @@ export default function FeedbackActions({ booking }: { booking: BookingLite }) {
 
   return (
     <div className="relative z-10">
+      {/* Notification */}
+      <Notification
+        type={notification.type}
+        message={notification.message}
+        isVisible={notification.isVisible}
+        onClose={() => setNotification({ ...notification, isVisible: false })}
+      />
       {loading ? (
         <div className="h-8 w-24 animate-pulse rounded-lg bg-gray-200" />
       ) : feedback ? (
@@ -106,7 +127,7 @@ export default function FeedbackActions({ booking }: { booking: BookingLite }) {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-[9999] flex animate-fade-in-fast items-center justify-center p-4"
+          className="fixed inset-0 z-[50] flex animate-fade-in-fast items-center justify-center p-4"
         >
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setOpen(false)} />
           <div className="relative z-10 w-full max-w-lg rounded-3xl bg-white/70 p-6 shadow-2xl backdrop-blur-xl">
@@ -137,8 +158,10 @@ export default function FeedbackActions({ booking }: { booking: BookingLite }) {
                 bookingId={booking._id}
                 defaultValue={mode === "edit" && feedback ? { id: feedback._id, rating: feedback.rating, comment: feedback.comment } : undefined}
                 onSuccess={(res) => {
+                  const wasEdit = mode === "edit";
                   setFeedback(res);
                   setMode("view");
+                  showNotification("success", wasEdit ? "Feedback updated successfully!" : "Feedback created successfully!");
                   // Do not close on success, user should see the result
                 }}
                 onCancel={() => {

@@ -2,6 +2,7 @@
 
 import React, { useEffect } from "react";
 import { CheckCircle, XCircle, X } from "lucide-react";
+import { createPortal } from "react-dom";
 
 interface NotificationProps {
   type: "success" | "error";
@@ -38,7 +39,8 @@ export default function Notification({
   const iconColor = type === "success" ? "text-green-600" : "text-red-600";
 
   return (
-    <div className="fixed top-4 right-4 z-50 animate-in slide-in-from-top-2 duration-300">
+    createPortal(
+    <div className="fixed top-4 right-4 z-[100] animate-in slide-in-from-top-2 duration-300">
       <div className={`${bgColor} ${borderColor} ${textColor} border rounded-lg p-4 shadow-lg max-w-md`}>
         <div className="flex items-start gap-3">
           <div className={`${iconColor} flex-shrink-0`}>
@@ -59,6 +61,7 @@ export default function Notification({
           </button>
         </div>
       </div>
-    </div>
-  );
+    </div>,
+    document.body
+  ));
 }
