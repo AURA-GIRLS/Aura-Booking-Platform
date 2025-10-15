@@ -400,13 +400,14 @@ export async function getMUAs(query: AdminMUAQueryDTO = {}): Promise<AdminMUALis
       { 
         $group: { 
           _id: '$muaId', 
-          totalMedia: { $sum: { $size: '$media' } },
+          totalMedia: { $sum: { $size: { $ifNull: ['$media', []] } } },
           images: { 
             $sum: { 
               $size: { 
                 $filter: { 
-                  input: '$media', 
-                  cond: { $eq: ['$$this.mediaType', 'IMAGE'] } 
+                  input: { $ifNull: ['$media', []] },
+                  as: 'm',
+                  cond: { $eq: ['$$m.mediaType', 'IMAGE'] } 
                 } 
               } 
             } 
@@ -415,8 +416,9 @@ export async function getMUAs(query: AdminMUAQueryDTO = {}): Promise<AdminMUALis
             $sum: { 
               $size: { 
                 $filter: { 
-                  input: '$media', 
-                  cond: { $eq: ['$$this.mediaType', 'VIDEO'] } 
+                  input: { $ifNull: ['$media', []] },
+                  as: 'm',
+                  cond: { $eq: ['$$m.mediaType', 'VIDEO'] } 
                 } 
               } 
             } 
