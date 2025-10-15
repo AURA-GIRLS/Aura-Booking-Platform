@@ -48,7 +48,8 @@ export const SERVICE_CATEGORIES = {
   BRIDAL: 'BRIDAL',          
   PARTY: 'PARTY',             
   WEDDING_GUEST: 'WEDDING_GUEST', 
-  GRADUATION: 'GRADUATION',    
+  GRADUATION: 'GRADUATION',  
+  PHOTOSHOOT: 'PHOTOSHOOT',    
   PROM: 'PROM',               
   DAILY: 'DAILY',             
   SPECIAL_EVENT: 'SPECIAL_EVENT' 

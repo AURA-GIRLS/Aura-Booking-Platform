@@ -443,11 +443,15 @@ const BookingHistory: React.FC = () => {
                 ? 'Available after this booking is completed or cancelled'
                 : 'Book this service again'
             }
-            className={`relative z-10 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold shadow-sm transition-colors cursor-pointer
+            className={`relative inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold shadow-sm transition-colors cursor-pointer
               ${booking.status === BOOKING_STATUS.PENDING || booking.status === BOOKING_STATUS.CONFIRMED || booking.status === BOOKING_STATUS.REJECTED
                 ? 'border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed hover:bg-gray-100'
                 : 'border border-pink-200 bg-white text-pink-700 hover:bg-pink-50'}`}
-            style={{ pointerEvents: 'auto' }}
+            style={{ 
+              pointerEvents: 'auto',
+              zIndex: 2, 
+              position: 'relative'
+            }}
           >
             <RefreshCcw size={16} /> Book Again
           </button>
