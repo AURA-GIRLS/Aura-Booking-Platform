@@ -112,6 +112,27 @@ export class ArtistsService {
           { $match: { 'filteredServices.0': { $exists: true } } }
         ] : []),
         
+        // Lookup feedbacks to compute live rating and review count
+        {
+          $lookup: {
+            from: 'feedbacks',
+            let: { id: '$_id' },
+            pipeline: [
+              { $match: { $expr: { $eq: ['$muaId', '$$id'] } } },
+              { $group: { _id: null, avg: { $avg: '$rating' }, cnt: { $sum: 1 } } }
+            ],
+            as: 'fbStats'
+          }
+        },
+        {
+          $addFields: {
+            ratingAverage: {
+              $round: [ { $ifNull: [ { $arrayElemAt: ['$fbStats.avg', 0] }, '$ratingAverage', 0 ] }, 1 ]
+            },
+            feedbackCount: { $ifNull: [ { $arrayElemAt: ['$fbStats.cnt', 0] }, '$feedbackCount', 0 ] }
+          }
+        },
+        
         // Calculate minPrice from all available services
         {
           $addFields: {
