@@ -18,6 +18,7 @@ interface LeftSidebarProps {
   fetchActiveMuas: () => Promise<void>;
   activeFilter: FilterState;                          // 🆕 dùng từ parent
   setActiveFilter: React.Dispatch<React.SetStateAction<FilterState>>;
+  resetPagination: () => void;                 // 🆕 dùng từ parent
 }
 
 export default function LeftSidebar({
@@ -31,6 +32,7 @@ export default function LeftSidebar({
   fetchActiveMuas,
   activeFilter,
   setActiveFilter,
+  resetPagination,
 }: Readonly<LeftSidebarProps>) {
   const router = useRouter();
   const pathname = usePathname();

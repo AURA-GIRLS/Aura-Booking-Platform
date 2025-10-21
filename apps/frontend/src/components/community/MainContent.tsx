@@ -35,6 +35,12 @@ export default function MainContent() {
   const [currentUser, setCurrentUser] = useState<UserWallResponseDTO | null>(null)
   const [privacy, setPrivacy] = useState<'public' | 'friends' | 'private'>('public')
 
+  // Infinite scroll state
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [hasMorePosts, setHasMorePosts] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+
   // Wall view state
   const [openWallUserId, setOpenWallUserId] = useState<string | null>(null)
   const [openWallUserName, setOpenWallUserName] = useState<string | undefined>(undefined)
@@ -96,11 +102,15 @@ export default function MainContent() {
     }
   }, [])
 
-  const fetchPosts = useCallback(async () => {
+  const fetchPosts = useCallback(async (page = 1, reset = true) => {
     // Feed: sort by popularity (likes desc, then newest)
-    const res = await CommunityService.listPosts({ page: 1, limit: 10, sort: 'popular' })
+    const res = await CommunityService.listPosts({ page, limit: 10, sort: 'popular' })
     if (!res.success || !res.data) return
+    
     let items = res.data.items
+    setTotalPages(res.data.pages || 1)
+    setHasMorePosts(page < (res.data.pages || 1))
+    
     try {
       if (currentUser?._id && items.length) {
         const likedRes = await CommunityService.getMyLikedPosts(items.map((p) => p._id))
@@ -112,8 +122,29 @@ export default function MainContent() {
     } catch {
       // ignore
     }
-    setPosts(items)
+    
+    if (reset) {
+      setPosts(items)
+      setCurrentPage(1)
+    } else {
+      setPosts(prev => [...prev, ...items])
+      setCurrentPage(page)
+    }
   }, [currentUser?._id])
+
+  const loadMorePosts = useCallback(async () => {
+    if (isLoadingMore || !hasMorePosts) return
+    
+    setIsLoadingMore(true)
+    try {
+      const nextPage = currentPage + 1
+      await fetchPosts(nextPage, false)
+    } catch (error) {
+      console.error('Failed to load more posts:', error)
+    } finally {
+      setIsLoadingMore(false)
+    }
+  }, [isLoadingMore, hasMorePosts, currentPage, fetchPosts])
 
   const fetchTrendingTags = useCallback(async () => {
     const res = await CommunityService.getTrendingTags(5)
@@ -125,11 +156,34 @@ export default function MainContent() {
   // Initial load
   useEffect(() => {
     const init = async () => {
-      await Promise.all([fetchMinimalUser(), fetchActiveMuas(), fetchPosts(), fetchTrendingTags()])
+      await Promise.all([fetchMinimalUser(), fetchActiveMuas(), fetchPosts(1, true), fetchTrendingTags()])
       setLoading(false)
     }
     init()
   }, [fetchMinimalUser, fetchActiveMuas, fetchPosts, fetchTrendingTags])
+
+  // Infinite scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      // Only trigger on main feed (not on wall or filtered views)
+      if (openWallUserId || activeFilter.type || isLoadingMore || !hasMorePosts) return
+
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+      const windowHeight = window.innerHeight
+      const documentHeight = document.documentElement.scrollHeight
+
+      // Calculate scroll percentage
+      const scrollPercentage = (scrollTop + windowHeight) / documentHeight
+
+      // Trigger load more when user scrolls 80% or more
+      if (scrollPercentage >= 0.8) {
+        loadMorePosts()
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [openWallUserId, activeFilter.type, isLoadingMore, hasMorePosts, loadMorePosts])
 
   const currentUserMinimal = useMemo(
     () =>
@@ -141,7 +195,9 @@ export default function MainContent() {
 
   const clearFilter = () => {
     setActiveFilter({ type: null })
-    fetchPosts()
+    setCurrentPage(1)
+    setHasMorePosts(true)
+    fetchPosts(1, true)
   }
 
   const handleOpenUserWall = useCallback(
@@ -254,6 +310,23 @@ export default function MainContent() {
           fetchMinimalUser={fetchMinimalUser}
           onOpenUserWall={handleOpenUserWall}
         />
+        
+        {/* Loading more indicator */}
+        {isLoadingMore && (
+          <div className="flex justify-center py-8">
+            <div className="flex items-center gap-2 text-gray-500">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-rose-600"></div>
+              <span className="text-sm">Loading more posts...</span>
+            </div>
+          </div>
+        )}
+        
+        {/* End of posts indicator */}
+        {!hasMorePosts && posts.length > 0 && (
+          <div className="flex justify-center py-8">
+            <span className="text-sm text-gray-400">You've reached the end of the feed</span>
+          </div>
+        )}
       </>
     )
   }
@@ -320,6 +393,10 @@ export default function MainContent() {
             fetchActiveMuas={fetchActiveMuas}
             activeFilter={activeFilter}
             setActiveFilter={setActiveFilter}
+            resetPagination={() => {
+              setCurrentPage(1)
+              setHasMorePosts(true)
+            }}
           />
         <div className="flex-1 w-full max-w-2xl mx-auto my-4">{renderCenter()}</div>
           <RightSidebar
