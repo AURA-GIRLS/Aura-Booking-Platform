@@ -65,13 +65,6 @@ export default function ShareDialog({ isOpen, onClose, postId }: ShareDialogProp
             <DialogTitle className="text-lg font-semibold text-gray-900">
               Share post
             </DialogTitle>
-            <button
-              onClick={handleClose}
-              className="rounded-full p-2 hover:bg-gray-100 transition-colors"
-              aria-label="Close"
-            >
-              <X className="w-4 h-4 text-gray-500" />
-            </button>
           </div>
         </DialogHeader>
         
