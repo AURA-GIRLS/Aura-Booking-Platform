@@ -48,6 +48,8 @@ export const PORTFOLIO_CATEGORY_LABELS = {
   GRADUATION: 'Graduation',
   DAILY: 'Daily',
   PROM: 'Prom',
+  PHOTOSHOOT: 'Photoshoot',
+  SPECIAL_EVENT: 'Special Event'
 } as const;
 
 

@@ -19,6 +19,8 @@ const CATEGORY_COLORS: Record<string, string> = {
   GRADUATION: "bg-blue-500",
   DAILY: "bg-green-500",
   PROM: "bg-indigo-500",
+  PHOTOSHOOT: "bg-amber-500",
+  SPECIAL_EVENT: "bg-orange-500",
 };
 
 export default function PortfolioSection() {
@@ -40,6 +42,8 @@ export default function PortfolioSection() {
     { value: "GRADUATION", label: PORTFOLIO_CATEGORY_LABELS.GRADUATION },
     { value: "DAILY", label: PORTFOLIO_CATEGORY_LABELS.DAILY },
     { value: "PROM", label: PORTFOLIO_CATEGORY_LABELS.PROM },
+    { value: "PHOTOSHOOT", label: PORTFOLIO_CATEGORY_LABELS.PHOTOSHOOT },
+    { value: "SPECIAL_EVENT", label: PORTFOLIO_CATEGORY_LABELS.SPECIAL_EVENT },
   ];
 
   // Fetch portfolios from MongoDB

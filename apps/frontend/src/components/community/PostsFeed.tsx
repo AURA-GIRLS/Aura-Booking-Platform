@@ -1,5 +1,6 @@
 import { Heart, MessageCircle, Share, MoreHorizontal, Check, Globe, Lock, Earth } from 'lucide-react';
 import React, { useEffect, useState, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import type { CommentResponseDTO, PostResponseDTO, UserWallResponseDTO } from '@/types/community.dtos';
 import { CommunityService } from '@/services/community';
 import { TARGET_TYPES, USER_ROLES, POST_STATUS, RESOURCE_TYPES } from '../../constants';
@@ -13,11 +14,13 @@ import { Badge } from '@/components/lib/ui/badge';
 import DetailModal from './modals/DetailModal';
 import { Separator } from '../lib/ui/separator';
 import DeleteConfirmDialog from '../generalUI/DeleteConfirmDialog';
+import ShareDialog from './ShareDialog';
 import { useAuthCheck } from '../../utils/auth';
 
 
 export default function PostsFeed({ posts, setPosts, currentUser: _currentUser, fetchMinimalUser, onOpenUserWall }: Readonly<{ posts: PostResponseDTO[]; setPosts: React.Dispatch<React.SetStateAction<PostResponseDTO[]>>; currentUser: UserWallResponseDTO; fetchMinimalUser: () => Promise<void>; onOpenUserWall?: (userId: string, userName?: string) => void }>) {
   type UIComment = CommentResponseDTO & { isLiked?: boolean; likeCount: number };
+  const searchParams = useSearchParams();
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
   const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
   const [commentsByPost, setCommentsByPost] = useState<Record<string, UIComment[]>>({});
@@ -32,6 +35,9 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser, 
   const [followLoading, setFollowLoading] = useState<Record<string, boolean>>({});
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [postToDelete, setPostToDelete] = useState<PostResponseDTO | null>(null);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [sharePostId, setSharePostId] = useState<string>('');
+  const [hasScrolledToPost, setHasScrolledToPost] = useState(false);
 
   const { checkAuthAndExecute, isAuthenticated } = useAuthCheck();
 
@@ -296,6 +302,57 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser, 
       setPostToDelete(null);
     }
   };
+
+  const handleSharePost = (postId: string) => {
+    setSharePostId(postId);
+    setShareDialogOpen(true);
+  };
+
+  // Function to scroll to a specific post
+  const scrollToPost = useCallback((postId: string) => {
+    const targetElement = document.getElementById(`post-${postId}`);
+    if (targetElement) {
+      // Add highlight effect
+      targetElement.classList.add('ring-2', 'ring-rose-400', 'ring-opacity-75');
+      
+      // Scroll to post with smooth behavior
+      targetElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'nearest'
+      });
+
+      // Remove highlight after animation
+      setTimeout(() => {
+        targetElement.classList.remove('ring-2', 'ring-rose-400', 'ring-opacity-75');
+      }, 3000);
+    }
+  }, []);
+
+  // Handle URL parameters for post navigation
+  useEffect(() => {
+    if (!searchParams || hasScrolledToPost) return;
+    
+    const postIdFromUrl = searchParams.get('post');
+    if (postIdFromUrl && posts.length > 0) {
+      // Check if the post exists in current posts
+      const targetPost = posts.find(p => p._id === postIdFromUrl);
+      if (targetPost) {
+        // Small delay to ensure DOM is rendered
+        setTimeout(() => {
+          scrollToPost(postIdFromUrl);
+          setHasScrolledToPost(true);
+        }, 500);
+      }
+    }
+  }, [searchParams, posts, hasScrolledToPost, scrollToPost]);
+
+  // Reset scroll state when posts change significantly (new fetch)
+  useEffect(() => {
+    if (posts.length > 0) {
+      setHasScrolledToPost(false);
+    }
+  }, [posts.length]);
 
   // Save handled inside EditPostModal now
   
@@ -613,7 +670,10 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser, 
                     <span className="text-sm">{post.commentsCount || 0} Comments</span>
                   </button>
 
-                  <button className="flex items-center space-x-2 hover:text-rose-600">
+                  <button 
+                    onClick={() => handleSharePost(post._id)}
+                    className="flex items-center space-x-2 hover:text-rose-600"
+                  >
                     <Share className="w-5 h-5" />
                     <span className="text-sm">Share</span>
                   </button>
@@ -655,6 +715,14 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser, 
         description="Are you sure you want to delete this post? This action cannot be undone and will remove all comments and likes."
         confirmText="Delete"
         cancelText="Cancel"
+      />
+      <ShareDialog
+        isOpen={shareDialogOpen}
+        onClose={() => {
+          setShareDialogOpen(false)
+          setSharePostId('')
+        }}
+        postId={sharePostId}
       />
 
     </>

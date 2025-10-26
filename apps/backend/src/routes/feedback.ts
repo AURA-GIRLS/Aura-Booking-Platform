@@ -6,18 +6,19 @@ import { FeedbackController } from '../controllers/feedback.controller';
 const router = Router(); 
 const controller = new FeedbackController(); 
 
-//apply auth to all feedback routes
-router.use(authenticateToken); 
+// Public route: recent feedback by MUA (no auth)
+router.get('/mua/:muaId/recent', (req, res) => controller.getRecentByMua(req, res));
 
-//Routes as specified
-router.get('/mine', (req, res) => controller.getMine(req, res)); 
-router.post('/', (req, res) => controller.create(req, res)); 
-router.patch('/:id', (req, res) => controller.update(req, res)); 
-router.delete('/:id', (req, res) => controller.remove(req, res)); 
-// New: recent feedback by MUA
-router.get('/mua/:muaId/recent', (req, res) => controller.getRecentByMua(req, res)); 
+// Apply auth to the remaining feedback routes
+router.use(authenticateToken);
 
-// Routes for MUA Feedback Page
+// Routes as specified
+router.get('/mine', (req, res) => controller.getMine(req, res));
+router.post('/', (req, res) => controller.create(req, res));
+router.patch('/:id', (req, res) => controller.update(req, res));
+router.delete('/:id', (req, res) => controller.remove(req, res));
+
+// Routes for MUA Feedback Page (authenticated)
 router.get('/mua/summary', (req, res) => controller.getFeedbackSummaryByMua(req, res));
 router.get('/mua/service/:serviceId', (req, res) => controller.getFeedbackForService(req, res));
 

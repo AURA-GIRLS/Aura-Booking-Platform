@@ -2,10 +2,9 @@ import { Types } from 'mongoose';
 import { Booking } from '../models/bookings.models'; 
 import { Feedback } from '../models/feedbacks.models'; 
 import { ServicePackage } from '../models/services.models'; 
-
+import { MUA } from '../models/muas.models';
 
 const allowedStatuses = new Set(['COMPLETED', 'DONE', 'FINISHED']); 
-
 
 const httpError = (status: number, code: string, message: string) => { 
   const e: any = new Error(message); 
@@ -13,7 +12,6 @@ const httpError = (status: number, code: string, message: string) => {
   e.code = code; 
   return e; 
 }; 
-
 
 export class FeedbackService { 
   constructor() { 
@@ -38,6 +36,34 @@ export class FeedbackService {
     } 
     return booking; 
   } 
+
+  // Recalculate and persist MUA ratingAverage and feedbackCount
+  private async recalcMuaRating(muaId: Types.ObjectId | string) {
+    if (!muaId) {
+    return; 
+    }
+    const _muaId = typeof muaId === 'string' ? new Types.ObjectId(muaId) : muaId;
+    const agg = await Feedback.aggregate([
+      { $match: { muaId: _muaId } },
+      {
+        $group: {
+          _id: '$muaId',
+          avg: { $avg: '$rating' },
+          cnt: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const avg = agg[0]?.avg ?? 0;
+    const cnt = agg[0]?.cnt ?? 0;
+
+    await MUA.updateOne({ _id: _muaId }, {
+      $set: {
+        ratingAverage: Math.round(avg * 10) / 10,
+        feedbackCount: cnt
+      }
+    });
+  }
 
   async getMine(userId: string, bookingId: string) { 
     await this.assertOwnershipAndStatus(userId, bookingId); 
@@ -88,6 +114,11 @@ export class FeedbackService {
       await booking.save(); 
     } 
 
+    // Recalculate MUA rating after creation
+    if (booking.muaId) {
+      await this.recalcMuaRating(booking.muaId);
+    }
+
     return created; 
   } 
 
@@ -106,6 +137,11 @@ export class FeedbackService {
     if (typeof patch.rating !== 'undefined') (feedback as any).rating = patch.rating; 
     if (typeof patch.comment !== 'undefined') (feedback as any).comment = patch.comment; 
     await feedback.save(); 
+
+    // Recalculate MUA rating after update
+    if (feedback.muaId) {
+  await this.recalcMuaRating(feedback.muaId);
+}
     return feedback; 
   } 
 
@@ -125,7 +161,12 @@ export class FeedbackService {
     await Booking.updateOne({ feedbackId: feedback._id }, { $unset: { feedbackId: '' } }); 
 
     await Feedback.deleteOne({ _id: feedback._id }); 
-  } 
+
+    // Recalculate MUA rating after deletion if muaId exists
+    if (feedback.muaId) {
+      await this.recalcMuaRating(feedback.muaId);
+    }
+  }   
 
   async getFeedbackSummaryByMua(muaId: string) {
     if (!Types.ObjectId.isValid(muaId)) {
