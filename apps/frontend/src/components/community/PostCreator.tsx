@@ -46,7 +46,7 @@ export default function PostCreator({
   setPrivacy: (p: Privacy) => void;
   posts: PostResponseDTO[];
   setPosts: React.Dispatch<React.SetStateAction<PostResponseDTO[]>>;
-  currentUser: UserWallResponseDTO;
+  currentUser: UserWallResponseDTO|null;
   fetchMinimalUser: () => Promise<void>;
 }>) {
   const [files, setFiles] = useState<File[]>([]);
@@ -180,23 +180,23 @@ export default function PostCreator({
     });
   };
 
-  const getInitials = (name: string) =>
-    name.split(' ').map(n => n[0]).join('').toUpperCase();
+  const getInitials = (name: string|undefined) =>
+    name?.split(' ').map(n => n[0]).join('').toUpperCase();
 
   return (
     <>
     <div className="bg-white rounded-xl p-4 mb-6 shadow-sm relative">
       <div className="flex items-start space-x-3">
-        {currentUser.avatarUrl ? (
+        {currentUser?.avatarUrl ? (
           <img
-            src={currentUser.avatarUrl}
+            src={currentUser?.avatarUrl}
             alt="avatar"
             className="w-10 h-10 object-cover rounded-full border-2 border-white"
           />
         ) : (
           <div className="w-10 h-10 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full flex items-center justify-center">
             <span className="text-white font-semibold text-sm">
-              {getInitials(currentUser.fullName)}
+              {getInitials(currentUser?.fullName)}
             </span>
           </div>
         )}

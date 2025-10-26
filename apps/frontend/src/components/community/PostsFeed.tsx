@@ -18,7 +18,21 @@ import ShareDialog from './ShareDialog';
 import { useAuthCheck } from '../../utils/auth';
 
 
-export default function PostsFeed({ posts, setPosts, currentUser: _currentUser, fetchMinimalUser, onOpenUserWall }: Readonly<{ posts: PostResponseDTO[]; setPosts: React.Dispatch<React.SetStateAction<PostResponseDTO[]>>; currentUser: UserWallResponseDTO; fetchMinimalUser: () => Promise<void>; onOpenUserWall?: (userId: string, userName?: string) => void }>) {
+export default function PostsFeed({ 
+  posts, 
+  setPosts, 
+  currentUser: _currentUser, 
+  fetchMinimalUser, 
+  onOpenUserWall,
+  onOpenMiniChat 
+}: Readonly<{ 
+  posts: PostResponseDTO[]; 
+  setPosts: React.Dispatch<React.SetStateAction<PostResponseDTO[]>>; 
+  currentUser: UserWallResponseDTO|null; 
+  fetchMinimalUser: () => Promise<void>; 
+  onOpenUserWall?: (userId: string, userName?: string) => void;
+  onOpenMiniChat: (userId: string) => void;
+}>) {
   type UIComment = CommentResponseDTO & { isLiked?: boolean; likeCount: number };
   const searchParams = useSearchParams();
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
@@ -70,7 +84,7 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser, 
   };
 
 
-  const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
+  const getInitials = (name: string|undefined) => name?.split(' ').map(n => n[0]).join('').toUpperCase();
   const isSelfUser = useCallback((id?: string) => {
     const me = ((_currentUser as any)?._id) ?? undefined;
     return !!(id && me && id === me);
@@ -548,21 +562,32 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser, 
                           </span>
                         )}
                         {post.authorId !== (_currentUser as any)._id && (
-                          <button
-                            type="button"
-                            onClick={() => toggleFollow(post.authorId)}
-                            disabled={!!followLoading[post.authorId]}
-                            className={
-                              `ml-2 text-xs px-2 py-[1px] my-0 shadow-xs rounded-md border cursor-pointer ` +
-                              (following[post.authorId]
-                                ? `border-rose-200 text-white bg-rose-600 hover:bg-rose-700`
-                                : `border-gray-300`)
-                            }
-                          >
-                             {following[post.authorId]
-                                ? `Following`
-                                : `Follow`}
-                          </button>
+                          <div className="flex items-center space-x-2 ml-2">
+                            <button
+                              type="button"
+                              onClick={() => toggleFollow(post.authorId)}
+                              disabled={!!followLoading[post.authorId]}
+                              className={
+                                `text-xs px-2 py-[1px] my-0 shadow-xs rounded-md border cursor-pointer ` +
+                                (following[post.authorId]
+                                  ? `border-rose-200 text-white bg-rose-600 hover:bg-rose-700`
+                                  : `border-gray-300`)
+                              }
+                            >
+                               {following[post.authorId]
+                                  ? `Following`
+                                  : `Follow`}
+                            </button>
+                            
+                            <button
+                              type="button"
+                              onClick={() => onOpenMiniChat(post.authorId)}
+                              title="Send message"
+                              className="p-1 text-gray-600 hover:text-blue-500 hover:bg-gray-100 rounded-md"
+                            >
+                              <MessageCircle size={14} />
+                            </button>
+                          </div>
                         )}
                       </h4>
                       <div className="text-sm text-gray-500 flex items-center gap-2">
@@ -706,6 +731,8 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser, 
         formatTimeAgo={formatTimeAgo}
         isSelfUser={isSelfUser}
         _currentUser={_currentUser}
+        onOpenUserWall={onOpenUserWall}
+        onOpenMiniChat={onOpenMiniChat}
       />
       <DeleteConfirmDialog
         open={deleteConfirmOpen}

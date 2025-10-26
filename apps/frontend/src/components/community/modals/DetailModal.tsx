@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/lib/ui/dialog";
-import { Send, MoreHorizontal, Check, MessageSquare } from "lucide-react";
+import { Send, MoreHorizontal, Check, MessageSquare, MessageCircle } from "lucide-react";
 import { USER_ROLES } from "@/constants/index";
 import type { CommentResponseDTO, PostResponseDTO, UserWallResponseDTO } from "@/types/community.dtos";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/lib/ui/tooltip";
@@ -28,14 +28,18 @@ export default function DetailModal({
     formatTimeAgo,
     isSelfUser,
     _currentUser,
+    onOpenUserWall,
+    onOpenMiniChat
 }: Readonly<{
     open: boolean;
     onOpenChange: (val: boolean) => void;
     post: PostResponseDTO | null;
-    getInitials: (name: string) => string;
+    getInitials: (name: string|undefined) => string|undefined;
     formatTimeAgo: (date: Date | string) => string;
     isSelfUser: (id?: string) => boolean;
-    _currentUser: UserWallResponseDTO;
+    _currentUser: UserWallResponseDTO|null;
+    onOpenUserWall?: (userId: string, userName?: string) => void;
+     onOpenMiniChat?: (userId: string) => void;
 }>) {
     const [comments, setComments] = React.useState<UIComment[]>([]);
     const [commentInput, setCommentInput] = React.useState("");
@@ -46,8 +50,50 @@ export default function DetailModal({
     const [editContent, setEditContent] = React.useState("");
     const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
     const [commentToDelete, setCommentToDelete] = React.useState<string | null>(null);
+    
+    // Follow and chat state
+    const [following, setFollowing] = React.useState<Record<string, boolean>>({});
+    const [followLoading, setFollowLoading] = React.useState<Record<string, boolean>>({});
 
     const { checkAuthAndExecute, isAuthenticated } = useAuthCheck();
+
+    // Follow functionality
+    const handleToggleFollow = async (userId: string, isFollowing: boolean) => {
+        if (!isAuthenticated) {
+            console.log("Please login to follow");
+            return;
+        }
+
+        setFollowLoading(prev => ({ ...prev, [userId]: true }));
+
+        try {
+            if (isFollowing) {
+                await CommunityService.unfollowUser(userId);
+                setFollowing(prev => ({ ...prev, [userId]: false }));
+            } else {
+                await CommunityService.followUser(userId);
+                setFollowing(prev => ({ ...prev, [userId]: true }));
+            }
+        } catch (error) {
+            console.error("Error toggling follow:", error);
+        } finally {
+            setFollowLoading(prev => ({ ...prev, [userId]: false }));
+        }
+    };
+
+    // Message functionality
+    const handleOpenChat = (userId: string) => {
+        if (!isAuthenticated) {
+            console.log("Please login to message");
+            return;
+        }
+        onOpenMiniChat?.(userId);
+    };
+
+    // User wall navigation
+    const handleOpenUserWall = (userId: string) => {
+        onOpenUserWall?.(userId);
+    };
 
     // Load comments when post changes
     React.useEffect(() => {
@@ -198,6 +244,22 @@ export default function DetailModal({
             socket.emit('post:leave', { postId: post._id });
         };
     }, [post?._id, open]);
+
+    // Load follow status
+    React.useEffect(() => {
+        if (!post?.authorId || !isAuthenticated || post.authorId === _currentUser?._id) return;
+
+        const loadFollowStatus = async () => {
+            try {
+                const response = await CommunityService.isFollowing(post.authorId);
+                setFollowing(prev => ({ ...prev, [post.authorId]: Boolean(response.data) }));
+            } catch (error) {
+                console.error("Error loading follow status:", error);
+            }
+        };
+
+        loadFollowStatus();
+    }, [post?.authorId, isAuthenticated, _currentUser?._id]);
 
     const loadComments = async () => {
         if (!post?._id) return;
@@ -502,7 +564,44 @@ export default function DetailModal({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="bg-white max-w-2xl p-0 overflow-hidden">
                 <DialogHeader className="px-4 py-3 border-b">
-                    <DialogTitle>{post.authorName}</DialogTitle>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                            <button 
+                                onClick={() => handleOpenUserWall(post.authorId)}
+                                className="hover:underline"
+                            >
+                                <DialogTitle>{post.authorName}</DialogTitle>
+                            </button>
+                        </div>
+                        
+                        {/* Follow and Message buttons */}
+                        {post.authorId !== _currentUser?._id && (
+                            <div className="flex items-center space-x-2">
+                                <button
+                                    onClick={() => handleToggleFollow(post.authorId, following[post.authorId])}
+                                    disabled={followLoading[post.authorId]}
+                                    className={`px-3 py-1 text-sm rounded-md ${
+                                        following[post.authorId] 
+                                            ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
+                                            : 'bg-blue-500 text-white hover:bg-blue-600'
+                                    } disabled:opacity-50`}
+                                >
+                                    {(() => {
+                                        if (followLoading[post.authorId]) return '...';
+                                        return following[post.authorId] ? 'Unfollow' : 'Follow';
+                                    })()}
+                                </button>
+                                
+                                <button
+                                    onClick={() => handleOpenChat(post.authorId)}
+                                    title="Send message"
+                                    className="p-1 text-gray-600 hover:text-blue-500 hover:bg-gray-100 rounded-md"
+                                >
+                                    <MessageCircle size={16} />
+                                </button>
+                            </div>
+                        )}
+                    </div>
                     <DialogDescription>{post.content}</DialogDescription>
                 </DialogHeader>
 
@@ -511,11 +610,11 @@ export default function DetailModal({
                     {/* Main Comment Input */}
                     <div className="relative">
                         <div className="flex items-start space-x-3 mb-4">
-                            {_currentUser.avatarUrl ? (
+                            {_currentUser?.avatarUrl ? (
                                 <img src={_currentUser.avatarUrl} alt="avatar" className="w-8 h-8 rounded-full object-cover" />
                             ) : (
                                 <div className="w-8 h-8 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full flex items-center justify-center">
-                                    <span className="text-white text-xs font-semibold">{getInitials(_currentUser.fullName)}</span>
+                                    <span className="text-white text-xs font-semibold">{getInitials(_currentUser?.fullName)}</span>
                                 </div>
                             )}
                             <div className="flex-1">
@@ -541,7 +640,7 @@ export default function DetailModal({
                         {!isAuthenticated() && (
                             <div className="absolute inset-0 bg-white/80 backdrop-blur-sm rounded-lg flex items-center justify-center">
                                 <button 
-                                    onClick={() => window.location.href = '/auth/login'}
+                                    onClick={() => globalThis.location.href = '/auth/login'}
                                     className="bg-rose-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-rose-700 transition-colors"
                                 >
                                     Login to experience
@@ -701,14 +800,14 @@ export default function DetailModal({
                                             </div>
                                         </div>
 
-                                        {/* Reply Input
+                                        {/* Reply Input */}
                                         {comment.showReplyInput && (
                                             <div className="flex items-start space-x-3 mt-3">
-                                                {_currentUser.avatarUrl ? (
+                                                {_currentUser?.avatarUrl ? (
                                                     <img src={_currentUser.avatarUrl} alt="avatar" className="w-6 h-6 rounded-full object-cover" />
                                                 ) : (
                                                     <div className="w-6 h-6 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full flex items-center justify-center">
-                                                        <span className="text-white text-xs font-semibold">{getInitials(_currentUser.fullName)}</span>
+                                                        <span className="text-white text-xs font-semibold">{getInitials(_currentUser?.fullName)}</span>
                                                     </div>
                                                 )}
                                                 <div className="flex-1">
@@ -718,7 +817,7 @@ export default function DetailModal({
                                                             onChange={(e) => updateReplyInput(comment._id, e.target.value)}
                                                             placeholder="Write a reply..."
                                                             className="flex-1 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none"
-                                                            onKeyPress={(e) => e.key === 'Enter' && onAddReply(comment._id)}
+                                                            onKeyDown={(e) => e.key === 'Enter' && onAddReply(comment._id)}
                                                         />
                                                         <button
                                                             onClick={() => onAddReply(comment._id)}
@@ -731,17 +830,17 @@ export default function DetailModal({
                                                     </div>
                                                 </div>
                                             </div>
-                                        )} */}
+                                        )}
 
                                         {/* Replies */}
                                         {comment.showReplies && comment.replies  && (
                                             <>
                                              <div className="flex items-start space-x-3 mt-3">
-                                                {_currentUser.avatarUrl ? (
+                                                {_currentUser?.avatarUrl ? (
                                                     <img src={_currentUser.avatarUrl} alt="avatar" className="w-6 h-6 rounded-full object-cover" />
                                                 ) : (
                                                     <div className="w-6 h-6 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full flex items-center justify-center">
-                                                        <span className="text-white text-xs font-semibold">{getInitials(_currentUser.fullName)}</span>
+                                                        <span className="text-white text-xs font-semibold">{getInitials(_currentUser?.fullName)}</span>
                                                     </div>
                                                 )}
                                                 <div className="flex-1">
@@ -751,7 +850,7 @@ export default function DetailModal({
                                                             onChange={(e) => updateReplyInput(comment._id, e.target.value)}
                                                             placeholder="Write a reply..."
                                                             className="flex-1 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none"
-                                                            onKeyPress={(e) => e.key === 'Enter' && onAddReply(comment._id)}
+                                                            onKeyDown={(e) => e.key === 'Enter' && onAddReply(comment._id)}
                                                         />
                                                         <button
                                                             onClick={() => onAddReply(comment._id)}

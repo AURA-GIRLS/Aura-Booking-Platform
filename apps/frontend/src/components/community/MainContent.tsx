@@ -8,15 +8,14 @@ import PostCreator from './PostCreator'
 import PostsFeed from './PostsFeed'
 import SocialWall from './SocialWall'
 import RightSidebar from './RightSidebar'
+import MiniChatBox from './chat/MiniChatBox'
 
-import type { Conversation, Event } from './community.types'
-import { mockUser, mockConversations } from './data/mockCommunityData'
+import type { Event } from './community.types'
 import { CommunityService } from '@/services/community'
 import { PostResponseDTO, TagResponseDTO, UserWallResponseDTO } from '@/types/community.dtos'
 import type { UserResponseDTO } from '@/types/user.dtos'
 import { POST_STATUS } from '@/constants/index'
 import { Skeleton } from '@/components/lib/ui/skeleton'
-import { GeneralSkeleton } from '../generalUI/GeneralSkeleton'
 
 // Reusable filter state
 export type FilterState =
@@ -29,8 +28,7 @@ export default function MainContent() {
   const [selectedTab, setSelectedTab] = useState('Primary')
   const [posts, setPosts] = useState<PostResponseDTO[]>([])
   const [userWalls, setUserWalls] = useState<UserWallResponseDTO[]>([])
-  const [conversations, setConversations] = useState<Conversation[]>([])
-  const [events, setEvents] = useState<Event[]>([])
+  const [events] = useState<Event[]>([])
   const [trendingTags, setTrendingTags] = useState<TagResponseDTO[]>([])
   const [currentUser, setCurrentUser] = useState<UserWallResponseDTO | null>(null)
   const [privacy, setPrivacy] = useState<'public' | 'friends' | 'private'>('public')
@@ -39,11 +37,13 @@ export default function MainContent() {
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [hasMorePosts, setHasMorePosts] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
 
   // Wall view state
   const [openWallUserId, setOpenWallUserId] = useState<string | null>(null)
   const [openWallUserName, setOpenWallUserName] = useState<string | undefined>(undefined)
+
+  // Mini chat state
+  const [activeChats, setActiveChats] = useState<{conversation: any; user: any}[]>([])
 
   const router = useRouter()
   const pathname = usePathname()
@@ -51,11 +51,6 @@ export default function MainContent() {
 
   const [activeFilter, setActiveFilter] = useState<FilterState>({ type: null })
   const [loading, setLoading] = useState(true)
-
-  // Hydrate mock data
-  useEffect(() => {
-    setConversations(mockConversations)
-  }, [])
 
   // Sync URL params (wall, wn)
   useEffect(() => {
@@ -68,7 +63,7 @@ export default function MainContent() {
   }, [searchParams])
 
   const fetchMinimalUser = useCallback(async () => {
-    if (typeof window === 'undefined') return
+    if (!globalThis.window) return
     try {
       const raw = localStorage.getItem('currentUser')
       const localUser = raw ? (JSON.parse(raw) as UserResponseDTO) : null
@@ -108,7 +103,6 @@ export default function MainContent() {
     if (!res.success || !res.data) return
     
     let items = res.data.items
-    setTotalPages(res.data.pages || 1)
     setHasMorePosts(page < (res.data.pages || 1))
     
     try {
@@ -229,6 +223,11 @@ export default function MainContent() {
     } catch {}
   }, [pathname, router, searchParams])
 
+  // Mini chat handlers
+  const handleOpenMiniChat = useCallback((userId: string) => {
+    console.log("Opening mini chat for user:", userId);
+  }, [])
+
   const isSelf = useMemo(
     () => currentUser?._id && openWallUserId && currentUser._id === openWallUserId,
     [currentUser?._id, openWallUserId]
@@ -249,7 +248,7 @@ export default function MainContent() {
               </span>
             </div>
           )}
-          <SocialWall userId={openWallUserId} />
+          <SocialWall userId={openWallUserId} onOpenMiniChat={handleOpenMiniChat} />
         </>
       )
     }
@@ -282,6 +281,7 @@ export default function MainContent() {
             currentUser={currentUserMinimal}
             fetchMinimalUser={fetchMinimalUser}
             onOpenUserWall={handleOpenUserWall}
+            onOpenMiniChat={handleOpenMiniChat}
           />
         </>
       )
@@ -291,7 +291,7 @@ export default function MainContent() {
       <>
         <StoriesSection
           userWalls={userWalls}
-          currentUser={(currentUser as any) ?? (mockUser as any)}
+          currentUser={currentUser}
         />
         <PostCreator
           postText={postText}
@@ -300,15 +300,16 @@ export default function MainContent() {
           setPrivacy={setPrivacy}
           posts={posts}
           setPosts={setPosts}
-          currentUser={(currentUser as any) ?? (mockUser as any)}
+          currentUser={currentUser}
           fetchMinimalUser={fetchMinimalUser}
         />
         <PostsFeed
           posts={posts.filter((p) => p.status !== POST_STATUS.PRIVATE)}
           setPosts={setPosts}
-          currentUser={(currentUser as any) ?? (mockUser as any)}
+          currentUser={currentUser}
           fetchMinimalUser={fetchMinimalUser}
           onOpenUserWall={handleOpenUserWall}
+          onOpenMiniChat={handleOpenMiniChat}
         />
         
         {/* Loading more indicator */}
@@ -345,8 +346,8 @@ export default function MainContent() {
       {/* Center skeleton */}
       <div className="flex-1 w-full max-w-2xl mx-auto space-y-4">
         <div className="flex space-x-4">
-          {[...Array(5)].map((_, i) => (
-            <Skeleton key={i} className="w-16 h-16 rounded-full bg-rose-200" />
+          {Array.from({ length: 5 }, (_, i) => (
+            <Skeleton key={`story-skeleton-${i}`} className="w-16 h-16 rounded-full bg-rose-200" />
           ))}
         </div>
         <div className="p-4 bg-white rounded-xl shadow-sm">
@@ -355,9 +356,9 @@ export default function MainContent() {
             <Skeleton className="h-10 flex-1 bg-rose-200" />
           </div>
         </div>
-        {[...Array(3)].map((_, i) => (
+        {Array.from({ length: 3 }, (_, i) => (
           <div
-            key={i}
+            key={`post-skeleton-${i}`}
             className="p-4 bg-white rounded-xl shadow-sm space-y-2"
           >
             <Skeleton className="h-4 w-1/3 bg-rose-200" />
@@ -382,31 +383,70 @@ export default function MainContent() {
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row">
-          <LeftSidebar
-            userWalls={userWalls}
-            setUserWalls={setUserWalls}
-            currentUser={(currentUser as any) ?? (mockUser as any)}
-            trendingTags={trendingTags}
-            posts={posts}
-            setPosts={setPosts}
-            fetchPosts={fetchPosts}
-            fetchActiveMuas={fetchActiveMuas}
-            activeFilter={activeFilter}
-            setActiveFilter={setActiveFilter}
-            resetPagination={() => {
-              setCurrentPage(1)
-              setHasMorePosts(true)
+        <LeftSidebar
+          userWalls={userWalls}
+          setUserWalls={setUserWalls}
+          currentUser={currentUser}
+          trendingTags={trendingTags}
+          posts={posts}
+          setPosts={setPosts}
+          fetchPosts={fetchPosts}
+          fetchActiveMuas={fetchActiveMuas}
+          activeFilter={activeFilter}
+          setActiveFilter={setActiveFilter}
+          resetPagination={() => {
+            setCurrentPage(1);
+            setHasMorePosts(true);
+          }}
+        />
+        <div className="flex-1 w-full max-w-2xl mx-auto my-4">
+          {renderCenter()}
+        </div>
+        <RightSidebar 
+          selectedTab={selectedTab} 
+          setSelectedTab={setSelectedTab} 
+          currentUser={currentUser} 
+          events={events}
+          onConversationClick={(conversation) => {
+            // Find the other user in the conversation
+            const otherUser = conversation.participants.find(
+              (p: any) => p._id !== currentUser?._id
+            );
+            
+            if (otherUser) {
+              // Check if chat is already open
+              const isChatOpen = activeChats.some(
+                chat => chat.conversation._id === conversation._id
+              );
+              
+              if (!isChatOpen) {
+                setActiveChats(prev => [
+                  ...prev,
+                  { conversation, user: otherUser }
+                ]);
+              }
+            }
+          }}
+        />
+      </div>
+      
+      {/* Mini Chat Boxes */}
+      <div className="fixed bottom-0 right-0 flex space-x-2 p-4 z-50">
+        {activeChats.map((chat, index) => (
+          <MiniChatBox
+            key={chat.conversation._id}
+            isOpen={true}
+            onClose={() => {
+              setActiveChats(prev => 
+                prev.filter(c => c.conversation._id !== chat.conversation._id)
+              );
             }}
+            recipientUserId={chat.user._id}
+            currentUser={currentUser}
+            position={{ bottom: 20 + (index * 400), right: 20 + (index * 20) }}
           />
-        <div className="flex-1 w-full max-w-2xl mx-auto my-4">{renderCenter()}</div>
-          <RightSidebar
-            selectedTab={selectedTab}
-            setSelectedTab={setSelectedTab}
-            conversations={conversations}
-            currentUser={(currentUser as any) ?? (mockUser as any)}
-            events={events}
-          />
+        ))}
       </div>
     </div>
-  )
+  );
 }
