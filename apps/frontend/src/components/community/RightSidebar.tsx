@@ -135,7 +135,7 @@ export default function RightSidebar({
                     )}
                   </div>
                   <p className={`text-sm text-gray-500 truncate ${conv.lastMessage?.status === 'read' ? 'font-normal' : 'font-semibold'}`}>
-                    {conv.lastMessage ? conv.lastMessage.content : 'No messages yet'}
+                    {conv.lastMessage ? conv.lastMessage.content.startsWith('http') ? `${displayName} sent a file.` : conv.lastMessage.content : 'No messages yet'}
                   </p>
                   <p className="text-xs text-gray-400">
                     {new Date(conv.updatedAt).toLocaleString('vi-VN', {

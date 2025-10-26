@@ -1,4 +1,5 @@
-import { X, Send, Users, Smile, Paperclip, Clock, ThumbsUp, Heart, Laugh, Angry, XCircle } from 'lucide-react';
+import { X, Send, Users, Smile, Paperclip, Clock, ThumbsUp, Heart, Laugh, Angry, XCircle, Loader2 } from 'lucide-react';
+import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import { formatDistanceToNow, format } from 'date-fns';
 // Removed unused vi locale import
 import { ChatService } from '@/services/chat';
@@ -8,18 +9,32 @@ import { UserWallResponseDTO } from '@/types/community.dtos';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { UserService } from '@/services/user';
 import { UserResponseDTO } from '@/types/user.dtos';
-
+import { UploadService } from '@/services/upload';
+import { toast } from 'sonner';
+import { 
+  FaFilePdf, 
+  FaFileWord, 
+  FaFileExcel, 
+  FaFilePowerpoint, 
+  FaFileArchive, 
+  FaFileAudio, 
+  FaFileVideo, 
+  FaFileCode,
+  FaFileImage,
+  FaFileAlt,
+  FaFile
+} from 'react-icons/fa';
 interface MiniChatBoxProps {
-recipientUserId:string;
-currentUser:UserWallResponseDTO|null;
-position:any;
+  recipientUserId: string;
+  currentUser: UserWallResponseDTO | null;
+  position: any;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export default function MiniChatBox({ 
-  isOpen, 
-  onClose, 
+export default function MiniChatBox({
+  isOpen,
+  onClose,
   recipientUserId,
   currentUser,
   position
@@ -28,12 +43,17 @@ export default function MiniChatBox({
   const [showTimestampFor, setShowTimestampFor] = useState<string | null>(null);
   const [showReactionsFor, setShowReactionsFor] = useState<string | null>(null);
   const [isReacting, setIsReacting] = useState(false);
-  
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const messageInputRef = useRef<HTMLInputElement>(null);
+
   const formatMessageTime = (dateString: string, detailed = false) => {
     if (detailed) {
       return format(new Date(dateString), 'HH:mm - dd/MM/yyyy');
     }
-    return formatDistanceToNow(new Date(dateString), { 
+    return formatDistanceToNow(new Date(dateString), {
       addSuffix: true
     });
   };
@@ -58,7 +78,7 @@ export default function MiniChatBox({
     if (isReacting) return;
     setIsReacting(true);
     e.stopPropagation();
-    
+
     try {
       const message = messages.find(m => m._id === messageId);
       if (!message) return;
@@ -103,11 +123,11 @@ export default function MiniChatBox({
       const isClickOnReactionButton = target.closest('.reaction-button');
       const isClickOnTimestampButton = target.closest('.timestamp-button');
       const isClickOnReactionPopup = target.closest('.reaction-popup');
-      
+
       if (!isClickOnReactionButton && !isClickOnReactionPopup) {
         setShowReactionsFor(null);
       }
-      
+
       if (!isClickOnTimestampButton) {
         setShowTimestampFor(null);
       }
@@ -118,7 +138,7 @@ export default function MiniChatBox({
   }, []);
   const [inputValue, setInputValue] = useState('');
   const [conversation, setConversation] = useState<ConversationDTO | null>(null);
-  const [recipientUser, setRecipientUser] = useState<UserResponseDTO|null>(null);
+  const [recipientUser, setRecipientUser] = useState<UserResponseDTO | null>(null);
   const [loading, setLoading] = useState(false);
   const [showGroupModal, setShowGroupModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -128,7 +148,61 @@ export default function MiniChatBox({
     if (!name) return '';
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
-
+  const getFileIcon = (extension: string) => {
+    const iconClass = 'w-5 h-5';
+    
+    switch (extension.toLowerCase()) {
+      case 'pdf':
+        return <FaFilePdf className={`${iconClass} text-red-500`} />;
+      case 'doc':
+      case 'docx':
+        return <FaFileWord className={`${iconClass} text-blue-600`} />;
+      case 'xls':
+      case 'xlsx':
+      case 'csv':
+        return <FaFileExcel className={`${iconClass} text-green-600`} />;
+      case 'ppt':
+      case 'pptx':
+        return <FaFilePowerpoint className={`${iconClass} text-orange-500`} />;
+      case 'zip':
+      case 'rar':
+      case '7z':
+      case 'tar':
+      case 'gz':
+        return <FaFileArchive className={`${iconClass} text-yellow-600`} />;
+      case 'mp3':
+      case 'wav':
+      case 'ogg':
+      case 'm4a':
+        return <FaFileAudio className={`${iconClass} text-purple-500`} />;
+      case 'mp4':
+      case 'mov':
+      case 'avi':
+      case 'mkv':
+      case 'webm':
+        return <FaFileVideo className={`${iconClass} text-blue-400`} />;
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif':
+      case 'webp':
+      case 'svg':
+        return <FaFileImage className={`${iconClass} text-green-400`} />;
+      case 'html':
+      case 'css':
+      case 'js':
+      case 'jsx':
+      case 'ts':
+      case 'tsx':
+      case 'json':
+        return <FaFileCode className={`${iconClass} text-blue-400`} />;
+      case 'txt':
+      case 'md':
+        return <FaFileAlt className={`${iconClass} text-gray-500`} />;
+      default:
+        return <FaFile className={`${iconClass} text-gray-400`} />;
+    }
+  };
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -214,20 +288,27 @@ export default function MiniChatBox({
     ensureConversation();
   }, [ensureConversation]);
 
-  const sendMessage = async () => {
-    if (!inputValue.trim() || !recipientUserId) return;
+  const sendMessage = async (fileUrl?: string) => {
+    const content = inputValue.trim();
+    if ((!content && !fileUrl) || !recipientUserId) return;
 
     checkAuthAndExecute(async () => {
       try {
         setLoading(true);
-        
+
         // Ensure conversation exists
         const conv = await ensureConversation();
         if (!conv) return;
 
+        // Prepare message content
+        let messageContent = content;
+        if (fileUrl) {
+          messageContent = content ? `${content}\n${fileUrl}` : fileUrl;
+        }
+
         // Send message
         const response = await ChatService.sendMessage(conv._id, {
-          content: inputValue.trim()
+          content: messageContent
         });
 
         if (response.success && response.data) {
@@ -236,10 +317,89 @@ export default function MiniChatBox({
         }
       } catch (error) {
         console.error('Failed to send message:', error);
+        toast.error('Failed to send message');
       } finally {
         setLoading(false);
       }
     });
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = [
+      'application/zip',
+      'application/x-zip-compressed',
+      'application/x-rar-compressed',
+      'application/x-7z-compressed',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/plain',
+      'application/pdf',
+      'image/jpeg',
+      'image/pjpeg',
+      'image/png',
+      'image/gif',
+      'image/apng',
+      'image/bmp',
+      'image/webp',
+      'image/svg+xml',
+      'image/x-icon',
+    ];
+
+    if (!validTypes.includes(file.type) && !file.name.match(/\.(zip|rar|7z|doc|docx|ppt|pptx|xls|xlsx|txt|pdf)$/i)) {
+      toast.error('File type not supported. Please upload a valid document file.');
+      return;
+    }
+
+    // Check file size (10MB limit)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      toast.error('File size too large. Maximum size is 10MB.');
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      setUploadProgress(0);
+
+      // Upload file
+      const uploadResponse = await UploadService.uploadFile(file, {
+        resourceType: 'raw',
+        folder: 'chat/files',
+        options: {
+          onUploadProgress: (progressEvent: any) => {
+            const progress = Math.round((progressEvent.loaded * 100) / (progressEvent.total || 1));
+            setUploadProgress(progress);
+          }
+        }
+      });
+
+      if (uploadResponse.success && uploadResponse.data) {
+        // Send message with file URL
+        await sendMessage(uploadResponse.data.url);
+      }
+    } catch (error) {
+      console.error('File upload failed:', error);
+      toast.error('Failed to upload file. Please try again.');
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -253,7 +413,7 @@ export default function MiniChatBox({
 
   if (loading && messages.length === 0) {
     return (
-      <div 
+      <div
         className="fixed bg-white rounded-t-lg shadow-lg border border-gray-200 overflow-hidden flex flex-col"
         style={{
           width: '320px',
@@ -266,9 +426,9 @@ export default function MiniChatBox({
         <div className="flex items-center justify-between p-3 bg-rose-50 border-b border-rose-100">
           <div className="flex items-center">
             {recipientUser?.avatarUrl ? (
-              <img 
-                src={recipientUser.avatarUrl} 
-                alt={recipientUser.fullName} 
+              <img
+                src={recipientUser.avatarUrl}
+                alt={recipientUser.fullName}
                 className="w-8 h-8 rounded-full object-cover mr-2"
               />
             ) : (
@@ -280,7 +440,7 @@ export default function MiniChatBox({
               {recipientUser?.fullName || 'Loading...'}
             </span>
           </div>
-          <button 
+          <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600"
           >
@@ -303,9 +463,9 @@ export default function MiniChatBox({
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
               {recipientUser?.avatarUrl ? (
-                <img 
-                  src={recipientUser.avatarUrl} 
-                  alt={recipientUser.fullName} 
+                <img
+                  src={recipientUser.avatarUrl}
+                  alt={recipientUser.fullName}
                   className="w-8 h-8 rounded-full object-cover"
                 />
               ) : (
@@ -347,7 +507,7 @@ export default function MiniChatBox({
               .map((message) => {
                 const isCurrentUser = message.senderId === currentUser?._id;
                 const showDetailedTime = showTimestampFor === message._id;
-                
+
                 return (
                   <div
                     key={message._id}
@@ -357,7 +517,7 @@ export default function MiniChatBox({
                       {!isCurrentUser && (
                         <div className="flex-shrink-0">
                           {recipientUser?.avatarUrl ? (
-                            <img 
+                            <img
                               src={recipientUser.avatarUrl}
                               alt={recipientUser.fullName}
                               className="w-6 h-6 rounded-full object-cover"
@@ -369,38 +529,98 @@ export default function MiniChatBox({
                           )}
                         </div>
                       )}
-                      
+
                       <div className="relative group/message flex items-end">
                         {/* Message bubble with actions container */}
                         <div className="relative">
                           {/* Message bubble */}
                           <div className="flex flex-col">
-                            <div
-                              className={`px-3 py-2 rounded-lg text-sm transition-all ${
-                                isCurrentUser
-                                  ? 'bg-rose-500 text-white rounded-br-none hover:bg-rose-600'
-                                  : 'bg-gray-100 text-gray-900 rounded-bl-none hover:bg-gray-200'
-                              }`}
-                            >
-                              {message.content}
+                            <div className="space-y-2">
+                              {/* Render message text if exists */}
+                              {message.content && !message.content.startsWith('http') && (
+                                <div className={`px-3 py-2 rounded-lg text-sm ${isCurrentUser
+                                  ? 'bg-rose-500 text-white rounded-br-none'
+                                  : 'bg-gray-100 text-gray-900 rounded-bl-none'
+                                  }`}>
+                                  {message.content}
+                                </div>
+                              )}
+
+                              {/* Render files/images if URL exists in content */}
+                              {message.content && message.content.startsWith('http') && (
+                                <div className="w-full max-w-[280px]">
+                                  <div className="grid grid-cols-1 gap-2">
+                                    {message.content.split('\n').map((url, idx) => {
+                                      if (!url.startsWith('http')) return null;
+                                      console.log("url: ", url);
+                                      const isImage = /.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url);
+                                      const fileName = url.split('/').pop() || 'file';
+                                      const fileExt = fileName.split('.').pop()?.toLowerCase() || '';
+
+                                      if (isImage) {
+                                        return (
+                                          <a
+                                            key={idx}
+                                            href={url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="block overflow-hidden rounded-md"
+                                          >
+                                            <img
+                                              src={url}
+                                              alt="Uploaded content"
+                                              className="w-full h-24 object-cover rounded-md hover:opacity-90 transition-opacity"
+                                            />
+                                          </a>
+                                        );
+                                      } else {
+                                        return (
+                                          <a
+                                            key={idx}
+                                            href={url}
+                                            download={fileName} // This will preserve the original filename and extension
+                                            title={fileName}
+                                            className={`col-span-2 block p-3 rounded-lg text-sm hover:bg-gray-200 ${isCurrentUser
+                                                ? 'bg-white text-rose-600 border border-rose-100'
+                                                : 'bg-white text-gray-900 border border-gray-200'
+                                              } hover:shadow-sm transition-shadow w-full`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                          >
+                                            <div className="flex items-center space-x-2">
+                                              <div className="flex-shrink-0">
+                                                {getFileIcon(fileExt)}
+                                              </div>
+                                              <div className="min-w-0">
+                                                <p className="text-sm font-medium text-gray-900 truncate">
+                                                  {fileName}
+                                                </p>
+                                              </div>
+                                            </div>
+                                          </a>
+                                        );
+                                      }
+                                    })}
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                            
+
                             {/* Display reactions */}
                             {message.reactions && message.reactions.length > 0 && (
                               <div className={`mt-1 flex flex-wrap gap-1 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
                                 {Array.from(new Set(message.reactions.map(r => r.emoji))).map(emoji => {
                                   const reactions = message.reactions.filter(r => r.emoji === emoji);
                                   const userReacted = reactions.some(r => r.user._id === currentUser?._id);
-                                  
+
                                   return (
                                     <button
                                       key={emoji}
                                       onClick={(e) => handleReaction(e, message._id, emoji)}
-                                      className={`text-xs px-2 py-0.5 rounded-full flex items-center space-x-1 ${
-                                        userReacted
-                                          ? 'bg-rose-100 text-rose-700 border border-rose-200'
-                                          : 'bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-50'
-                                      }`}
+                                      className={`text-xs px-2 py-0.5 rounded-full flex items-center space-x-1 ${userReacted
+                                        ? 'bg-rose-100 text-rose-700 border border-rose-200'
+                                        : 'bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-50'
+                                        }`}
                                     >
                                       <span>{emoji}</span>
                                       <span className="text-xs">{reactions.length}</span>
@@ -413,43 +633,40 @@ export default function MiniChatBox({
 
                           {/* Timestamp display - appears below message */}
                           {showTimestampFor === message._id && (
-                            <div className={`text-xs text-gray-600 mt-1 ${
-                              isCurrentUser ? 'text-right' : 'text-left'
-                            }`}>
+                            <div className={`text-xs text-gray-600 mt-1 ${isCurrentUser ? 'text-right' : 'text-left'
+                              }`}>
                               {message.createdAt && formatMessageTime(message.createdAt, true)}
                             </div>
                           )}
                         </div>
 
                         {/* Hover action buttons - positioned horizontally next to message */}
-                        <div className={`flex items-center space-x-1 px-2 opacity-0 group-hover/message:opacity-100 transition-opacity duration-200 ${
-                          isCurrentUser ? 'order-first' : 'order-last'
-                        }`}>
+                        <div className={`flex items-center space-x-1 px-2 opacity-0 group-hover/message:opacity-100 transition-opacity duration-200 ${isCurrentUser ? 'order-first' : 'order-last'
+                          }`}>
                           {/* Reaction button */}
-                            <button
-                              onClick={(e) => toggleReactions(e, message._id)}
-                              className="p-1 text-gray-600 hover:text-rose-500 rounded-full hover:bg-gray-100 transition-colors reaction-button"
-                              title="Add reaction"
-                            >
-                              <Smile className="w-4 h-4" />
-                            </button>
-                          
+                          <button
+                            onClick={(e) => toggleReactions(e, message._id)}
+                            className="p-1 text-gray-600 hover:text-rose-500 rounded-full hover:bg-gray-100 transition-colors reaction-button"
+                            title="Add reaction"
+                          >
+                            <Smile className="w-4 h-4" />
+                          </button>
+
                           {/* Timestamp button */}
-                            <button
-                              onClick={(e) => toggleTimestamp(e, message._id)}
-                              className="p-1 text-gray-600 hover:text-rose-500 rounded-full hover:bg-gray-100 transition-colors timestamp-button"
-                              title="View timestamp"
-                            >
-                              <Clock className="w-4 h-4" />
-                            </button>
+                          <button
+                            onClick={(e) => toggleTimestamp(e, message._id)}
+                            className="p-1 text-gray-600 hover:text-rose-500 rounded-full hover:bg-gray-100 transition-colors timestamp-button"
+                            title="View timestamp"
+                          >
+                            <Clock className="w-4 h-4" />
+                          </button>
                         </div>
 
                         {/* Reaction popup - positioned above the message */}
                         {showReactionsFor === message._id && (
-                          <div 
-                            className={`absolute bottom-full mb-1 bg-white rounded-full shadow-lg p-1 border border-gray-200 flex items-center space-x-1 z-10 reaction-popup ${
-                              isCurrentUser ? 'right-0' : 'left-0'
-                            }`}
+                          <div
+                            className={`absolute bottom-full mb-1 bg-white rounded-full shadow-lg p-1 border border-gray-200 flex items-center space-x-1 z-10 reaction-popup ${isCurrentUser ? 'right-0' : 'left-0'
+                              }`}
                             onMouseLeave={() => setShowReactionsFor(null)}
                           >
                             {[
@@ -477,11 +694,11 @@ export default function MiniChatBox({
                           </div>
                         )}
                       </div>
-                      
+
                       {isCurrentUser && (
                         <div className="flex-shrink-0">
                           {currentUser?.avatarUrl ? (
-                            <img 
+                            <img
                               src={currentUser.avatarUrl}
                               alt={currentUser.fullName}
                               className="w-6 h-6 rounded-full object-cover"
@@ -508,25 +725,81 @@ export default function MiniChatBox({
         {/* Input Area */}
         <div className="p-3 border-t border-gray-200">
           <div className="flex items-center space-x-2">
-            <button title="Attach a file" className="p-1 text-gray-400 hover:text-gray-600">
-              <Paperclip className="w-4 h-4" />
-            </button>
-            <button title="Add an emoji" className="p-1 text-gray-400 hover:text-gray-600">
-              <Smile className="w-4 h-4" />
-            </button>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={triggerFileInput}
+                disabled={isUploading}
+                title="Attach a file"
+                className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isUploading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Paperclip className="w-4 h-4" />
+                )}
+              </button>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                className="hidden"
+                accept=".zip,.rar,.7z,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.pdf,application/zip,application/x-zip-compressed,application/x-rar-compressed,application/x-7z-compressed,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,application/pdf,.jpg,.jpeg,.png,.gif,.webp"
+              />
+              {isUploading && (
+                <div className="absolute bottom-full left-0 w-24 h-1 bg-gray-200 rounded-full overflow-hidden mb-1">
+                  <div
+                    className="h-full bg-rose-500 transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              )}
+            </div>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                title="Add an emoji"
+                className="p-1 text-gray-400 hover:text-gray-600"
+              >
+                <Smile className="w-4 h-4" />
+              </button>
+              {showEmojiPicker && (
+                <div className="absolute bottom-full right-0 mb-2 z-50">
+                  <EmojiPicker
+                    onEmojiClick={(emojiData: EmojiClickData) => {
+                      setInputValue(prev => prev + emojiData.emoji);
+                      setShowEmojiPicker(false);
+                      messageInputRef.current?.focus();
+                    }}
+                    width={300}
+                    height={350}
+                    previewConfig={{
+                      showPreview: false
+                    }}
+                    skinTonesDisabled
+                    searchDisabled={false}
+                  />
+                </div>
+              )}
+            </div>
             <div className="flex-1 flex">
               <input
+                ref={messageInputRef}
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={handleKeyPress}
+                onClick={() => setShowEmojiPicker(false)}
                 placeholder="Type a message..."
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-1 focus:ring-rose-500 focus:border-rose-500 text-sm"
                 disabled={loading}
               />
-              <button title="Send message"
-                onClick={sendMessage}
-                disabled={loading || !inputValue.trim()}
+              <button
+                type="button"
+                title="Send message"
+                onClick={() => sendMessage()}
+                disabled={loading || (!inputValue.trim() && !isUploading)}
                 className="px-3 py-2 bg-rose-500 text-white rounded-r-lg hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Send className="w-4 h-4" />
