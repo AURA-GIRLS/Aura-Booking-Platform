@@ -20,6 +20,9 @@ export interface Config {
   // Email Service
   smtpUser: string;
   sendgridApiKey:string;
+  smtpHost: string;
+  smtpPort: number;
+  smtpPass: string;
   
   // Third-party services
   googleClientId: string;

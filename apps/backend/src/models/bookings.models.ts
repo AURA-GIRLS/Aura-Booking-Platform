@@ -28,6 +28,9 @@ const BookingSchema = new Schema({
   feedbackId:  { type: Schema.Types.ObjectId, ref: "Feedback", default: null },
   paymentId: { type: Schema.Types.ObjectId, ref: 'Transaction' },
   completedAt: { type: Date, default: null },
+  reminded24h: { type: Boolean, default: false },
+  reminded1h: { type: Boolean, default: false },
+  lastReminderAt: { type: Date, default: null },
 });
 
 export const Booking = model("Booking", BookingSchema);
