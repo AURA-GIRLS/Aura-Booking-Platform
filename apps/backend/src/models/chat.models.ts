@@ -46,10 +46,10 @@ const ConversationSchema = new Schema<IConversation>({
   isDeleted: { type: Boolean, default: false },
 }, { timestamps: true });
 
-ConversationSchema.index({ participantHash: 1, type: 1 }, {
-  unique: true,
-  partialFilterExpression: { type: 'private' }
-});
+// ConversationSchema.index({ participantHash: 1, type: 1 }, {
+//   unique: true,
+//   partialFilterExpression: { type: 'private' }
+// });
 
 
 // Index bổ sung cho nhóm: Đổi thứ tự field để tránh bị Mongoose coi là trùng lặp.

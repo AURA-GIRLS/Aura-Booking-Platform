@@ -224,9 +224,52 @@ export default function MainContent() {
   }, [pathname, router, searchParams])
 
   // Mini chat handlers
-  const handleOpenMiniChat = useCallback((userId: string) => {
-    console.log("Opening mini chat for user:", userId);
-  }, [])
+const handleOpenMiniChat = useCallback((userId: string) => {
+  console.log("Opening mini chat for user:", userId);
+  
+  // Check if chat is already open
+  const isChatOpen = activeChats.some(chat => 
+    chat.conversation.participants.some((p: any) => p._id === userId)
+  );
+
+  if (isChatOpen) {
+    // If chat is already open, just bring it to front
+    setActiveChats(prev => {
+      const chatIndex = prev.findIndex(chat => 
+        chat.conversation.participants.some((p: any) => p._id === userId)
+      );
+      if (chatIndex === -1) return prev;
+      
+      const newChats = [...prev];
+      const [chatToMove] = newChats.splice(chatIndex, 1);
+      return [...newChats, chatToMove];
+    });
+    return;
+  }
+
+  // If chat is not open, create a new one
+  const newChat = {
+    conversation: {
+      _id: `temp-${Date.now()}`,
+      participants: [
+        { _id: userId },
+        { _id: currentUser?._id }
+      ],
+      type: 'private',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      lastMessage: null
+    },
+    user: {
+      _id: userId,
+      // You might want to fetch user details here or pass them as parameters
+      fullName: 'Loading...',
+      avatarUrl: ''
+    }
+  };
+
+  setActiveChats(prev => [...prev, newChat]);
+}, [activeChats, currentUser?._id]);
 
   const isSelf = useMemo(
     () => currentUser?._id && openWallUserId && currentUser._id === openWallUserId,

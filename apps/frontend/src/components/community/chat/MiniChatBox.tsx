@@ -1,29 +1,30 @@
-import { X, Send, Users, Smile, Paperclip, Clock, ThumbsUp, Heart, Laugh, Angry, XCircle, Loader2 } from 'lucide-react';
-import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
-import { formatDistanceToNow, format } from 'date-fns';
-// Removed unused vi locale import
-import { ChatService } from '@/services/chat';
-import type { ConversationDTO, MessageDTO } from '../../../types/chat.dtos';
-import { useAuthCheck } from '../../../utils/auth';
-import { UserWallResponseDTO } from '@/types/community.dtos';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { UserService } from '@/services/user';
-import { UserResponseDTO } from '@/types/user.dtos';
-import { UploadService } from '@/services/upload';
-import { toast } from 'sonner';
-import { 
-  FaFilePdf, 
-  FaFileWord, 
-  FaFileExcel, 
-  FaFilePowerpoint, 
-  FaFileArchive, 
-  FaFileAudio, 
-  FaFileVideo, 
+import { X, Send, Users, Smile, Paperclip, Clock, Loader2 } from "lucide-react";
+import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
+import { formatDistanceToNow, format } from "date-fns";
+import { ChatService } from "@/services/chat";
+import type { ConversationDTO, MessageDTO } from "../../../types/chat.dtos";
+import { useAuthCheck } from "../../../utils/auth";
+import { UserWallResponseDTO } from "@/types/community.dtos";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { UserService } from "@/services/user";
+import { UserResponseDTO } from "@/types/user.dtos";
+import { UploadService } from "@/services/upload";
+import { toast } from "sonner";
+import {
+  FaFilePdf,
+  FaFileWord,
+  FaFileExcel,
+  FaFilePowerpoint,
+  FaFileArchive,
+  FaFileAudio,
+  FaFileVideo,
   FaFileCode,
   FaFileImage,
   FaFileAlt,
-  FaFile
-} from 'react-icons/fa';
+  FaFile,
+} from "react-icons/fa";
+import { socket } from "@/config/socket"; // ✅ NEW: Socket import
+
 interface MiniChatBoxProps {
   recipientUserId: string;
   currentUser: UserWallResponseDTO | null;
@@ -37,26 +38,135 @@ export default function MiniChatBox({
   onClose,
   recipientUserId,
   currentUser,
-  position
+  position,
 }: Readonly<MiniChatBoxProps>) {
   const [messages, setMessages] = useState<MessageDTO[]>([]);
+  const [conversation, setConversation] = useState<ConversationDTO | null>(null);
+  const [recipientUser, setRecipientUser] = useState<UserResponseDTO | null>(null);
+  const [inputValue, setInputValue] = useState("");
   const [showTimestampFor, setShowTimestampFor] = useState<string | null>(null);
   const [showReactionsFor, setShowReactionsFor] = useState<string | null>(null);
   const [isReacting, setIsReacting] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [showGroupModal, setShowGroupModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messageInputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { checkAuthAndExecute } = useAuthCheck();
 
-  const formatMessageTime = (dateString: string, detailed = false) => {
-    if (detailed) {
-      return format(new Date(dateString), 'HH:mm - dd/MM/yyyy');
-    }
-    return formatDistanceToNow(new Date(dateString), {
-      addSuffix: true
-    });
-  };
+  // ====================== Utility ======================
+  const formatMessageTime = (dateString: string, detailed = false) =>
+    detailed
+      ? format(new Date(dateString), "HH:mm - dd/MM/yyyy")
+      : formatDistanceToNow(new Date(dateString), { addSuffix: true });
+
+  // ====================== Conversation Logic ======================
+
+  useEffect(() => {
+    if (!recipientUserId) return;
+    UserService.getUserById(recipientUserId)
+      .then((res) => res.success && res.data && setRecipientUser(res.data))
+      .catch(() => setRecipientUser(null));
+  }, [recipientUserId]);
+
+  // ====================== Fetch Messages ======================
+  useEffect(() => {
+    const fetchMessages = async () => {
+      if (!conversation?._id) return;
+      try {
+        setLoading(true);
+        const res = await ChatService.getMessages(conversation._id, { page: 1, limit: 50 });
+        if (res.success && res.data) setMessages(res.data.items || []);
+      } catch (err) {
+        console.error("Failed to fetch messages:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMessages();
+  }, [conversation?._id]);
+
+  // ====================== SOCKET HANDLING ======================
+  useEffect(() => {
+    if (!conversation?._id) return;
+    const roomId = `conversation:${conversation._id}`;
+    socket.emit("join", roomId);
+    console.log(`🔌 Joined room: ${roomId}`);
+
+    const handleNew = (payload: any) => {
+      if (payload.conversationId !== conversation._id) return;
+      setMessages((prev) => {
+        const exists = prev.some((m) => m._id === payload.message._id);
+        return exists ? prev : [...prev, payload.message];
+      });
+      scrollToBottom();
+    };
+
+    const handleReact = (payload: any) => {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m._id === payload.messageId
+            ? {
+                ...m,
+                reactions: [
+                  ...(m.reactions || []).filter(
+                    (r) => r.user._id !== payload.reaction.user._id
+                  ),
+                  payload.reaction,
+                ],
+              }
+            : m
+        )
+      );
+    };
+
+    const handleUnreact = (payload: any) => {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m._id === payload.messageId
+            ? {
+                ...m,
+                reactions: (m.reactions || []).filter(
+                  (r) => r.user._id !== payload.userId
+                ),
+              }
+            : m
+        )
+      );
+    };
+
+    const handleConvUpdate = (payload: any) => {
+      if (payload.conversationId === conversation._id) {
+        console.log("🪄 Conversation updated:", payload);
+      }
+    };
+
+    socket.on("message:new", handleNew);
+    socket.on("message:react", handleReact);
+    socket.on("message:unreact", handleUnreact);
+    socket.on("conversation:update", handleConvUpdate);
+
+    return () => {
+      socket.emit("leave", roomId);
+      socket.off("message:new", handleNew);
+      socket.off("message:react", handleReact);
+      socket.off("message:unreact", handleUnreact);
+      socket.off("conversation:update", handleConvUpdate);
+      console.log(`🚪 Left room: ${roomId}`);
+    };
+  }, [conversation?._id]);
+
+ 
+  // ====================== UI logic (unchanged except socket) ======================
+
+
+
+  if (!isOpen) return null;
+
+ 
 
   const toggleTimestamp = (e: React.MouseEvent, messageId: string) => {
     e.preventDefault();
@@ -136,13 +246,7 @@ export default function MiniChatBox({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-  const [inputValue, setInputValue] = useState('');
-  const [conversation, setConversation] = useState<ConversationDTO | null>(null);
-  const [recipientUser, setRecipientUser] = useState<UserResponseDTO | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [showGroupModal, setShowGroupModal] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { checkAuthAndExecute } = useAuthCheck();
+
 
   const getInitials = (name: string) => {
     if (!name) return '';
@@ -552,7 +656,6 @@ export default function MiniChatBox({
                                   <div className="grid grid-cols-1 gap-2">
                                     {message.content.split('\n').map((url, idx) => {
                                       if (!url.startsWith('http')) return null;
-                                      console.log("url: ", url);
                                       const isImage = /.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url);
                                       const fileName = url.split('/').pop() || 'file';
                                       const fileExt = fileName.split('.').pop()?.toLowerCase() || '';
