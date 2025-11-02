@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/lib/ui/dropdown-menu';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/lib/ui/avatar';
 import { ArtistNavbarProps } from "@/types/user.dtos";
+import { initSocket } from "@/config/socket";
 
 export default function ArtistNavbar({ mua, setMua }:  Readonly<ArtistNavbarProps>) {
   const [isOpen, setIsOpen] = useState(false);
@@ -31,6 +32,9 @@ export default function ArtistNavbar({ mua, setMua }:  Readonly<ArtistNavbarProp
   
   useEffect(() => {
     setId(mua?._id || null);
+     if(user){
+          initSocket().emit("auth:user", user?._id);
+        }
   }, [mua]);
   
   const handleLogout = () => {

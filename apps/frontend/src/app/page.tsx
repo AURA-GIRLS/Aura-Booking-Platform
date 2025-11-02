@@ -20,6 +20,7 @@ export default function HomePage() {
         const storedUser = localStorage.getItem("currentUser");
         const storedMua = localStorage.getItem("currentMUA");
   
+        
         setUser(storedUser && storedUser !== "undefined" ? JSON.parse(storedUser) : null);
         setMua(storedMua && storedMua !== "undefined" ? JSON.parse(storedMua) : null);
       } catch (error) {

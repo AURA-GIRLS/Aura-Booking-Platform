@@ -1,4 +1,4 @@
-import { X, Send, Users, Smile, Paperclip, Clock, Loader2 } from "lucide-react";
+import { X, Send, Users, Smile, Paperclip, Clock, Loader2, Pin } from "lucide-react";
 import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { ChatService } from "@/services/chat";
@@ -23,7 +23,7 @@ import {
   FaFileAlt,
   FaFile,
 } from "react-icons/fa";
-import { socket } from "@/config/socket"; // ✅ NEW: Socket import
+import { initSocket } from "@/config/socket"; 
 
 interface MiniChatBoxProps {
   recipientUserId: string;
@@ -89,11 +89,11 @@ export default function MiniChatBox({
     fetchMessages();
   }, [conversation?._id]);
 
-  // ====================== SOCKET HANDLING ======================
+  // ====================== initSocket() HANDLING ======================
   useEffect(() => {
     if (!conversation?._id) return;
     const roomId = `conversation:${conversation._id}`;
-    socket.emit("join", roomId);
+    initSocket().emit("join", roomId);
     console.log(`🔌 Joined room: ${roomId}`);
 
     const handleNew = (payload: any) => {
@@ -138,29 +138,33 @@ export default function MiniChatBox({
       );
     };
 
-    const handleConvUpdate = (payload: any) => {
-      if (payload.conversationId === conversation._id) {
-        console.log("🪄 Conversation updated:", payload);
-      }
-    };
+   const handleConvUpdate = (payload: any) => {
+  if (payload.conversationId === conversation?._id && payload.data) {
+    setConversation((prev) => (prev ? { ...prev, ...payload.data } : prev));
+    if (payload.data.isPinned !== undefined) {
+      toast(payload.data.isPinned ? "📌 Conversation pinned" : "Conversation unpinned");
+    }
+  }
+};
 
-    socket.on("message:new", handleNew);
-    socket.on("message:react", handleReact);
-    socket.on("message:unreact", handleUnreact);
-    socket.on("conversation:update", handleConvUpdate);
+
+    initSocket().on("message:new", handleNew);
+    initSocket().on("message:react", handleReact);
+    initSocket().on("message:unreact", handleUnreact);
+    initSocket().on("conversation:update", handleConvUpdate);
 
     return () => {
-      socket.emit("leave", roomId);
-      socket.off("message:new", handleNew);
-      socket.off("message:react", handleReact);
-      socket.off("message:unreact", handleUnreact);
-      socket.off("conversation:update", handleConvUpdate);
+      initSocket().emit("leave", roomId);
+      initSocket().off("message:new", handleNew);
+      initSocket().off("message:react", handleReact);
+      initSocket().off("message:unreact", handleUnreact);
+      initSocket().off("conversation:update", handleConvUpdate);
       console.log(`🚪 Left room: ${roomId}`);
     };
   }, [conversation?._id]);
 
  
-  // ====================== UI logic (unchanged except socket) ======================
+  // ====================== UI logic (unchanged except initSocket()) ======================
 
 
 
@@ -507,6 +511,22 @@ const sendMessage = async (fileUrl?: string) => {
       sendMessage();
     }
   };
+const handleTogglePin = async () => {
+  if (!conversation?._id) return;
+  try {
+    const shouldPin = !conversation.isPinned;
+    const response = await ChatService.togglePinConversation(conversation._id, shouldPin);
+    if (response.success) {
+      setConversation((prev) => prev ? { ...prev, isPinned: shouldPin } : prev);
+      toast.success(shouldPin ? "📌 Conversation pinned" : "Conversation unpinned");
+    } else {
+      toast.error("Failed to update pin status");
+    }
+  } catch (error) {
+    console.error("Failed to toggle pin:", error);
+    toast.error("Error updating pin status");
+  }
+};
 
   if (!isOpen) return null;
 
@@ -576,8 +596,19 @@ const sendMessage = async (fileUrl?: string) => {
             <span className="font-medium text-sm">
               {recipientUser?.fullName || 'Chat'}
             </span>
+            
           </div>
-          <div className="flex items-center space-x-1">
+          <div className="flex items-center space-x-1"> 
+            {/* 📌 Pin / Unpin */}
+  <button
+    onClick={handleTogglePin}
+    title={conversation?.isPinned ? "Unpin conversation" : "Pin conversation"}
+    className={`p-1 rounded hover:bg-white/20 transition-colors ${
+      conversation?.isPinned ? "text-yellow-300" : "text-white"
+    }`}
+  >
+    <Pin className="w-4 h-4" fill={conversation?.isPinned ? "currentColor" : "none"} />
+  </button>
             <button
               onClick={() => setShowGroupModal(true)}
               className="p-1 hover:bg-white/20 rounded"

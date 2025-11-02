@@ -9,20 +9,89 @@ const toObjectId = (id: string) => new mongoose.Types.ObjectId(id);
 export class ChatService {
 	// Create or get existing private conversation between two users
 	async createPrivateConversation(userA: string, userB: string) {
-		// ensure participants are ordered deterministically
 		const participants = [userA, userB].map(toObjectId);
-		// Try find existing private conversation with exactly these two participants
-		const existing = await Conversation.findOne({ type: 'private', participants: { $all: participants, $size: 2 } }).lean();
+		const existing = await Conversation.findOne({
+			type: "private",
+			participants: { $all: participants, $size: 2 },
+		}).lean();
 		if (existing) return existing;
-		const participantsSorted = [userA, userB].sort(); // đảm bảo thứ tự luôn như nhau
-		const hash = participantsSorted.join('_');
 
+		const participantsSorted = [userA, userB].sort();
+		const hash = participantsSorted.join("_");
 		const conv = await Conversation.create({
-			type: 'private',
+			type: "private",
 			participants: participantsSorted,
-			participantHash: hash
+			participantHash: hash,
 		});
+
+		// ✅ Emit realtime to both participants
+		try {
+			const io = getIO();
+			participants.forEach((p) => {
+				io.to(`user:${p}`).emit("conversation:created", {
+					conversation: conv,
+				});
+			});
+		} catch { }
+
 		return conv;
+	}
+
+	async deleteConversation(conversationId: string) {
+		const conv = await Conversation.findById(conversationId);
+		if (!conv) throw new Error("Conversation not found");
+
+		conv.isDeleted = true;
+		await conv.save();
+
+		// ✅ Emit deletion to all participants
+		try {
+			const io = getIO();
+			conv.participants.forEach((p) => {
+				io.to(`user:${p}`).emit("conversation:deleted", {
+					conversationId,
+				});
+			});
+		} catch { }
+
+		return { conversationId };
+	}
+
+	async pinConversation(userId: string, conversationId: string) {
+		await PinnedConversation.updateOne(
+			{ userId: toObjectId(userId), conversationId: toObjectId(conversationId) },
+			{ $set: { pinnedAt: new Date() } },
+			{ upsert: true }
+		);
+
+		// ✅ Emit update
+		try {
+			const io = getIO();
+			io.to(`user:${userId}`).emit("conversation:update", {
+				conversationId,
+				data: { isPinned: true },
+			});
+		} catch { }
+
+		return { conversationId };
+	}
+
+	async unpinConversation(userId: string, conversationId: string) {
+		await PinnedConversation.deleteOne({
+			userId: toObjectId(userId),
+			conversationId: toObjectId(conversationId),
+		});
+
+		// ✅ Emit update
+		try {
+			const io = getIO();
+			io.to(`user:${userId}`).emit("conversation:update", {
+				conversationId,
+				data: { isPinned: false },
+			});
+		} catch { }
+
+		return { conversationId };
 	}
 
 	async createGroupConversation(creatorId: string, dto: { name: string; participantIds: string[]; avatarUrl?: string }) {
@@ -82,15 +151,7 @@ export class ChatService {
 		return { items, total, page, pages };
 	}
 
-	async pinConversation(userId: string, conversationId: string) {
-		await PinnedConversation.updateOne({ userId: toObjectId(userId), conversationId: toObjectId(conversationId) }, { $set: { pinnedAt: new Date() } }, { upsert: true });
-		return { conversationId };
-	}
 
-	async unpinConversation(userId: string, conversationId: string) {
-		await PinnedConversation.deleteOne({ userId: toObjectId(userId), conversationId: toObjectId(conversationId) });
-		return { conversationId };
-	}
 
 	// Send message in conversation
 	async sendMessage(senderId: string, conversationId: string, body: { content?: string; attachments?: IAttachment[]; repliedTo?: string }) {
@@ -188,7 +249,8 @@ export class ChatService {
 		const convId = message.conversationId.toString();
 
 		const reaction = await ChatReaction.findOneAndUpdate({ messageId: toObjectId(messageId), userId: toObjectId(userId) }, { $set: { emoji } }, { upsert: true, new: true, setDefaultsOnInsert: true });
-		try { const io = getIO(); 
+		try {
+			const io = getIO();
 			io.to(`conversation:${convId}`).emit("message:react", { messageId, reaction });
 		} catch { }
 		return reaction;
@@ -199,7 +261,8 @@ export class ChatService {
 		const message = await Message.findById(messageId);
 		if (!message) throw new Error("Message not found");
 		const convId = message.conversationId.toString();
-		try { const io = getIO(); 
+		try {
+			const io = getIO();
 			io.to(`conversation:${convId}`).emit("message:unreact", { messageId, userId });
 		} catch { }
 		return { messageId };

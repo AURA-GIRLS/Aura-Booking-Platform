@@ -8,7 +8,7 @@ import type { CommentResponseDTO, PostResponseDTO, UserWallResponseDTO } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/lib/ui/tooltip";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/lib/ui/dropdown-menu";
 import { CommunityService } from "@/services/community";
-import { socket } from "@/config/socket";
+import { initSocket } from "@/config/socket";
 import DeleteConfirmDialog from "../../generalUI/DeleteConfirmDialog";
 import { useAuthCheck } from "../../../utils/auth";
 
@@ -225,23 +225,23 @@ export default function DetailModal({
         };
 
         // Register socket listeners
-        socket.on('comment:new', handleNewComment);
-        socket.on('comment:reply', handleNewReply);
-        socket.on('comment:like', handleCommentLike);
-        socket.on('comment:delete', handleCommentDelete);
-        socket.on('comment:update', handleCommentUpdate);
+        initSocket().on('comment:new', handleNewComment);
+        initSocket().on('comment:reply', handleNewReply);
+        initSocket().on('comment:like', handleCommentLike);
+        initSocket().on('comment:delete', handleCommentDelete);
+        initSocket().on('comment:update', handleCommentUpdate);
 
         // Join post room for realtime updates
-        socket.emit('post:join', { postId: post._id });
+        initSocket().emit('post:join', { postId: post._id });
 
         // Cleanup function
         return () => {
-            socket.off('comment:new', handleNewComment);
-            socket.off('comment:reply', handleNewReply);
-            socket.off('comment:like', handleCommentLike);
-            socket.off('comment:delete', handleCommentDelete);
-            socket.off('comment:update', handleCommentUpdate);
-            socket.emit('post:leave', { postId: post._id });
+            initSocket().off('comment:new', handleNewComment);
+            initSocket().off('comment:reply', handleNewReply);
+            initSocket().off('comment:like', handleCommentLike);
+            initSocket().off('comment:delete', handleCommentDelete);
+            initSocket().off('comment:update', handleCommentUpdate);
+            initSocket().emit('post:leave', { postId: post._id });
         };
     }, [post?._id, open]);
 
@@ -353,7 +353,7 @@ export default function DetailModal({
                     setReplyInputs(prev => ({ ...prev, [parentCommentId]: "" }));
                     
                     // Emit socket event to notify other users
-                    socket.emit('comment:reply', {
+                    initSocket().emit('comment:reply', {
                         postId: post._id,
                         parentCommentId,
                         reply: response.data,
@@ -515,7 +515,7 @@ export default function DetailModal({
                       )?._id 
                     : undefined;
 
-                socket.emit('comment:update', {
+                initSocket().emit('comment:update', {
                     postId: post._id,
                     commentId,
                     content: editContent.trim(),

@@ -5,7 +5,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { CommunityService } from '@/services/community';
 import type { CreatePostDTO, PostResponseDTO, TagResponseDTO, UserWallResponseDTO } from '@/types/community.dtos';
 import { POST_STATUS } from '../../constants';
-import { socket } from '@/config/socket';
+import { initSocket } from "@/config/socket";
 import { UploadService, type ResourceType } from '@/services/upload';
 import ServiceSearchDialog from './ServiceSearchDialog';
 import { ServiceResponseDTO } from '@/types/service.dtos';
@@ -88,9 +88,9 @@ export default function PostCreator({
         void fetchMinimalUser?.();
       }
     };
-    socket.on('newPost', onNewPost);
+    initSocket().on('newPost', onNewPost);
     return () => {
-      socket.off('newPost', onNewPost);
+      initSocket().off('newPost', onNewPost);
     };
   }, [prependPost, currentUser, fetchMinimalUser]);
 

@@ -140,4 +140,11 @@ export const ChatService = {
       throw error.response?.data || error;
     }
   },
+  // /services/chat.ts
+async togglePinConversation(conversationId: string, shouldPin: boolean) {
+  return shouldPin
+    ? this.pinConversation(conversationId)
+    : this.unpinConversation(conversationId);
+}
+
 };

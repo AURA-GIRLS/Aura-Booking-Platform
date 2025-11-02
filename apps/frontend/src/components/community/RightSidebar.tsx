@@ -6,6 +6,7 @@ import { Input } from '../lib/ui/input';
 import { useAuthCheck } from '../../utils/auth';
 import { ChatService } from '../../services/chat';
 import { UserWallResponseDTO } from '@/types/community.dtos';
+import { initSocket } from '@/config/socket';
 
 export default function RightSidebar({ 
   selectedTab, 
@@ -26,27 +27,54 @@ export default function RightSidebar({
 
   const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
 
-  // Fetch conversations from API
+  // Fetch initial list
   useEffect(() => {
     const fetchConversations = async () => {
       if (!isAuthenticated()) return;
-      
-      try {
-        setLoading(true);
-        const response = await ChatService.getConversations({ page: 1, limit: 50 });
-        console.log("response conversations:", response);
-        if (response.success && response.data) {
-          setConversations(response.data.items);
-        }
-      } catch (error) {
-        console.error('Failed to fetch conversations:', error);
-      } finally {
-        setLoading(false);
-      }
+      const res = await ChatService.getConversations({ page: 1, limit: 50 });
+      if (res.success && res.data) setConversations(res.data.items);
+    };
+    fetchConversations();
+  }, []);
+
+  // ✅ SOCKET REALTIME SYNC
+  useEffect(() => {
+    if (!isAuthenticated()) return;
+
+    const handleCreated = (payload: any) => {
+      setConversations((prev) => {
+        const exists = prev.some((c) => c._id === payload.conversation._id);
+        return exists ? prev : [payload.conversation, ...prev];
+      });
     };
 
-    fetchConversations();
-  }, [conversations.length]);
+    const handleDeleted = (payload: any) => {
+      setConversations((prev) =>
+        prev.filter((c) => c._id !== payload.conversationId)
+      );
+    };
+
+    const handleUpdate = (payload: any) => {
+      console.log("bbbb",payload);
+      setConversations((prev) =>
+        prev.map((c) =>
+          c._id === payload.conversationId
+            ? { ...c, ...payload.data }
+            : c
+        )
+      );
+    };
+
+    initSocket().on("conversation:created", handleCreated);
+    initSocket().on("conversation:deleted", handleDeleted);
+    initSocket().on("conversation:update", handleUpdate);
+
+    return () => {
+      initSocket().off("conversation:created", handleCreated);
+      initSocket().off("conversation:deleted", handleDeleted);
+      initSocket().off("conversation:update", handleUpdate);
+    };
+  }, [isAuthenticated]);
 
   // Filter conversations based on selected tab
   const filteredConversations = conversations.filter(conv => {

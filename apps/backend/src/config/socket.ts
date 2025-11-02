@@ -14,7 +14,12 @@ export function initSocket(server:HTTPServer){
 // Config sự kiện Socket.IO
 io.on("connection", (socket) => {
   console.log("⚡ User connected:", socket.id);
-
+ socket.on("auth:user", (userId: string) => {
+  console.log("userid"+ userId);
+      if (!userId) return;
+      socket.join(`user:${userId}`);
+      console.log(`👤 Socket ${socket.id} joined user room: user:${userId}`);
+    });
   // --- Join conversation ---
   socket.on("join", (roomId: string) => {
     socket.join(roomId);
