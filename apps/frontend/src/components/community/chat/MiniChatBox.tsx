@@ -113,7 +113,7 @@ export default function MiniChatBox({
                 ...m,
                 reactions: [
                   ...(m.reactions || []).filter(
-                    (r) => r.user._id !== payload.reaction.user._id
+                    (r) => r.user && r.user._id !== payload.reaction.user?._id
                   ),
                   payload.reaction,
                 ],
@@ -130,7 +130,7 @@ export default function MiniChatBox({
             ? {
                 ...m,
                 reactions: (m.reactions || []).filter(
-                  (r) => r.user._id !== payload.userId
+                  (r) => r.user && r.user._id !== payload.userId
                 ),
               }
             : m
@@ -392,41 +392,36 @@ export default function MiniChatBox({
     ensureConversation();
   }, [ensureConversation]);
 
-  const sendMessage = async (fileUrl?: string) => {
-    const content = inputValue.trim();
-    if ((!content && !fileUrl) || !recipientUserId) return;
+const sendMessage = async (fileUrl?: string) => {
+  const content = inputValue.trim();
+  if ((!content && !fileUrl) || !recipientUserId) return;
 
-    checkAuthAndExecute(async () => {
-      try {
-        setLoading(true);
+  checkAuthAndExecute(async () => {
+    try {
+      setLoading(true);
+      const conv = await ensureConversation();
+      if (!conv) return;
 
-        // Ensure conversation exists
-        const conv = await ensureConversation();
-        if (!conv) return;
-
-        // Prepare message content
-        let messageContent = content;
-        if (fileUrl) {
-          messageContent = content ? `${content}\n${fileUrl}` : fileUrl;
-        }
-
-        // Send message
-        const response = await ChatService.sendMessage(conv._id, {
-          content: messageContent
-        });
-
-        if (response.success && response.data) {
-          setMessages(prev => [...prev, response.data!]);
-          setInputValue('');
-        }
-      } catch (error) {
-        console.error('Failed to send message:', error);
-        toast.error('Failed to send message');
-      } finally {
-        setLoading(false);
+      let messageContent = content;
+      if (fileUrl) {
+        messageContent = content ? `${content}\n${fileUrl}` : fileUrl;
       }
-    });
-  };
+
+      const response = await ChatService.sendMessage(conv._id, {
+        content: messageContent,
+      });
+
+      if (response.success) {
+        setInputValue('');
+      }
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      toast.error('Failed to send message');
+    } finally {
+      setLoading(false);
+    }
+  });
+};
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -714,7 +709,7 @@ export default function MiniChatBox({
                               <div className={`mt-1 flex flex-wrap gap-1 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
                                 {Array.from(new Set(message.reactions.map(r => r.emoji))).map(emoji => {
                                   const reactions = message.reactions.filter(r => r.emoji === emoji);
-                                  const userReacted = reactions.some(r => r.user._id === currentUser?._id);
+                                  const userReacted = reactions.some(r => r.user?._id && currentUser?._id && r.user._id === currentUser._id);
 
                                   return (
                                     <button
@@ -773,12 +768,12 @@ export default function MiniChatBox({
                             onMouseLeave={() => setShowReactionsFor(null)}
                           >
                             {[
-                              '👍', '❤️', '😆', '😮', '😢', '🙏'
+                              '👍', '❤️', '😆', '😮', '😢'
                             ].map((emoji) => (
                               <button
                                 key={emoji}
                                 onClick={(e) => handleReaction(e, message._id, emoji)}
-                                className="text-2xl hover:scale-125 transform transition-transform duration-150 p-1 hover:bg-gray-100 rounded-full"
+                                className="text-xl hover:scale-125 transform transition-transform duration-150 p-1 hover:bg-gray-100 rounded-full"
                                 title="Add reaction"
                               >
                                 {emoji}
