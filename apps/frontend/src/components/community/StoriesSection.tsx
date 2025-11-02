@@ -18,7 +18,7 @@ export default function StoriesSection({
   currentUser,
 }: {
   userWalls: UserWallResponseDTO[];
-  currentUser: UserWallResponseDTO;
+  currentUser: UserWallResponseDTO|null;
 }) {
   const searchParams = useSearchParams();
   const pathname = usePathname();

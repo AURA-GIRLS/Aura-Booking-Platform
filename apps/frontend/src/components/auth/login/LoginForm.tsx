@@ -7,6 +7,7 @@ import { UserIcon } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
 import { authService } from '@/services/auth';
 import { config } from '@/config/index';
+import { initSocket, getSocket } from '@/config/socket';
 
 const LoginForm: React.FC = () => {
 	const [form, setForm] = useState({
@@ -47,6 +48,9 @@ const LoginForm: React.FC = () => {
 				}else if(res.data && res.data.user.role === 'ADMIN'){
 					window.location.href = '/admin/dashboard';
 				}
+				
+				const socket = getSocket();
+				socket?.emit("auth:user", res.data.user._id);
 			} else {
 				setError(res.message || 'Login failed');
 			}
@@ -79,7 +83,9 @@ const LoginForm: React.FC = () => {
 							} else {
 								localStorage.removeItem('currentMUA');
 							}
-							
+							const socket = getSocket();
+							console.log("res.data.user._id",res.data.user._id);
+							socket?.emit("auth:user", res.data.user._id);
 							// Dispatch custom event to notify components about user update
 							window.dispatchEvent(new CustomEvent('userUpdated'));
 							

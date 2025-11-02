@@ -11,6 +11,7 @@ import { Skeleton } from "../lib/ui/skeleton";
 
 type Props = {
   userId?: string; // Profile user ID to view; if omitted, fallback to current logged-in user
+  onOpenMiniChat: (userId: string) => void;
 };
 
 // Removed large left-side Artist panel; we now embed a compact artist summary above Top posts.
@@ -65,8 +66,9 @@ type NewestPostsProps = Readonly<{
   setPosts: React.Dispatch<React.SetStateAction<PostResponseDTO[]>>;
   viewerMinimal: any;
   fetchViewerMinimal: () => Promise<void>;
+  onOpenMiniChat: (userId: string) => void;
 }>;
-function NewestPosts({ newestPosts, setPosts, viewerMinimal, fetchViewerMinimal }: NewestPostsProps) {
+function NewestPosts({ newestPosts, setPosts, viewerMinimal, fetchViewerMinimal, onOpenMiniChat }: NewestPostsProps) {
   return (
     <div className="bg-transparent fade-in">
       <div className="flex items-center justify-between mb-2">
@@ -77,12 +79,13 @@ function NewestPosts({ newestPosts, setPosts, viewerMinimal, fetchViewerMinimal 
         setPosts={setPosts}
         currentUser={viewerMinimal}
         fetchMinimalUser={fetchViewerMinimal}
+        onOpenMiniChat={onOpenMiniChat}
       />
     </div>
   );
 }
 
-export default function SocialWall({ userId }: Readonly<Props>) {
+export default function SocialWall({ userId, onOpenMiniChat }: Readonly<Props>) {
   const [profile, setProfile] = useState<UserWallResponseDTO | null>(null);
   const [viewer, setViewer] = useState<UserWallResponseDTO | null>(null); // minimal of current logged-in user
   const [posts, setPosts] = useState<PostResponseDTO[]>([]);
@@ -103,7 +106,7 @@ export default function SocialWall({ userId }: Readonly<Props>) {
 
   const fetchViewerMinimal = useCallback(async () => {
     try {
-      const raw = typeof window !== "undefined" ? localStorage.getItem("currentUser") : null;
+      const raw = globalThis.window ? globalThis.localStorage.getItem("currentUser") : null;
       const localUser = raw ? (JSON.parse(raw) as UserResponseDTO) : null;
       if (!localUser?._id) { setViewer(null); return; }
       const res = await CommunityService.getUserWall(localUser._id);
@@ -116,7 +119,7 @@ export default function SocialWall({ userId }: Readonly<Props>) {
   const targetUserId = useMemo(() => {
     if (userId) return userId;
     try {
-      const raw = typeof window !== "undefined" ? localStorage.getItem("currentUser") : null;
+      const raw = globalThis.window ? globalThis.localStorage.getItem("currentUser") : null;
       const localUser = raw ? (JSON.parse(raw) as UserResponseDTO) : null;
       return localUser?._id || "";
     } catch {
@@ -184,10 +187,10 @@ export default function SocialWall({ userId }: Readonly<Props>) {
 
   // If URL has #post-<id>, scroll to it after posts are loaded
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const hash = window.location.hash;
+    if (!globalThis.window) return;
+    const hash = globalThis.location.hash;
     if (hash?.startsWith('#post-')) {
-      const el = document.getElementById(hash.slice(1));
+      const el = globalThis.document.getElementById(hash.slice(1));
       if (el) {
         setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
       }
@@ -268,8 +271,8 @@ export default function SocialWall({ userId }: Readonly<Props>) {
           <div className="bg-white rounded-xl shadow-sm p-4 space-y-3">
             <Skeleton className="h-5 w-32 bg-rose-200" />
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {[...Array(3)].map((_, i) => (
-                <Skeleton key={i} className="h-40 w-full rounded-md bg-rose-200" />
+              {Array.from({ length: 3 }, (_, i) => (
+                <Skeleton key={`featured-skeleton-${i}`} className="h-40 w-full rounded-md bg-rose-200" />
               ))}
             </div>
           </div>
@@ -277,8 +280,8 @@ export default function SocialWall({ userId }: Readonly<Props>) {
           {/* NewestPosts skeleton */}
           <div className="space-y-3">
             <Skeleton className="h-5 w-32 bg-rose-200" />
-            {[...Array(2)].map((_, i) => (
-              <div key={i} className="bg-white rounded-xl shadow-sm p-4 space-y-2">
+            {Array.from({ length: 2 }, (_, i) => (
+              <div key={`newest-skeleton-${i}`} className="bg-white rounded-xl shadow-sm p-4 space-y-2">
                 <Skeleton className="h-4 w-1/3 bg-rose-200" />
                 <Skeleton className="h-6 w-2/3 bg-rose-200" />
                 <Skeleton className="h-40 w-full bg-rose-200" />
@@ -392,6 +395,7 @@ export default function SocialWall({ userId }: Readonly<Props>) {
             )}
             <button
               type="button"
+              onClick={() => onOpenMiniChat?.(profile._id)}
               className="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium shadow-sm bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
             >
               <MessageCircle className="w-4 h-4 mr-1" /> Message
@@ -449,7 +453,7 @@ export default function SocialWall({ userId }: Readonly<Props>) {
             </div>
           )}
           <FeaturedPosts featuredPosts={featuredPosts} onClickPost={scrollToPost} />
-          <NewestPosts newestPosts={newestPosts} setPosts={setPosts} viewerMinimal={viewerMinimal} fetchViewerMinimal={fetchViewerMinimal} />
+          <NewestPosts newestPosts={newestPosts} setPosts={setPosts} viewerMinimal={viewerMinimal} fetchViewerMinimal={fetchViewerMinimal} onOpenMiniChat={onOpenMiniChat} />
         </div>
       </div>
       {/* Local animations and scroll margin for anchors */}
