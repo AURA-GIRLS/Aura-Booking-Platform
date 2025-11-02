@@ -16,6 +16,7 @@ import { PostResponseDTO, TagResponseDTO, UserWallResponseDTO } from '@/types/co
 import type { UserResponseDTO } from '@/types/user.dtos'
 import { POST_STATUS } from '@/constants/index'
 import { Skeleton } from '@/components/lib/ui/skeleton'
+import { toast } from 'sonner'
 
 // Reusable filter state
 export type FilterState =
@@ -43,7 +44,7 @@ export default function MainContent() {
   const [openWallUserName, setOpenWallUserName] = useState<string | undefined>(undefined)
 
   // Mini chat state
-  const [activeChats, setActiveChats] = useState<{conversation: any; user: any}[]>([])
+  const [activeChats, setActiveChats] = useState<{ conversation: any; user: any }[]>([])
 
   const router = useRouter()
   const pathname = usePathname()
@@ -51,6 +52,9 @@ export default function MainContent() {
 
   const [activeFilter, setActiveFilter] = useState<FilterState>({ type: null })
   const [loading, setLoading] = useState(true)
+
+  const [minimizedChats, setMinimizedChats] = useState<{ conversation: any; user: any }[]>([]);
+
 
   // Sync URL params (wall, wn)
   useEffect(() => {
@@ -84,7 +88,7 @@ export default function MainContent() {
             prev.fullName === minimalUser.fullName
           return same ? prev : minimalUser
         })
-      } 
+      }
     } catch {
       setCurrentUser(null)
     }
@@ -101,10 +105,10 @@ export default function MainContent() {
     // Feed: sort by popularity (likes desc, then newest)
     const res = await CommunityService.listPosts({ page, limit: 10, sort: 'popular' })
     if (!res.success || !res.data) return
-    
+
     let items = res.data.items
     setHasMorePosts(page < (res.data.pages || 1))
-    
+
     try {
       if (currentUser?._id && items.length) {
         const likedRes = await CommunityService.getMyLikedPosts(items.map((p) => p._id))
@@ -116,7 +120,7 @@ export default function MainContent() {
     } catch {
       // ignore
     }
-    
+
     if (reset) {
       setPosts(items)
       setCurrentPage(1)
@@ -128,7 +132,7 @@ export default function MainContent() {
 
   const loadMorePosts = useCallback(async () => {
     if (isLoadingMore || !hasMorePosts) return
-    
+
     setIsLoadingMore(true)
     try {
       const nextPage = currentPage + 1
@@ -146,6 +150,47 @@ export default function MainContent() {
       setTrendingTags(res.data)
     }
   }, [])
+
+  const onConversationClick = (conversation: any) => {
+    const otherUser = conversation.participants.find((p: any) => p._id !== currentUser?._id);
+    if (!otherUser) return;
+
+    const existsInActive = activeChats.some((c) => c.conversation._id === conversation._id);
+    const existsInMinimized = minimizedChats.some((c) => c.conversation._id === conversation._id);
+
+    if (existsInActive) return; // Đã mở
+    if (existsInMinimized) {
+      // Mở lại nếu còn chỗ trống
+      if (activeChats.length < 5) {
+        setMinimizedChats((prev) =>
+          prev.filter((c) => c.conversation._id !== conversation._id)
+        );
+        setActiveChats((prev) => [...prev, conversation]);
+      }
+      return;
+    }
+
+    // Nếu còn chỗ trống -> mở mới
+    if (activeChats.length < 5) {
+      setActiveChats((prev) => [
+        ...prev,
+        { conversation, user: otherUser },
+      ]);
+    } else {
+      // Nếu đủ 5 -> tự thu nhỏ
+      setMinimizedChats((prev) => [
+        ...prev,
+        { conversation, user: otherUser },
+      ]);
+    }
+  }
+  const onClose = (chat: any) => {
+    setActiveChats((prev) =>
+      prev.filter((c) => c.conversation._id !== chat.conversation._id)
+    );
+    setMinimizedChats((prev) => [...prev, chat]); // thêm vào danh sách thu nhỏ
+  }
+
 
   // Initial load
   useEffect(() => {
@@ -182,7 +227,7 @@ export default function MainContent() {
   const currentUserMinimal = useMemo(
     () =>
       currentUser
-        ? ({ fullName: currentUser.fullName, _id: currentUser._id,avatarUrl: currentUser.avatarUrl } as any)
+        ? ({ fullName: currentUser.fullName, _id: currentUser._id, avatarUrl: currentUser.avatarUrl } as any)
         : ({ fullName: '' } as any),
     [currentUser?._id, currentUser?.fullName]
   )
@@ -206,7 +251,7 @@ export default function MainContent() {
         else sp.delete('wn')
         const qs = sp.toString()
         router.push((qs ? `${pathname}?${qs}` : pathname) as any, { scroll: false })
-      } catch {}
+      } catch { }
     },
     [pathname, router, searchParams]
   )
@@ -220,56 +265,56 @@ export default function MainContent() {
       sp.delete('wn')
       const qs = sp.toString()
       router.push((qs ? `${pathname}?${qs}` : pathname) as any, { scroll: false })
-    } catch {}
+    } catch { }
   }, [pathname, router, searchParams])
 
   // Mini chat handlers
-const handleOpenMiniChat = useCallback((userId: string) => {
-  console.log("Opening mini chat for user:", userId);
-  
-  // Check if chat is already open
-  const isChatOpen = activeChats.some(chat => 
-    chat.conversation.participants.some((p: any) => p._id === userId)
-  );
+  const handleOpenMiniChat = useCallback((userId: string) => {
+    console.log("Opening mini chat for user:", userId);
 
-  if (isChatOpen) {
-    // If chat is already open, just bring it to front
-    setActiveChats(prev => {
-      const chatIndex = prev.findIndex(chat => 
-        chat.conversation.participants.some((p: any) => p._id === userId)
-      );
-      if (chatIndex === -1) return prev;
-      
-      const newChats = [...prev];
-      const [chatToMove] = newChats.splice(chatIndex, 1);
-      return [...newChats, chatToMove];
-    });
-    return;
-  }
+    // Check if chat is already open
+    const isChatOpen = activeChats.some(chat =>
+      chat.conversation.participants.some((p: any) => p._id === userId)
+    );
 
-  // If chat is not open, create a new one
-  const newChat = {
-    conversation: {
-      _id: `temp-${Date.now()}`,
-      participants: [
-        { _id: userId },
-        { _id: currentUser?._id }
-      ],
-      type: 'private',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      lastMessage: null
-    },
-    user: {
-      _id: userId,
-      // You might want to fetch user details here or pass them as parameters
-      fullName: 'Loading...',
-      avatarUrl: ''
+    if (isChatOpen) {
+      // If chat is already open, just bring it to front
+      setActiveChats(prev => {
+        const chatIndex = prev.findIndex(chat =>
+          chat.conversation.participants.some((p: any) => p._id === userId)
+        );
+        if (chatIndex === -1) return prev;
+
+        const newChats = [...prev];
+        const [chatToMove] = newChats.splice(chatIndex, 1);
+        return [...newChats, chatToMove];
+      });
+      return;
     }
-  };
 
-  setActiveChats(prev => [...prev, newChat]);
-}, [activeChats, currentUser?._id]);
+    // If chat is not open, create a new one
+    const newChat = {
+      conversation: {
+        _id: `temp-${Date.now()}`,
+        participants: [
+          { _id: userId },
+          { _id: currentUser?._id }
+        ],
+        type: 'private',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        lastMessage: null
+      },
+      user: {
+        _id: userId,
+        // You might want to fetch user details here or pass them as parameters
+        fullName: 'Loading...',
+        avatarUrl: ''
+      }
+    };
+
+    setActiveChats(prev => [...prev, newChat]);
+  }, [activeChats, currentUser?._id]);
 
   const isSelf = useMemo(
     () => currentUser?._id && openWallUserId && currentUser._id === openWallUserId,
@@ -354,7 +399,7 @@ const handleOpenMiniChat = useCallback((userId: string) => {
           onOpenUserWall={handleOpenUserWall}
           onOpenMiniChat={handleOpenMiniChat}
         />
-        
+
         {/* Loading more indicator */}
         {isLoadingMore && (
           <div className="flex justify-center py-8">
@@ -364,7 +409,7 @@ const handleOpenMiniChat = useCallback((userId: string) => {
             </div>
           </div>
         )}
-        
+
         {/* End of posts indicator */}
         {!hasMorePosts && posts.length > 0 && (
           <div className="flex justify-center py-8">
@@ -378,47 +423,47 @@ const handleOpenMiniChat = useCallback((userId: string) => {
   // 🔹 Loading skeleton UI
   if (loading) {
     return (
-  <div className="min-h-screen bg-white z-20"> {/* 👈 nền hồng nhạt toàn trang */}
-    <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-4 p-4">
-      {/* Left sidebar skeleton */}
-      <div className="hidden md:block md:w-64 lg:w-72 xl:w-80 space-y-4">
-        <Skeleton className="h-10 w-3/4 bg-rose-200" />
-        <Skeleton className="h-6 w-1/2 bg-rose-200" />
-        <Skeleton className="h-40 w-full bg-rose-200" />
-      </div>
-      {/* Center skeleton */}
-      <div className="flex-1 w-full max-w-2xl mx-auto space-y-4">
-        <div className="flex space-x-4">
-          {Array.from({ length: 5 }, (_, i) => (
-            <Skeleton key={`story-skeleton-${i}`} className="w-16 h-16 rounded-full bg-rose-200" />
-          ))}
-        </div>
-        <div className="p-4 bg-white rounded-xl shadow-sm">
-          <div className="flex space-x-2">
-            <Skeleton className="w-10 h-10 rounded-full bg-rose-200" />
-            <Skeleton className="h-10 flex-1 bg-rose-200" />
-          </div>
-        </div>
-        {Array.from({ length: 3 }, (_, i) => (
-          <div
-            key={`post-skeleton-${i}`}
-            className="p-4 bg-white rounded-xl shadow-sm space-y-2"
-          >
-            <Skeleton className="h-4 w-1/3 bg-rose-200" />
-            <Skeleton className="h-6 w-2/3 bg-rose-200" />
+      <div className="min-h-screen bg-white z-20"> {/* 👈 nền hồng nhạt toàn trang */}
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-4 p-4">
+          {/* Left sidebar skeleton */}
+          <div className="hidden md:block md:w-64 lg:w-72 xl:w-80 space-y-4">
+            <Skeleton className="h-10 w-3/4 bg-rose-200" />
+            <Skeleton className="h-6 w-1/2 bg-rose-200" />
             <Skeleton className="h-40 w-full bg-rose-200" />
           </div>
-        ))}
+          {/* Center skeleton */}
+          <div className="flex-1 w-full max-w-2xl mx-auto space-y-4">
+            <div className="flex space-x-4">
+              {Array.from({ length: 5 }, (_, i) => (
+                <Skeleton key={`story-skeleton-${i}`} className="w-16 h-16 rounded-full bg-rose-200" />
+              ))}
+            </div>
+            <div className="p-4 bg-white rounded-xl shadow-sm">
+              <div className="flex space-x-2">
+                <Skeleton className="w-10 h-10 rounded-full bg-rose-200" />
+                <Skeleton className="h-10 flex-1 bg-rose-200" />
+              </div>
+            </div>
+            {Array.from({ length: 3 }, (_, i) => (
+              <div
+                key={`post-skeleton-${i}`}
+                className="p-4 bg-white rounded-xl shadow-sm space-y-2"
+              >
+                <Skeleton className="h-4 w-1/3 bg-rose-200" />
+                <Skeleton className="h-6 w-2/3 bg-rose-200" />
+                <Skeleton className="h-40 w-full bg-rose-200" />
+              </div>
+            ))}
+          </div>
+          {/* Right sidebar skeleton */}
+          <div className="hidden lg:block lg:w-72 xl:w-80 space-y-4">
+            <Skeleton className="h-10 w-1/2 bg-rose-200" />
+            <Skeleton className="h-24 w-full bg-rose-200" />
+            <Skeleton className="h-24 w-full bg-rose-200" />
+          </div>
+        </div>
       </div>
-      {/* Right sidebar skeleton */}
-      <div className="hidden lg:block lg:w-72 xl:w-80 space-y-4">
-        <Skeleton className="h-10 w-1/2 bg-rose-200" />
-        <Skeleton className="h-24 w-full bg-rose-200" />
-        <Skeleton className="h-24 w-full bg-rose-200" />
-      </div>
-    </div>
-  </div>
-)
+    )
 
   }
 
@@ -445,23 +490,23 @@ const handleOpenMiniChat = useCallback((userId: string) => {
         <div className="flex-1 w-full max-w-2xl mx-auto my-4">
           {renderCenter()}
         </div>
-        <RightSidebar 
-          selectedTab={selectedTab} 
-          setSelectedTab={setSelectedTab} 
-          currentUser={currentUser} 
+        <RightSidebar
+          selectedTab={selectedTab}
+          setSelectedTab={setSelectedTab}
+          currentUser={currentUser}
           events={events}
           onConversationClick={(conversation) => {
             // Find the other user in the conversation
             const otherUser = conversation.participants.find(
               (p: any) => p._id !== currentUser?._id
             );
-            
+
             if (otherUser) {
               // Check if chat is already open
               const isChatOpen = activeChats.some(
                 chat => chat.conversation._id === conversation._id
               );
-              
+
               if (!isChatOpen) {
                 setActiveChats(prev => [
                   ...prev,
@@ -472,24 +517,86 @@ const handleOpenMiniChat = useCallback((userId: string) => {
           }}
         />
       </div>
-      
-      {/* Mini Chat Boxes */}
-      <div className="fixed bottom-0 right-0 flex space-x-2 p-4 z-50">
+
+      {/* Mini Chat System */}
+      <div className="fixed bottom-0 right-0 flex flex-row-reverse items-end gap-2 p-4 z-50">
+
+        {/* 👉 Mini chat boxes (lùi sang trái để không che avatar) */}
         {activeChats.map((chat, index) => (
           <MiniChatBox
             key={chat.conversation._id}
             isOpen={true}
             onClose={() => {
-              setActiveChats(prev => 
-                prev.filter(c => c.conversation._id !== chat.conversation._id)
+              // Khi đóng => chuyển sang danh sách thu nhỏ (chỉ 1 entry duy nhất)
+              setActiveChats((prev) =>
+                prev.filter((c) => c.conversation._id !== chat.conversation._id)
               );
+
+              // Nếu đã có trong minimized => không thêm nữa
+              setMinimizedChats((prev) => {
+                const exists = prev.some((c) => c.conversation._id === chat.conversation._id);
+                return exists ? prev : [...prev, chat];
+              });
             }}
             recipientUserId={chat.user._id}
             currentUser={currentUser}
-            position={{ bottom: 20 + (index * 400), right: 20 + (index * 20) }}
+            position={{
+              bottom: 20,
+              right: 100 + index * 340, // 👉 đẩy qua trái để chừa khoảng 100px cho cột avatar
+            }}
           />
         ))}
+
+        {/* 👉 Cột avatar thu nhỏ bên phải ngoài cùng */}
+        <div className="flex flex-col items-center gap-3 mr-2">
+          {minimizedChats.map((chat) => (
+            <div
+              key={chat.conversation._id}
+              className="relative group cursor-pointer"
+            >
+              <img
+                src={chat.user.avatarUrl || 'https://cdn.pixabay.com/photo/2023/02/18/11/00/icon-7797704_1280.png'}
+                alt={chat.user.fullName}
+                title={chat.user.fullName}
+                onClick={() => {
+                  // Chỉ mở lại nếu chưa có và chưa vượt quá giới hạn 5
+                  const isAlreadyOpen = activeChats.some(
+                    (c) => c.conversation._id === chat.conversation._id
+                  );
+
+                  if (isAlreadyOpen) return;
+                  if (activeChats.length >= 5) {
+                    toast.warning("You can only have up to 5 active chat boxes.");
+                    return;
+                  }
+
+                  // Mở lại chat và loại khỏi danh sách thu nhỏ
+                  setMinimizedChats((prev) =>
+                    prev.filter((c) => c.conversation._id !== chat.conversation._id)
+                  );
+                  setActiveChats((prev) => [...prev, chat]);
+                }}
+                className="w-12 h-12 rounded-full object-cover border-2 border-rose-400 shadow-md hover:scale-110 transition-transform"
+              />
+
+              {/* Nút X nhỏ để đóng hẳn */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMinimizedChats((prev) =>
+                    prev.filter((c) => c.conversation._id !== chat.conversation._id)
+                  );
+                }}
+                className="absolute -top-1 -right-1 bg-rose-500 text-white rounded-full w-4 h-4 text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
       </div>
+
+
     </div>
   );
 }

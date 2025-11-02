@@ -7,7 +7,7 @@ import { TARGET_TYPES, USER_ROLES, POST_STATUS, RESOURCE_TYPES } from '../../con
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/lib/ui/dropdown-menu';
 import EditPostModal from './modals/EditPostModal';
 import ImageLightbox from './modals/ImageLightbox';
-import { initSocket } from "@/config/socket";
+import { initSocket, getSocket } from "@/config/socket";
 
 import AttachedServicesDisplay from './AttachedServicesDisplay';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../lib/ui/tooltip';
@@ -248,6 +248,7 @@ export default function PostsFeed({
   }, [setFollowing, _currentUser, fetchMinimalUser]);
 
   useEffect(() => {
+    const socket = getSocket();
     // hydrate following for current user
     const me = (_currentUser as any)?._id as string | undefined;
     if (me) {
@@ -265,23 +266,23 @@ export default function PostsFeed({
       })();
     }
 
-    initSocket().on('postLiked', handleSocketPostLiked as any);
-    initSocket().on('postUnliked', handleSocketPostUnliked as any);
-    initSocket().on('postUpdated', handleSocketPostUpdated as any);
-    initSocket().on('postDeleted', handleSocketPostDeleted as any);
-    initSocket().on('commentLiked', handleSocketCommentLiked as any);
-    initSocket().on('commentUnliked', handleSocketCommentUnliked as any);
-    initSocket().on('userFollowed', handleSocketUserFollowed as any);
-    initSocket().on('userUnfollowed', handleSocketUserUnfollowed as any);
+    socket?.on('postLiked', handleSocketPostLiked as any);
+    socket?.on('postUnliked', handleSocketPostUnliked as any);
+    socket?.on('postUpdated', handleSocketPostUpdated as any);
+    socket?.on('postDeleted', handleSocketPostDeleted as any);
+    socket?.on('commentLiked', handleSocketCommentLiked as any);
+    socket?.on('commentUnliked', handleSocketCommentUnliked as any);
+    socket?.on('userFollowed', handleSocketUserFollowed as any);
+    socket?.on('userUnfollowed', handleSocketUserUnfollowed as any);
     return () => {
-      initSocket().off('postLiked', handleSocketPostLiked as any);
-      initSocket().off('postUnliked', handleSocketPostUnliked as any);
-      initSocket().off('postUpdated', handleSocketPostUpdated as any);
-      initSocket().off('postDeleted', handleSocketPostDeleted as any);
-      initSocket().off('commentLiked', handleSocketCommentLiked as any);
-      initSocket().off('commentUnliked', handleSocketCommentUnliked as any);
-      initSocket().off('userFollowed', handleSocketUserFollowed as any);
-      initSocket().off('userUnfollowed', handleSocketUserUnfollowed as any);
+      socket?.off('postLiked', handleSocketPostLiked as any);
+      socket?.off('postUnliked', handleSocketPostUnliked as any);
+      socket?.off('postUpdated', handleSocketPostUpdated as any);
+      socket?.off('postDeleted', handleSocketPostDeleted as any);
+      socket?.off('commentLiked', handleSocketCommentLiked as any);
+      socket?.off('commentUnliked', handleSocketCommentUnliked as any);
+      socket?.off('userFollowed', handleSocketUserFollowed as any);
+      socket?.off('userUnfollowed', handleSocketUserUnfollowed as any);
     };
   }, [
     _currentUser,

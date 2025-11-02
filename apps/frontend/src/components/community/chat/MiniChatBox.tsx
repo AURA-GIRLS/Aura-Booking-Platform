@@ -23,7 +23,7 @@ import {
   FaFileAlt,
   FaFile,
 } from "react-icons/fa";
-import { initSocket } from "@/config/socket"; 
+import { initSocket, getSocket } from "@/config/socket"; 
 
 interface MiniChatBoxProps {
   recipientUserId: string;
@@ -93,7 +93,8 @@ export default function MiniChatBox({
   useEffect(() => {
     if (!conversation?._id) return;
     const roomId = `conversation:${conversation._id}`;
-    initSocket().emit("join", roomId);
+   const socket = getSocket();
+    socket?.emit("join", roomId);
     console.log(`🔌 Joined room: ${roomId}`);
 
     const handleNew = (payload: any) => {
@@ -148,17 +149,17 @@ export default function MiniChatBox({
 };
 
 
-    initSocket().on("message:new", handleNew);
-    initSocket().on("message:react", handleReact);
-    initSocket().on("message:unreact", handleUnreact);
-    initSocket().on("conversation:update", handleConvUpdate);
+    socket?.on("message:new", handleNew);
+    socket?.on("message:react", handleReact);
+    socket?.on("message:unreact", handleUnreact);
+    socket?.on("conversation:update", handleConvUpdate);
 
     return () => {
-      initSocket().emit("leave", roomId);
-      initSocket().off("message:new", handleNew);
-      initSocket().off("message:react", handleReact);
-      initSocket().off("message:unreact", handleUnreact);
-      initSocket().off("conversation:update", handleConvUpdate);
+      socket?.emit("leave", roomId);
+      socket?.off("message:new", handleNew);
+      socket?.off("message:react", handleReact);
+      socket?.off("message:unreact", handleUnreact);
+      socket?.off("conversation:update", handleConvUpdate);
       console.log(`🚪 Left room: ${roomId}`);
     };
   }, [conversation?._id]);
@@ -316,29 +317,7 @@ export default function MiniChatBox({
   };
 
   // Fetch messages when component mounts or conversation changes
-  useEffect(() => {
-    const fetchMessages = async () => {
-      if (!conversation?._id) return;
 
-      try {
-        setLoading(true);
-        const response = await ChatService.getMessages(conversation._id, {
-          page: 1,
-          limit: 50, // Adjust the limit as needed
-        });
-
-        if (response.success && response.data) {
-          setMessages(response.data.items || []);
-        }
-      } catch (error) {
-        console.error('Failed to fetch messages:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchMessages();
-  }, [conversation?._id]);
 
   useEffect(() => {
     getRecipientInfo();
@@ -533,10 +512,8 @@ const handleTogglePin = async () => {
   if (loading && messages.length === 0) {
     return (
       <div
-        className="fixed bg-white rounded-t-lg shadow-lg border border-gray-200 overflow-hidden flex flex-col"
+        className="fixed w-80 h-96  bg-white rounded-t-lg shadow-lg border border-gray-200 overflow-hidden flex flex-col"
         style={{
-          width: '320px',
-          height: '400px',
           right: position?.right || '20px',
           bottom: position?.bottom || '20px',
           zIndex: 50,
@@ -576,7 +553,13 @@ const handleTogglePin = async () => {
   return (
     <>
       {/* Mini Chat Box */}
-      <div id={`${conversation?._id}`} className="fixed bottom-4 right-4 w-80 h-96 bg-white rounded-lg shadow-xl border border-gray-200 flex flex-col z-50">
+      <div id={`${conversation?._id}`}
+       style={{
+          right: position?.right || '20px',
+          bottom: position?.bottom || '20px',
+          zIndex: 50,
+        }}
+      className="fixed w-80 h-96 bg-white rounded-lg shadow-xl border border-gray-200 flex flex-col z-50">
         {/* Header */}
         <div className="flex items-center justify-between p-3 border-b border-gray-200 bg-gradient-to-r from-rose-500 to-rose-600 text-white rounded-t-lg">
           <div className="flex items-center space-x-2">
@@ -843,11 +826,7 @@ const handleTogglePin = async () => {
                   </div>
                 );
               })
-          ) : (
-            <div className="h-full flex items-center justify-center text-gray-400 text-sm">
-              No messages yet. Start the conversation! 👋
-            </div>
-          )}
+          ) :null}
           <div ref={messagesEndRef} />
         </div>
 

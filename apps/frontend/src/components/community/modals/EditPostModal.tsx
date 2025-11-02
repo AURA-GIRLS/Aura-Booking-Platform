@@ -7,7 +7,7 @@ import { UploadService, type ResourceType } from "@/services/upload";
 import { CommunityService } from "@/services/community";
 import { Badge } from "@/components/lib/ui/badge";
 import { Button } from "@/components/lib/ui/button";
-import { initSocket} from "@/config/socket";
+import { initSocket, getSocket} from "@/config/socket";
 import ServiceSearchDialog from '../ServiceSearchDialog';
 import { ServiceResponseDTO } from '@/types/service.dtos';
 import {
@@ -233,11 +233,12 @@ export default function EditPostModal({
                 }
             } catch {/* ignore */}
         };
-        initSocket().on('postUpdated', onPostUpdated as any);
-        initSocket().on('postDeleted', onPostDeleted as any);
+        const socket = getSocket();
+        socket?.on('postUpdated', onPostUpdated as any);
+        socket?.on('postDeleted', onPostDeleted as any);
         return () => {
-            initSocket().off('postUpdated', onPostUpdated as any);
-            initSocket().off('postDeleted', onPostDeleted as any);
+            socket?.off('postUpdated', onPostUpdated as any);
+            socket?.off('postDeleted', onPostDeleted as any);
         };
     }, [isOpen, post, onClose, onUpdated]);
 

@@ -6,7 +6,7 @@ import { Input } from '../lib/ui/input';
 import { useAuthCheck } from '../../utils/auth';
 import { ChatService } from '../../services/chat';
 import { UserWallResponseDTO } from '@/types/community.dtos';
-import { initSocket } from '@/config/socket';
+import { initSocket, getSocket } from '@/config/socket';
 
 export default function RightSidebar({ 
   selectedTab, 
@@ -25,8 +25,10 @@ export default function RightSidebar({
   const [loading, setLoading] = useState(false);
   const { isAuthenticated } = useAuthCheck();
 
-  const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
-
+const getInitials = (name?: string) => {
+  if (!name) return 'U'; // Return 'U' for unknown users
+  return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+};
   // Fetch initial list
   useEffect(() => {
     const fetchConversations = async () => {
@@ -65,14 +67,15 @@ export default function RightSidebar({
       );
     };
 
-    initSocket().on("conversation:created", handleCreated);
-    initSocket().on("conversation:deleted", handleDeleted);
-    initSocket().on("conversation:update", handleUpdate);
+    const socket = getSocket();
+    socket?.on("conversation:created", handleCreated);
+    socket?.on("conversation:deleted", handleDeleted);
+    socket?.on("conversation:update", handleUpdate);
 
     return () => {
-      initSocket().off("conversation:created", handleCreated);
-      initSocket().off("conversation:deleted", handleDeleted);
-      initSocket().off("conversation:update", handleUpdate);
+      socket?.off("conversation:created", handleCreated);
+      socket?.off("conversation:deleted", handleDeleted);
+      socket?.off("conversation:update", handleUpdate);
     };
   }, [isAuthenticated]);
 
