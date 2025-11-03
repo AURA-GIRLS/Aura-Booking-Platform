@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2 } from "lucide-react";
 import { BankAccountResponseDTO, BankDTO, UpdateBankAccountDTO } from "@/types/bankaccount.dtos";
 import { ProfileBankAccountService } from "@/services/profile.bankaccount";
+import { useTranslate } from "@/i18n/hooks/useTranslate";
 
 interface BankAccountModalProps {
   open: boolean;
@@ -25,6 +26,7 @@ const BankAccountModal: React.FC<BankAccountModalProps> = ({
   initialData,
   isLoading = false
 }) => {
+  const { t } = useTranslate('profile');
   const [formData, setFormData] = useState<UpdateBankAccountDTO>({
     accountName: "",
     accountNumber: "",
@@ -37,6 +39,7 @@ const BankAccountModal: React.FC<BankAccountModalProps> = ({
 
   const [errors, setErrors] = useState<Partial<UpdateBankAccountDTO>>({});
   const [bankList, setBankList] = useState<BankDTO[]>([]);
+  
   // Reset form when modal opens/closes or initial data changes
   useEffect(() => {
     if (open) {
@@ -71,7 +74,6 @@ const BankAccountModal: React.FC<BankAccountModalProps> = ({
         setBankList(response?.data);
       }
       console.log("VietQR Bank List:", response.data);
-      console.log("bank list:", bankList);
     } catch (error) {
       console.error("Failed to fetch VietQR bank list:", error);
     }
@@ -86,7 +88,7 @@ const BankAccountModal: React.FC<BankAccountModalProps> = ({
   };
 
   const handleBankSelect = (bankId: string) => {
-    const selectedBank = bankList.find(bank => bank.id.toString() === bankId);
+    const selectedBank = bankList.find((bank: BankDTO) => bank.id.toString() === bankId);
     if (selectedBank) {
       setFormData(prev => ({
         ...prev,
@@ -112,31 +114,31 @@ const BankAccountModal: React.FC<BankAccountModalProps> = ({
     const newErrors: Partial<UpdateBankAccountDTO> = {};
 
     if (!formData.accountName!.trim()) {
-      newErrors.accountName = "Account name is required";
+      newErrors.accountName = t('bankAccountModal.accountNameRequired');
     }
 
     if (!formData.accountNumber!.trim()) {
-      newErrors.accountNumber = "Account number is required";
+      newErrors.accountNumber = t('bankAccountModal.accountNumberRequired');
     } else if (!/^\d+$/.test(formData.accountNumber || "")) {
-      newErrors.accountNumber = "Account number must contain only digits";
+      newErrors.accountNumber = t('bankAccountModal.accountNumberDigits');
     }
 
     if (!formData.bankName!.trim()) {
-      newErrors.bankName = "Bank name is required";
+      newErrors.bankName = t('bankAccountModal.bankNameRequired');
     }
 
     if (!formData.bankCode!.trim()) {
-      newErrors.bankCode = "Bank code is required";
+      newErrors.bankCode = t('bankAccountModal.bankCodeRequired');
     }
 
     if (!formData.bankBin!.trim()) {
-      newErrors.bankBin = "Bank BIN is required";
+      newErrors.bankBin = t('bankAccountModal.bankBinRequired');
     } else if (!/^\d+$/.test(formData.bankBin || "")) {
-      newErrors.bankBin = "Bank BIN must contain only digits";
+      newErrors.bankBin = t('bankAccountModal.bankBinDigits');
     }
 
     if (formData.swiftCode && !/^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$/.test(formData.swiftCode)) {
-      newErrors.swiftCode = "Invalid SWIFT code format";
+      newErrors.swiftCode = t('bankAccountModal.invalidSwiftCode');
     }
 
     setErrors(newErrors);
@@ -157,14 +159,12 @@ const BankAccountModal: React.FC<BankAccountModalProps> = ({
     }
   };
 
-  
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange} >
-      <DialogContent className="max-w-md w-full mx-auto bg-white" aria-describedby="Add or update your bank account details">
+      <DialogContent className="max-w-md w-full mx-auto bg-white" aria-describedby={t('bankAccountModal.addBankAccount')}>
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold text-gray-900">
-            {initialData ? "Update Bank Account" : "Add Bank Account"}
+            {initialData ? t('bankAccountModal.updateBankAccount') : t('bankAccountModal.addBankAccount')}
           </DialogTitle>
         </DialogHeader>
 
@@ -172,12 +172,12 @@ const BankAccountModal: React.FC<BankAccountModalProps> = ({
           {/* Account Name */}
           <div className="space-y-2">
             <Label htmlFor="accountName" className="text-sm font-medium text-gray-700">
-              Account Name *
+              {t('bankAccountModal.accountName')} *
             </Label>
             <Input
               id="accountName"
               type="text"
-              placeholder="Enter account holder name"
+              placeholder={t('bankAccountModal.accountNamePlaceholder')}
               value={formData.accountName}
               onChange={(e) => handleInputChange("accountName", e.target.value)}
               className={errors.accountName ? "border-red-500 focus:ring-red-500" : ""}
@@ -191,12 +191,12 @@ const BankAccountModal: React.FC<BankAccountModalProps> = ({
           {/* Account Number */}
           <div className="space-y-2">
             <Label htmlFor="accountNumber" className="text-sm font-medium text-gray-700">
-              Account Number *
+              {t('bankAccountModal.accountNumber')} *
             </Label>
             <Input
               id="accountNumber"
               type="text"
-              placeholder="Enter account number"
+              placeholder={t('bankAccountModal.accountNumberPlaceholder')}
               value={formData.accountNumber}
               onChange={(e) => handleInputChange("accountNumber", e.target.value)}
               className={errors.accountNumber ? "border-red-500 focus:ring-red-500" : ""}
@@ -210,18 +210,18 @@ const BankAccountModal: React.FC<BankAccountModalProps> = ({
           {/* Bank Selection */}
           <div className="space-y-2">
             <Label htmlFor="bankName" className="text-sm font-medium text-gray-700">
-              Bank Name *
+              {t('bankAccountModal.bankName')} *
             </Label>
             <Select 
               onValueChange={handleBankSelect}
-              value={bankList.find(bank => bank.shortName === formData.bankName)?.id.toString() || ""}
+              value={bankList.find((bank: BankDTO) => bank.shortName === formData.bankName)?.id.toString() || ""}
               disabled={isLoading}
             >
               <SelectTrigger className={errors.bankName ? "border-red-500 focus:ring-red-500" : ""}>
-                <SelectValue placeholder="Select a bank" />
+                <SelectValue placeholder={t('bankAccountModal.selectBank')} />
               </SelectTrigger>
               <SelectContent className="max-h-[200px] w-[400px] bg-white">
-                {bankList.map((bank) => (
+                {bankList.map((bank: BankDTO) => (
                   <SelectItem key={bank.id} value={bank.id.toString()}>
                     <div className="flex items-center gap-3">
                       {bank.logo && (
@@ -259,7 +259,7 @@ const BankAccountModal: React.FC<BankAccountModalProps> = ({
               disabled={isLoading}
               className="flex-1"
             >
-              Cancel
+              {t('bankAccountModal.cancel')}
             </Button>
             <Button
               type="submit"
@@ -267,7 +267,7 @@ const BankAccountModal: React.FC<BankAccountModalProps> = ({
               className="flex-1 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600"
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {initialData ? "Update Account" : "Add Account"}
+              {initialData ? t('bankAccountModal.updateAccount') : t('bankAccountModal.addAccount')}
             </Button>
           </div>
         </form>

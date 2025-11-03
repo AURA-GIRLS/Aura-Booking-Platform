@@ -4,6 +4,7 @@ import React from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { User, History, CreditCard } from "lucide-react";
+import { useTranslate } from "@/i18n/hooks/useTranslate";
 
 interface ProfileLayoutProps {
   children: React.ReactNode;
@@ -11,23 +12,24 @@ interface ProfileLayoutProps {
 
 const ProfileLayout: React.FC<ProfileLayoutProps> = ({ children }) => {
   const pathname = usePathname();
+  const { t } = useTranslate('profile');
 
     const navigationItems = [
         {
         href: "/user/profile",
-        label: "My Profile",
+        label: t('profileLayout.myProfile'),
         icon: User,
         matchPaths: ["/user/profile", "/user/profile/edit-profile"]
         },
          {
         href: "/user/profile/bank-account",
-        label: "Bank Account", 
+        label: t('profileLayout.bankAccount'), 
         icon: CreditCard,
         matchPaths: ["/user/profile/bank-account"]
         },
         {
         href: "/user/profile/booking-history",
-        label: "Booking History", 
+        label: t('profileLayout.bookingHistory'), 
         icon: History,
         matchPaths: ["/user/profile/booking-history"]
         },
@@ -63,8 +65,8 @@ const ProfileLayout: React.FC<ProfileLayoutProps> = ({ children }) => {
             <div className="p-4 lg:p-6 xl:p-8">
               {/* Header */}
               <div className="mb-8 lg:mb-10 xl:mb-12">
-                <h2 className="text-xl lg:text-2xl font-bold text-gray-800 mb-2">Account Settings</h2>
-                <p className="text-gray-600 text-xs lg:text-sm">Manage your profile and preferences</p>
+                <h2 className="text-xl lg:text-2xl font-bold text-gray-800 mb-2">{t('profileLayout.accountSettings')}</h2>
+                <p className="text-gray-600 text-xs lg:text-sm">{t('profileLayout.manageProfile')}</p>
               </div>
 
               {/* Navigation Items */}
