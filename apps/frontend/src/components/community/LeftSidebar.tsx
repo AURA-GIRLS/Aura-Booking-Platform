@@ -207,15 +207,15 @@ export default function LeftSidebar({
       {/* Stats */}
       <div className="flex justify-between mb-6 text-center">
         <div>
-          <div className="font-semibold text-gray-900">{currentUser.followersCount}</div>
+         <div className="font-semibold text-gray-900">{currentUser?.followersCount ?? 0}</div>
           <div className="text-xs text-gray-500">{t('sidebar.follower')}</div>
         </div>
         <div>
-          <div className="font-semibold text-gray-900">{currentUser.followingsCount}</div>
+          <div className="font-semibold text-gray-900">{currentUser?.followingsCount ?? 0}</div>
           <div className="text-xs text-gray-500">{t('sidebar.following')}</div>
         </div>
         <div>
-          <div className="font-semibold text-gray-900">{currentUser.postsCount}</div>
+         <div className="font-semibold text-gray-900">{currentUser?.postsCount ?? 0}</div>
           <div className="text-xs text-gray-500">{t('sidebar.post')}</div>
         </div>
       </div>
