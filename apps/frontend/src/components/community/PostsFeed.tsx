@@ -7,7 +7,8 @@ import { TARGET_TYPES, USER_ROLES, POST_STATUS, RESOURCE_TYPES } from '../../con
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/lib/ui/dropdown-menu';
 import EditPostModal from './modals/EditPostModal';
 import ImageLightbox from './modals/ImageLightbox';
-import { socket } from '@/config/socket';
+import { initSocket, getSocket } from "@/config/socket";
+
 import AttachedServicesDisplay from './AttachedServicesDisplay';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../lib/ui/tooltip';
 import { Badge } from '@/components/lib/ui/badge';
@@ -20,6 +21,21 @@ import { useTranslate } from '@/i18n/hooks/useTranslate';
 
 export default function PostsFeed({ posts, setPosts, currentUser: _currentUser, fetchMinimalUser, onOpenUserWall }: Readonly<{ posts: PostResponseDTO[]; setPosts: React.Dispatch<React.SetStateAction<PostResponseDTO[]>>; currentUser: UserWallResponseDTO|null; fetchMinimalUser: () => Promise<void>; onOpenUserWall?: (userId: string, userName?: string) => void }>) {
   const { t } = useTranslate('community');
+export default function PostsFeed({ 
+  posts, 
+  setPosts, 
+  currentUser: _currentUser, 
+  fetchMinimalUser, 
+  onOpenUserWall,
+  onOpenMiniChat 
+}: Readonly<{ 
+  posts: PostResponseDTO[]; 
+  setPosts: React.Dispatch<React.SetStateAction<PostResponseDTO[]>>; 
+  currentUser: UserWallResponseDTO|null; 
+  fetchMinimalUser: () => Promise<void>; 
+  onOpenUserWall?: (userId: string, userName?: string) => void;
+  onOpenMiniChat: (userId: string) => void;
+}>) {
   type UIComment = CommentResponseDTO & { isLiked?: boolean; likeCount: number };
   const searchParams = useSearchParams();
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
@@ -71,7 +87,8 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser, 
   };
 
 
-  const getInitials = (name: string) => name?.split(' ').map(n => n[0]).join('').toUpperCase() || '';
+
+  const getInitials = (name: string|undefined) => name?.split(' ').map(n => n[0]).join('').toUpperCase();
   const isSelfUser = useCallback((id?: string) => {
     const me = ((_currentUser as any)?._id) ?? undefined;
     return !!(id && me && id === me);
@@ -234,6 +251,7 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser, 
   }, [setFollowing, _currentUser, fetchMinimalUser]);
 
   useEffect(() => {
+    const socket = getSocket();
     // hydrate following for current user
     const me = (_currentUser as any)?._id as string | undefined;
     if (me) {
@@ -251,23 +269,23 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser, 
       })();
     }
 
-    socket.on('postLiked', handleSocketPostLiked as any);
-    socket.on('postUnliked', handleSocketPostUnliked as any);
-    socket.on('postUpdated', handleSocketPostUpdated as any);
-    socket.on('postDeleted', handleSocketPostDeleted as any);
-    socket.on('commentLiked', handleSocketCommentLiked as any);
-    socket.on('commentUnliked', handleSocketCommentUnliked as any);
-    socket.on('userFollowed', handleSocketUserFollowed as any);
-    socket.on('userUnfollowed', handleSocketUserUnfollowed as any);
+    socket?.on('postLiked', handleSocketPostLiked as any);
+    socket?.on('postUnliked', handleSocketPostUnliked as any);
+    socket?.on('postUpdated', handleSocketPostUpdated as any);
+    socket?.on('postDeleted', handleSocketPostDeleted as any);
+    socket?.on('commentLiked', handleSocketCommentLiked as any);
+    socket?.on('commentUnliked', handleSocketCommentUnliked as any);
+    socket?.on('userFollowed', handleSocketUserFollowed as any);
+    socket?.on('userUnfollowed', handleSocketUserUnfollowed as any);
     return () => {
-      socket.off('postLiked', handleSocketPostLiked as any);
-      socket.off('postUnliked', handleSocketPostUnliked as any);
-      socket.off('postUpdated', handleSocketPostUpdated as any);
-      socket.off('postDeleted', handleSocketPostDeleted as any);
-      socket.off('commentLiked', handleSocketCommentLiked as any);
-      socket.off('commentUnliked', handleSocketCommentUnliked as any);
-      socket.off('userFollowed', handleSocketUserFollowed as any);
-      socket.off('userUnfollowed', handleSocketUserUnfollowed as any);
+      socket?.off('postLiked', handleSocketPostLiked as any);
+      socket?.off('postUnliked', handleSocketPostUnliked as any);
+      socket?.off('postUpdated', handleSocketPostUpdated as any);
+      socket?.off('postDeleted', handleSocketPostDeleted as any);
+      socket?.off('commentLiked', handleSocketCommentLiked as any);
+      socket?.off('commentUnliked', handleSocketCommentUnliked as any);
+      socket?.off('userFollowed', handleSocketUserFollowed as any);
+      socket?.off('userUnfollowed', handleSocketUserUnfollowed as any);
     };
   }, [
     _currentUser,
@@ -565,6 +583,15 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser, 
                                   ? `Following`
                                   : `Follow`}
                             </button>
+                            
+                            <button
+                              type="button"
+                              onClick={() => onOpenMiniChat(post.authorId)}
+                              title="Send message"
+                              className="p-1 text-gray-600 hover:text-blue-500 hover:bg-gray-100 rounded-md"
+                            >
+                              <MessageCircle size={14} />
+                            </button>
                           </div>
                         )}
                       </h4>
@@ -710,6 +737,7 @@ export default function PostsFeed({ posts, setPosts, currentUser: _currentUser, 
         isSelfUser={isSelfUser}
         _currentUser={_currentUser}
         onOpenUserWall={onOpenUserWall}
+        onOpenMiniChat={onOpenMiniChat}
       />
       <DeleteConfirmDialog
         open={deleteConfirmOpen}

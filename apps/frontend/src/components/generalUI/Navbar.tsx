@@ -6,6 +6,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/lib/ui/avatar'
 import LanguageSwitcher from './LanguageSwitcher';
 import { NavbarProps } from '@/types/user.dtos';
 import { useTranslate } from '@/i18n/hooks/useTranslate';
+import { initSocket, getSocket } from '@/config/socket';
 
 export default function Navbar({ user, setUser }: Readonly<NavbarProps>)  {
   const [isOpen, setIsOpen] = useState(false);
@@ -17,6 +18,10 @@ export default function Navbar({ user, setUser }: Readonly<NavbarProps>)  {
     const timer = setTimeout(() => {
       setIsUserLoaded(true);
     }, 100); // Short delay to ensure user state is properly loaded
+    if(user){
+      const socket = getSocket();
+      socket?.emit("auth:user", user?._id);
+    }
 
     return () => clearTimeout(timer);
   }, [user]);

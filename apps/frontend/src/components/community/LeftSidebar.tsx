@@ -13,7 +13,7 @@ interface LeftSidebarProps {
   setUserWalls: React.Dispatch<React.SetStateAction<UserWallResponseDTO[]>>;
   posts: PostResponseDTO[];
   setPosts: React.Dispatch<React.SetStateAction<PostResponseDTO[]>>;
-  currentUser: UserWallResponseDTO;  // 🆕 từ MainContent truyền vào
+  currentUser: UserWallResponseDTO|null;  // 🆕 từ MainContent truyền vào
   trendingTags: TagResponseDTO[];
   fetchPosts: () => Promise<void>;
   fetchActiveMuas: () => Promise<void>;
@@ -54,8 +54,8 @@ export default function LeftSidebar({
     };
   }, [currentUser?._id, searchParams]);
 
-  const getInitials = (name: string) =>
-    name.split(" ").map((n) => n[0]).join("").toUpperCase();
+  const getInitials = (name: string|undefined) =>
+    name?.split(" ").map((n) => n[0]).join("").toUpperCase();
 
   // Helpers to keep URL and data logic tidy
   const pushUrl = useCallback((mutate: (sp: URLSearchParams) => void) => {
@@ -117,8 +117,8 @@ export default function LeftSidebar({
   const handleOpenMyWall = useCallback(() => {
     try {
       const sp = new URLSearchParams(searchParams?.toString());
-      sp.set("wall", String(currentUser._id))
-      if (currentUser.fullName) sp.set("wn", currentUser.fullName);
+      sp.set("wall", String(currentUser?._id))
+      if (currentUser?.fullName) sp.set("wn", currentUser?.fullName);
       else sp.delete("wn");
       const qs = sp.toString();
       router.push((qs ? `${pathname}?${qs}` : pathname) as any, { scroll: false });
@@ -127,7 +127,7 @@ export default function LeftSidebar({
     } catch {
       // ignore
     }
-  }, [currentUser._id, currentUser.fullName, pathname, router, searchParams]);
+  }, [currentUser?._id, currentUser?.fullName, pathname, router, searchParams]);
 
   const handleGoFeed = useCallback(async () => {
     // Clear SocialWall params and reset filter to default feed
@@ -183,19 +183,19 @@ export default function LeftSidebar({
           onClick={handleOpenMyWall}
           className={`w-10 h-10 rounded-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-rose-300 focus:ring-offset-2 focus:ring-offset-white bg-gradient-to-br from-rose-500 to-rose-700 ${isOnMyWall ? "ring-2 ring-rose-400" : ""}`}
         >
-         {currentUser.avatarUrl ? (
+         {currentUser?.avatarUrl ? (
           <img src={currentUser.avatarUrl} alt="avatar" className="w-full h-full object-cover rounded-full border-2 border-white" />
          ) : (
             <span className="text-white font-semibold">
-            {getInitials(currentUser.fullName)}
+            {getInitials(currentUser?.fullName)}
           </span>
           )}
         </button>
         <div className="ml-3">
           <button type="button" onClick={handleOpenMyWall} className="font-semibold text-gray-900 text-sm hover:underline">
-            {currentUser.fullName}
+            {currentUser?.fullName}
           </button>
-          <p className="text-xs text-gray-500">@{currentUser.fullName}</p>
+          <p className="text-xs text-gray-500">@{currentUser?.fullName}</p>
           {isOnMyWall && (
             <span className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-rose-700 bg-rose-100 px-2 py-0.5 rounded-full">
               {t('sidebar.myPersonalWall')}

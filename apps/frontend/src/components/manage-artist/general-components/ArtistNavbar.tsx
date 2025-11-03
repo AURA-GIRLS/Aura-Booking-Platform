@@ -5,6 +5,7 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/lib/ui/avatar';
 import { ArtistNavbarProps } from "@/types/user.dtos";
 import LanguageSwitcher from '../../generalUI/LanguageSwitcher';
+import { getSocket } from "@/config/socket";
 
 export default function ArtistNavbar({ mua, setMua }:  Readonly<ArtistNavbarProps>) {
   const [isOpen, setIsOpen] = useState(false);
@@ -32,6 +33,10 @@ export default function ArtistNavbar({ mua, setMua }:  Readonly<ArtistNavbarProp
   
   useEffect(() => {
     setId(mua?._id || null);
+     if(user){
+      const socket = getSocket();
+          socket?.emit("auth:user", user?._id);
+        }
   }, [mua]);
   
   const handleLogout = () => {

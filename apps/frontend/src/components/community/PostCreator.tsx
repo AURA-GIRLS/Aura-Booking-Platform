@@ -5,7 +5,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { CommunityService } from '@/services/community';
 import type { CreatePostDTO, PostResponseDTO, TagResponseDTO, UserWallResponseDTO } from '@/types/community.dtos';
 import { POST_STATUS } from '../../constants';
-import { socket } from '@/config/socket';
+import { initSocket, getSocket } from "@/config/socket";
 import { UploadService, type ResourceType } from '@/services/upload';
 import ServiceSearchDialog from './ServiceSearchDialog';
 import { ServiceResponseDTO } from '@/types/service.dtos';
@@ -47,7 +47,7 @@ export default function PostCreator({
   setPrivacy: (p: Privacy) => void;
   posts: PostResponseDTO[];
   setPosts: React.Dispatch<React.SetStateAction<PostResponseDTO[]>>;
-  currentUser: UserWallResponseDTO;
+  currentUser: UserWallResponseDTO|null;
   fetchMinimalUser: () => Promise<void>;
 }>) {
   const { t } = useTranslate('community');
@@ -90,9 +90,10 @@ export default function PostCreator({
         void fetchMinimalUser?.();
       }
     };
-    socket.on('newPost', onNewPost);
+    const socket = getSocket();
+    socket?.on('newPost', onNewPost);
     return () => {
-      socket.off('newPost', onNewPost);
+      socket?.off('newPost', onNewPost);
     };
   }, [prependPost, currentUser, fetchMinimalUser]);
 
@@ -182,23 +183,23 @@ export default function PostCreator({
     });
   };
 
-  const getInitials = (name: string) =>
-    name.split(' ').map(n => n[0]).join('').toUpperCase();
+  const getInitials = (name: string|undefined) =>
+    name?.split(' ').map(n => n[0]).join('').toUpperCase();
 
   return (
     <>
     <div className="bg-white rounded-xl p-4 mb-6 shadow-sm relative">
       <div className="flex items-start space-x-3">
-        {currentUser.avatarUrl ? (
+        {currentUser?.avatarUrl ? (
           <img
-            src={currentUser.avatarUrl}
+            src={currentUser?.avatarUrl}
             alt="avatar"
             className="w-10 h-10 object-cover rounded-full border-2 border-white"
           />
         ) : (
           <div className="w-10 h-10 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full flex items-center justify-center">
             <span className="text-white font-semibold text-sm">
-              {getInitials(currentUser.fullName)}
+              {getInitials(currentUser?.fullName)}
             </span>
           </div>
         )}

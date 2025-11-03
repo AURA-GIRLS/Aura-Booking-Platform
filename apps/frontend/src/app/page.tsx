@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import ArtistNavbar from "@/components/manage-artist/general-components/ArtistNavbar";
 import { UserResponseDTO } from "../types";
 import { MuaResponseDTO } from "../types/user.dtos";
+import { initSocket } from "@/config/socket";
 
 export default function HomePage() {
   const [user, setUser] = useState<UserResponseDTO | null>(null);
@@ -17,9 +18,10 @@ export default function HomePage() {
   useEffect(() => {
     const loadUserData = () => {
       try {
+         initSocket();
         const storedUser = localStorage.getItem("currentUser");
         const storedMua = localStorage.getItem("currentMUA");
-  
+        
         setUser(storedUser && storedUser !== "undefined" ? JSON.parse(storedUser) : null);
         setMua(storedMua && storedMua !== "undefined" ? JSON.parse(storedMua) : null);
       } catch (error) {
