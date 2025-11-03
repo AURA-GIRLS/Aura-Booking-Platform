@@ -9,6 +9,60 @@ module.exports = {
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
   		},
+  		fontFamily: {
+  			sans: [
+  				'var(--font-inter)',
+  				'Inter',
+  				'system-ui',
+  				'-apple-system',
+  				'BlinkMacSystemFont',
+  				'"Segoe UI"',
+  				'Roboto',
+  				'"Helvetica Neue"',
+  				'Arial',
+  				'"Noto Sans"',
+  				'sans-serif',
+  				'"Apple Color Emoji"',
+  				'"Segoe UI Emoji"',
+  				'"Segoe UI Symbol"',
+  				'"Noto Color Emoji"'
+  			],
+  			heading: [
+  				'var(--font-inter)',
+  				'Inter',
+  				'system-ui',
+  				'-apple-system',
+  				'BlinkMacSystemFont',
+  				'"Segoe UI"',
+  				'Roboto',
+  				'"Helvetica Neue"',
+  				'Arial',
+  				'"Noto Sans"',
+  				'sans-serif',
+  				'"Apple Color Emoji"',
+  				'"Segoe UI Emoji"',
+  				'"Segoe UI Symbol"',
+  				'"Noto Color Emoji"'
+  			],
+  			serif: [
+  				'"Playfair Display"',
+  				'Georgia',
+  				'Cambria',
+  				'"Times New Roman"',
+  				'Times',
+  				'serif'
+  			],
+  			mono: [
+  				'"JetBrains Mono"',
+  				'"Fira Code"',
+  				'Menlo',
+  				'Monaco',
+  				'Consolas',
+  				'"Liberation Mono"',
+  				'"Courier New"',
+  				'monospace'
+  			]
+  		},
   		colors: {
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
@@ -55,5 +109,4 @@ module.exports = {
   },
   plugins: [require("tailwindcss-animate")]
 };
-
 

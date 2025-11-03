@@ -2,8 +2,8 @@
   "name": "shared",
   "version": "0.1.0",
   "private": true,
-  "types": "dist/index.d.ts",
-  "main": "dist/index.js",
+  "types": "dist/shared/src/index.d.ts",
+  "main": "dist/shared/src/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "lint": "eslint . --ext .ts",
@@ -16,5 +16,4 @@
     "@types/node": "^20.12.12"
   }
 }
-
 
