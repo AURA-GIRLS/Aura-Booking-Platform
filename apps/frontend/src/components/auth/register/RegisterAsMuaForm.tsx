@@ -7,8 +7,10 @@ import { Button } from '@/components/lib/ui/button';
 import { BrushIcon } from 'lucide-react';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/lib/ui/select';
 import { PROVINCES } from '@/constants/constants';
+import { useTranslate } from '@/i18n/hooks/useTranslate';
 
 export default function RegisterAsMuaForm() {
+	const { t, locale } = useTranslate('auth');
 	const [form, setForm] = useState({
 		fullName: '',
 		email: '',
@@ -47,7 +49,7 @@ export default function RegisterAsMuaForm() {
 			});
 			setSuccess(true);
 		} catch (err: any) {
-			setError(err?.message || 'Registration failed');
+			setError(err?.message || t('registerAsMua.registrationFailed'));
 		} finally {
 			setLoading(false);
 		}
@@ -68,22 +70,22 @@ export default function RegisterAsMuaForm() {
 							</div>
 							<div>
 								<h2 className="text-2xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
-									Join as Makeup Artist
+									{t('registerAsMua.title')}
 								</h2>
 								<p className="text-gray-600 text-sm mt-2">
-									Grow your brand. Get more bookings. Join Aura's artist network!
+									{t('registerAsMua.subtitle')}
 								</p>
 							</div>
 						</div>
 					{/* Form Fields */}
 					<div className="space-y-4">
 						<div>
-							<Label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">Full Name</Label>
+							<Label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">{t('registerAsMua.fullNameLabel')}</Label>
 							<Input
 								id="fullName"
 								name="fullName"
 								type="text"
-								placeholder="Your full name"
+								placeholder={t('registerAsMua.fullNamePlaceholder')}
 								className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all duration-200"
 								value={form.fullName}
 								onChange={handleChange}
@@ -91,12 +93,12 @@ export default function RegisterAsMuaForm() {
 							/>
 						</div>
 						<div>
-							<Label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">Email</Label>
+							<Label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">{t('registerAsMua.emailLabel')}</Label>
 							<Input
 								id="email"
 								name="email"
 								type="email"
-								placeholder="you@email.com"
+								placeholder={t('registerAsMua.emailPlaceholder')}
 								className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all duration-200"
 								value={form.email}
 								onChange={handleChange}
@@ -104,12 +106,12 @@ export default function RegisterAsMuaForm() {
 							/>
 						</div>
 						<div>
-							<Label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">Password</Label>
+							<Label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">{t('registerAsMua.passwordLabel')}</Label>
 							<Input
 								id="password"
 								name="password"
 								type="password"
-								placeholder="Password"
+								placeholder={t('registerAsMua.passwordPlaceholder')}
 								className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all duration-200"
 								value={form.password}
 								onChange={handleChange}
@@ -117,24 +119,24 @@ export default function RegisterAsMuaForm() {
 							/>
 						</div>
 						<div>
-							<Label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-2">Phone Number</Label>
+							<Label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-2">{t('registerAsMua.phoneLabel')}</Label>
 							<Input
 								id="phoneNumber"
 								name="phoneNumber"
 								type="text"
-								placeholder="Phone number"
+								placeholder={t('registerAsMua.phonePlaceholder')}
 								className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all duration-200"
 								value={form.phoneNumber}
 								onChange={handleChange}
 							/>
 						</div>
 						<div>
-							<Label htmlFor="experienceYears" className="block text-sm font-medium text-gray-700 mb-2">Years of Experience</Label>
+							<Label htmlFor="experienceYears" className="block text-sm font-medium text-gray-700 mb-2">{t('registerAsMua.experienceLabel')}</Label>
 							<Input
 								id="experienceYears"
 								name="experienceYears"
 								type="number"
-								placeholder="e.g. 3"
+								placeholder={t('registerAsMua.experiencePlaceholder')}
 								className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all duration-200"
 								value={form.experienceYears}
 								onChange={handleChange}
@@ -142,10 +144,10 @@ export default function RegisterAsMuaForm() {
 							/>
 						</div>
 						<div>
-							<Label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">Location</Label>
+							<Label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">{t('registerAsMua.locationLabel')}</Label>
 							<Select value={form.location} onValueChange={handleLocationChange}>
 								<SelectTrigger className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all duration-200">
-									<SelectValue placeholder="Select your province/city" />
+									<SelectValue placeholder={t('registerAsMua.locationPlaceholder')} />
 								</SelectTrigger>
 								<SelectContent className="bg-white">
 									{PROVINCES.map((province) => (
@@ -155,11 +157,11 @@ export default function RegisterAsMuaForm() {
 							</Select>
 						</div>
 						<div>
-							<Label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-2">Short Bio</Label>
+							<Label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-2">{t('registerAsMua.bioLabel')}</Label>
 							<textarea
 								id="bio"
 								name="bio"
-								placeholder="Tell us about yourself (optional)"
+								placeholder={t('registerAsMua.bioPlaceholder')}
 								className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all duration-200 min-h-[80px] resize-none"
 								value={form.bio}
 								onChange={handleChange}
@@ -174,7 +176,7 @@ export default function RegisterAsMuaForm() {
 					)}
 					{success && (
 						<div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-xl text-sm text-center">
-							Registration successful! Please check your email to verify your account.
+							{t('registerAsMua.registrationSuccess')}
 						</div>
 					)}
 
@@ -187,31 +189,31 @@ export default function RegisterAsMuaForm() {
 						{loading ? (
 							<div className="flex items-center justify-center gap-2">
 								<div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-								Registering...
+								{t('registerAsMua.registering')}
 							</div>
 						) : (
-							'Join as Artist'
+							t('registerAsMua.joinAsArtistButton')
 						)}
 					</Button>
 
 					{/* Footer Links */}
 					<div className="text-center space-y-2">
 						<div className="text-sm text-gray-600">
-							Want to join as customer?{' '}
+							{t('registerAsMua.joinAsCustomer')}{' '}
 							<a href="/auth/register/customer" className="text-rose-600 hover:text-rose-700 font-medium hover:underline transition-colors">
-								Sign up as customer
+								{t('registerAsMua.signUpAsCustomer')}
 							</a>
 						</div>
 						<div className="text-sm text-gray-600">
-							Already have an account?{' '}
+							{t('registerAsMua.alreadyHaveAccount')}{' '}
 							<a href="/auth/login" className="text-rose-600 hover:text-rose-700 font-medium hover:underline transition-colors">
-								Sign In
+								{t('registerAsMua.signIn')}
 							</a>
 						</div>
 						<div className="text-sm text-gray-600">
-							Haven't received verification email?{' '}
+							{t('registerAsMua.haventReceivedEmail')}{' '}
 							<a href="/auth/resend-verification" className="text-rose-600 hover:text-rose-700 font-medium hover:underline transition-colors">
-								Resend
+								{t('registerAsMua.resend')}
 							</a>
 						</div>
 					</div>
