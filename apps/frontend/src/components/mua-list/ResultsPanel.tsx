@@ -10,6 +10,7 @@ import { MapPin, Star } from "lucide-react";
 import { Artist, SortKey } from "@/types/artist.dto";
 import { Button } from "../lib/ui/button";
 import { useAuthCheck } from "../../utils/auth";
+import { useTranslate } from "@/i18n/hooks/useTranslate";
 
 export interface ResultsPanelProps {
   occasion: ServiceCategory;
@@ -52,6 +53,7 @@ export default function ResultsPanel({
   totalPages,
   onPageChange,
 }: ResultsPanelProps) {
+  const { t } = useTranslate('artists');
   const { checkAuthAndExecute } = useAuthCheck();
   const occasionTabs = Object.entries(SERVICE_CATEGORY_LABELS);
 
@@ -61,11 +63,11 @@ export default function ResultsPanel({
     });
   };
   const sortOptions: { value: SortKey; label: string }[] = [
-    { value: "rating_desc", label: "Featured" },
-    { value: "price_asc", label: "Price: Low to High" },
-    { value: "price_desc", label: "Price: High to Low" },
-    { value: "newest", label: "Newest" },
-    { value: "popular", label: "Popular" },
+    { value: "rating_desc", label: t('makeupArtistList.results.sortOptions.featured') },
+    { value: "price_asc", label: t('makeupArtistList.results.sortOptions.priceLowToHigh') },
+    { value: "price_desc", label: t('makeupArtistList.results.sortOptions.priceHighToLow') },
+    { value: "newest", label: t('makeupArtistList.results.sortOptions.newest') },
+    { value: "popular", label: t('makeupArtistList.results.sortOptions.popular') },
   ];
 
   const handleViewProfile = (artistId: string) => {
@@ -96,9 +98,9 @@ export default function ResultsPanel({
 
         {/* Sort dropdown */}
         <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600">Sort by:</span>
+          <span className="text-sm text-gray-600">{t('makeupArtistList.results.sortBy')}</span>
           <select
-          title="sort by ..."
+          title={t('makeupArtistList.results.sortBy')}
             value={sort}
             onChange={(e) => onSortChange(e.target.value as SortKey)}
             className="h-10 px-3 rounded-lg border border-gray-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 focus:border-rose-400 hover:border-rose-400 hover:shadow-md transition-all duration-300"
@@ -116,14 +118,14 @@ export default function ResultsPanel({
       <div className="mb-6 animate-slide-up">
         <h2 className="text-2xl font-bold bg-clip-text text-gray-900 mb-1 animate-fade-in">
           {isDateFiltered 
-            ? `Available on ${selectedDate}: ${total.toLocaleString("en-US")} Makeup Artists`
-            : `All Areas: ${total.toLocaleString("en-US")} Makeup Artists waiting for you to choose`
+            ? t('makeupArtistList.results.availableOnDate').replace('{date}', selectedDate).replace('{count}', total.toLocaleString("en-US"))
+            : t('makeupArtistList.results.allAreas').replace('{count}', total.toLocaleString("en-US"))
           }
         </h2>
         <p className="text-gray-600 animate-slide-up">
           {isDateFiltered 
-            ? `Makeup artists available for booking on ${selectedDate}`
-            : "Recently found high-quality makeup services nationwide"
+            ? t('makeupArtistList.results.availableForBooking').replace('{date}', selectedDate)
+            : t('makeupArtistList.results.recentlyFound')
           }
         </p>
       </div>
@@ -133,14 +135,14 @@ export default function ResultsPanel({
         <div className="bg-red-50 border border-red-200 rounded-xl p-4 animate-shake hover:shadow-lg transition-all duration-300">
           <div className="flex items-center gap-2">
             <span className="text-red-600">⚠️</span>
-            <span className="text-red-800 font-medium">An error occurred</span>
+            <span className="text-red-800 font-medium">{t('makeupArtistList.results.errorOccurred')}</span>
           </div>
           <p className="text-red-700 mt-1 text-sm">{error}</p>
           <button
             onClick={onLoadMore}
             className="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
           >
-            Try Again
+            {t('makeupArtistList.results.tryAgain')}
           </button>
         </div>
       )}
@@ -166,7 +168,7 @@ export default function ResultsPanel({
                   {muaService.mua.userName}
                 </h3>
                 <p className="text-gray-600 text-sm mb-1">
-                {muaService.mua.bio || "Professional Makeup Artist & Beauty Expert"}
+                {muaService.mua.bio || t('makeupArtistList.results.professionalMakeupService')}
                 </p>
                 <span className="inline-flex items-center  py-1 rounded-full text-xs font-medium hover:from-rose-200 hover:to-pink-200  gap-2">
                   <div className="flex items-center gap-1">
@@ -178,10 +180,10 @@ export default function ResultsPanel({
                     <span className="font-bold text-gray-900">
                       {muaService.mua.ratingAverage?.toFixed(1)}
                     </span>
-                    <span className="text-gray-500">({muaService.mua.feedbackCount} reviews)</span>
+                    <span className="text-gray-500">({muaService.mua.feedbackCount} {t('makeupArtistList.results.reviews')})</span>
                   </div>
                     <span className="bg-rose-600 text-white text-xs px-2 py-1 rounded-sm font-semibold">
-                      Verified
+                      {t('makeupArtistList.results.verified')}
                     </span>
                 </span>
               </div>
@@ -199,16 +201,16 @@ export default function ResultsPanel({
                 onClick={() => onViewProfile(muaService.mua._id, 'portfolio')}
                 className="px-3 py-2 bg-white border border-rose-300 text-rose-600 text-xs font-medium rounded-sm hover:bg-rose-50 hover:border-rose-300 transition-all duration-200"
               >
-                View Portfolio
+                {t('makeupArtistList.results.viewPortfolio')}
               </button>
             </div>
           </div>
         </div>
-                    
+                     
                     {/* Available Services */}
                     <div className="mt-4">
                       <h4 className="text-sm font-medium text-gray-900 mb-2">
-                        Available Services ({muaService.services.length})
+                        {t('makeupArtistList.results.availableServices').replace('{count}', muaService.services.length.toString())}
                       </h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                         {muaService.services.map((service) => (
@@ -245,14 +247,14 @@ export default function ResultsPanel({
                                           {service.price.toLocaleString()} VND
                                         </p>
                                         <p className="text-xs text-gray-500">
-                                          {service.duration} mins
+                                          {service.duration} {t('makeupArtistList.results.mins')}
                                         </p>
                                       </div>
                                       <button
                                         onClick={() => handleBookService(muaService.mua._id, service._id)}
                                         className="px-3 py-1 bg-rose-500 text-white text-xs rounded-md hover:bg-rose-600 transition-colors flex-shrink-0"
                                       >
-                                        Book
+                                        {t('makeupArtistList.results.book')}
                                       </button>
                                     </div>
                                   </div>
@@ -315,21 +317,21 @@ export default function ResultsPanel({
           <div className="text-6xl mb-4 animate-bounce">💄</div>
           <h3 className="text-xl font-semibold bg-gradient-to-r from-rose-700 to-pink-700 bg-clip-text text-transparent mb-2 animate-slide-up">
             {isDateFiltered 
-              ? `No Makeup Artists available on ${selectedDate}`
-              : "No Makeup Artist found"
+              ? t('makeupArtistList.results.noArtistsAvailable').replace('{date}', selectedDate)
+              : t('makeupArtistList.results.noArtistsFound')
             }
           </h3>
           <p className="text-gray-600 mb-6 animate-slide-up">
             {isDateFiltered 
-              ? "Try selecting a different date or check back later"
-              : "Try adjusting the filters or searching with different keywords"
+              ? t('makeupArtistList.results.tryDifferentDate')
+              : t('makeupArtistList.results.tryAdjustingFilters')
             }
           </p>
           <button
             onClick={() => window.location.reload()}
             className="px-6 py-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-xl hover:from-rose-600 hover:to-pink-700 hover:scale-105 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-rose-300 focus:ring-offset-2 transition-all duration-300 transform active:scale-95"
           >
-            Reset Search
+            {t('makeupArtistList.results.resetSearch')}
           </button>
         </div>
       )}
