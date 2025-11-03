@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { CommunityService } from "@/services/community";
 import { FilterState } from "./MainContent";
 import { useAuthCheck } from "../../utils/auth";
+import { useTranslate } from '@/i18n/hooks/useTranslate';
 
 interface LeftSidebarProps {
   userWalls: UserWallResponseDTO[]; // 🆕 danh sách user walls để hiển thị ở StoriesSectio
@@ -34,6 +35,7 @@ export default function LeftSidebar({
   setActiveFilter,
   resetPagination,
 }: Readonly<LeftSidebarProps>) {
+  const { t } = useTranslate('community');
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -196,7 +198,7 @@ export default function LeftSidebar({
           <p className="text-xs text-gray-500">@{currentUser.fullName}</p>
           {isOnMyWall && (
             <span className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-rose-700 bg-rose-100 px-2 py-0.5 rounded-full">
-              My Personal Wall
+              {t('sidebar.myPersonalWall')}
             </span>
           )}
         </div>
@@ -206,15 +208,15 @@ export default function LeftSidebar({
       <div className="flex justify-between mb-6 text-center">
         <div>
           <div className="font-semibold text-gray-900">{currentUser.followersCount}</div>
-          <div className="text-xs text-gray-500">Follower</div>
+          <div className="text-xs text-gray-500">{t('sidebar.follower')}</div>
         </div>
         <div>
           <div className="font-semibold text-gray-900">{currentUser.followingsCount}</div>
-          <div className="text-xs text-gray-500">Following</div>
+          <div className="text-xs text-gray-500">{t('sidebar.following')}</div>
         </div>
         <div>
           <div className="font-semibold text-gray-900">{currentUser.postsCount}</div>
-          <div className="text-xs text-gray-500">Post</div>
+          <div className="text-xs text-gray-500">{t('sidebar.post')}</div>
         </div>
       </div>
 
@@ -225,20 +227,20 @@ export default function LeftSidebar({
           onClick={handleGoFeed}
           className={`flex items-center w-full text-left px-3 py-2 rounded-lg ${!isOnAnyWall && navActive === "feed" ? "text-white bg-rose-600" : "text-gray-800 hover:bg-gray-100"}`}
         >
-          <Users className="w-5 h-5 mr-3" /> Feed
+          <Users className="w-5 h-5 mr-3" /> {t('sidebar.feed')}
         </button>
         <button
           type="button"
           onClick={handleGoFollowingFeed}
           className={`flex items-center w-full px-3 py-2 rounded-lg ${!isOnAnyWall && navActive === "following" ? "text-white bg-rose-600" : "text-gray-800 hover:bg-gray-100"}`}
         >
-          <Users className="w-5 h-5 mr-3" /> Following Users
+          <Users className="w-5 h-5 mr-3" /> {t('sidebar.followingUsers')}
         </button>
       </nav>
 
       {/* Trending Tags */}
       <div className="mt-8">
-        <h4 className="text-sm font-semibold text-gray-500 mb-3">TRENDING TAGS</h4>
+        <h4 className="text-sm font-semibold text-gray-500 mb-3">{t('sidebar.trendingTags')}</h4>
         <div className="space-y-3">
           {trendingTags.map((tag) => (
             <button
@@ -263,7 +265,7 @@ export default function LeftSidebar({
             onClick={() => window.location.href = '/auth/login'}
             className="bg-rose-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-rose-700 transition-colors"
           >
-            Login to experience
+            {t('sidebar.loginToExperience')}
           </button>
         </div>
       )}

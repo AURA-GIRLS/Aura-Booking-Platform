@@ -27,6 +27,7 @@ import {
 } from "@/components/lib/ui/command";
 import { Badge } from "@/components/lib/ui/badge";
 import { useAuthCheck } from '../../utils/auth';
+import { useTranslate } from '@/i18n/hooks/useTranslate';
 
 type Privacy = 'public' | 'friends' | 'private';
 
@@ -49,6 +50,7 @@ export default function PostCreator({
   currentUser: UserWallResponseDTO;
   fetchMinimalUser: () => Promise<void>;
 }>) {
+  const { t } = useTranslate('community');
   const [files, setFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -204,7 +206,7 @@ export default function PostCreator({
           <textarea
             value={postText}
             onChange={(e) => setPostText(e.target.value)}
-            placeholder="What's on your mind?"
+            placeholder={t('postCreator.placeholder')}
             className="w-full border-none resize-none text-gray-700 placeholder-gray-400 focus:outline-none"
             rows={3}
           />
@@ -231,7 +233,7 @@ export default function PostCreator({
           {selectedServices.length > 0 && (
             <div className="mt-2 space-y-2">
               <div className="text-sm text-gray-600 font-medium">
-                Selected services ({selectedServices.length}):
+                {t('postCreator.selectedServices')} ({selectedServices.length}):
               </div>
               <div className="space-y-2">
                 {selectedServices.map((service) => (
@@ -289,7 +291,7 @@ export default function PostCreator({
             <div className="flex space-x-4 ">
               <label className="flex items-center text-sm text-gray-500 hover:text-rose-600 cursor-pointer">
                 <Image className="w-5 h-5 mr-1" />
-                <span>Image/Video</span>
+                <span>{t('postCreator.imageVideo')}</span>
                 <input
                   type="file"
                   multiple
@@ -306,7 +308,7 @@ export default function PostCreator({
                 onClick={() => setTagDialogOpen(true)}
                 className="flex items-center text-sm text-gray-500 hover:text-rose-600"
               >
-                <Hash className="w-5 h-5 mr-1" /> Hashtag
+                <Hash className="w-5 h-5 mr-1" /> {t('postCreator.hashtag')}
               </button>
               <button
                 type="button"
@@ -316,15 +318,15 @@ export default function PostCreator({
                 <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 012 2v6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M8 6a2 2 0 00-2 2v6.002" />
                 </svg>
-                Services
+                {t('postCreator.services')}
               </button>
               <Select value={privacy} onValueChange={(v) => setPrivacy(v as Privacy)}>
                 <SelectTrigger className="w-[8rem] text-sm text-gray-500 border-none focus:outline-none">
-                  <SelectValue placeholder="Select privacy" />
+                  <SelectValue placeholder={t('postCreator.selectPrivacy')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="public">Public</SelectItem>
-                  <SelectItem value="private">Only Me</SelectItem>
+                  <SelectItem value="public">{t('postCreator.public')}</SelectItem>
+                  <SelectItem value="private">{t('postCreator.onlyMe')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -338,10 +340,10 @@ export default function PostCreator({
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Posting...
+                    {t('postCreator.posting')}
                   </>
                 ) : (
-                  "Share Post"
+                  t('postCreator.sharePost')
                 )}
               </button>
             </div>
@@ -355,7 +357,7 @@ export default function PostCreator({
             onClick={() => window.location.href = '/auth/login'}
             className="bg-rose-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-rose-700 transition-colors"
           >
-            Login to experience
+            {t('postCreator.loginToExperience')}
           </button>
         </div>
       )}
@@ -370,7 +372,7 @@ export default function PostCreator({
         }}
       >
         <CommandInput
-          placeholder="Search or create tag..."
+          placeholder={t('postCreator.searchOrCreateTag')}
           value={tagQuery}
           onValueChange={setTagQuery}
         />
@@ -379,13 +381,13 @@ export default function PostCreator({
             {sanitizeTag(tagQuery)
               ? (
                 <div className="px-3 py-2 text-sm text-muted-foreground">
-                  No tags found. Press Enter to create “{sanitizeTag(tagQuery)}”.
+                  {t('postCreator.noTagsFound')} "{sanitizeTag(tagQuery)}".
                 </div>
               )
-              : 'No tags found.'}
+              : t('postCreator.noTagsFoundSimple')}
           </CommandEmpty>
           {allTags.length > 0 && (
-            <CommandGroup heading="All tags">
+            <CommandGroup heading={t('postCreator.allTags')}>
               {allTags.map((t) => {
                 const name = t.name || t.slug;
                 const active = isSelected(name);
@@ -410,7 +412,7 @@ export default function PostCreator({
             !allTags.some(
               t => (t.name || t.slug).toLowerCase() === sanitizeTag(tagQuery).toLowerCase()
             ) && (
-              <CommandGroup heading="Create">
+              <CommandGroup heading={t('postCreator.create')}>
                 <CommandItem
                   className="hover:bg-gray-100 focus:bg-gray-100"
                   value={sanitizeTag(tagQuery)}
@@ -420,7 +422,7 @@ export default function PostCreator({
                   }}
                 >
                   <Plus className="mr-2 h-4 w-4" />
-                  Create “{sanitizeTag(tagQuery)}”
+                  {t('postCreator.createTag')} "{sanitizeTag(tagQuery)}"
                 </CommandItem>
               </CommandGroup>
             )}

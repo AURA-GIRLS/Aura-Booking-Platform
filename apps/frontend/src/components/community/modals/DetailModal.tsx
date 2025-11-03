@@ -28,6 +28,7 @@ export default function DetailModal({
     formatTimeAgo,
     isSelfUser,
     _currentUser,
+    onOpenUserWall,
 }: Readonly<{
     open: boolean;
     onOpenChange: (val: boolean) => void;
@@ -35,7 +36,8 @@ export default function DetailModal({
     getInitials: (name: string) => string;
     formatTimeAgo: (date: Date | string) => string;
     isSelfUser: (id?: string) => boolean;
-    _currentUser: UserWallResponseDTO;
+    _currentUser: UserWallResponseDTO | null;
+    onOpenUserWall?: (userId: string, userName?: string) => void;
 }>) {
     const [comments, setComments] = React.useState<UIComment[]>([]);
     const [commentInput, setCommentInput] = React.useState("");
@@ -511,11 +513,11 @@ export default function DetailModal({
                     {/* Main Comment Input */}
                     <div className="relative">
                         <div className="flex items-start space-x-3 mb-4">
-                            {_currentUser.avatarUrl ? (
+                            {_currentUser?.avatarUrl ? (
                                 <img src={_currentUser.avatarUrl} alt="avatar" className="w-8 h-8 rounded-full object-cover" />
                             ) : (
                                 <div className="w-8 h-8 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full flex items-center justify-center">
-                                    <span className="text-white text-xs font-semibold">{getInitials(_currentUser.fullName)}</span>
+                                    <span className="text-white text-xs font-semibold">{getInitials(_currentUser?.fullName || '')}</span>
                                 </div>
                             )}
                             <div className="flex-1">
@@ -577,7 +579,13 @@ export default function DetailModal({
                                     <div className="flex-1">
                                         <div className="bg-gray-50 rounded-lg px-3 py-2">
                                             <div className="text-sm font-medium text-gray-900">
-                                                {comment.authorName}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => onOpenUserWall?.(comment.authorId, comment.authorName)}
+                                                    className="text-gray-900 hover:underline"
+                                                >
+                                                    {comment.authorName}
+                                                </button>
                                                 {comment.authorRole && comment.authorRole.toUpperCase() === USER_ROLES.ARTIST && (
                                                     <span className="relative group ml-1 cursor-pointer">
                                                         <TooltipProvider>
@@ -637,7 +645,7 @@ export default function DetailModal({
                                                 <div className="text-sm text-gray-800">{comment.content}</div>
                                             )}
                                         </div>
-                                        
+                                     
                                         {/* Comment Actions */}
                                         <div className="flex items-center space-x-4 mt-1 text-xs text-gray-500">
                                             <span>{formatTimeAgo(comment.createdAt)}</span>
@@ -737,11 +745,11 @@ export default function DetailModal({
                                         {comment.showReplies && comment.replies  && (
                                             <>
                                              <div className="flex items-start space-x-3 mt-3">
-                                                {_currentUser.avatarUrl ? (
+                                                {_currentUser?.avatarUrl ? (
                                                     <img src={_currentUser.avatarUrl} alt="avatar" className="w-6 h-6 rounded-full object-cover" />
                                                 ) : (
                                                     <div className="w-6 h-6 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full flex items-center justify-center">
-                                                        <span className="text-white text-xs font-semibold">{getInitials(_currentUser.fullName)}</span>
+                                                        <span className="text-white text-xs font-semibold">{getInitials(_currentUser?.fullName || '')}</span>
                                                     </div>
                                                 )}
                                                 <div className="flex-1">
@@ -777,7 +785,13 @@ export default function DetailModal({
                                                         <div className="flex-1">
                                                             <div className="bg-gray-50 rounded-lg px-3 py-2">
                                                                 <div className="text-sm font-medium text-gray-900">
-                                                                    {reply.authorName}
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => onOpenUserWall?.(reply.authorId, reply.authorName)}
+                                                                        className="text-gray-900 hover:underline"
+                                                                    >
+                                                                        {reply.authorName}
+                                                                    </button>
                                                                     {reply.authorRole && reply.authorRole.toUpperCase() === USER_ROLES.ARTIST && (
                                                                         <span className="relative group ml-1 cursor-pointer">
                                                                             <TooltipProvider>
@@ -837,7 +851,7 @@ export default function DetailModal({
                                                                     <div className="text-sm text-gray-800">{reply.content}</div>
                                                                 )}
                                                             </div>
-                                                            
+                                                             
                                                             {/* Reply Actions */}
                                                             <div className="flex items-center space-x-4 mt-1 text-xs text-gray-500">
                                                                 <span>{formatTimeAgo(reply.createdAt)}</span>
