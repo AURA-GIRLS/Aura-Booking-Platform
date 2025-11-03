@@ -1,0 +1,71 @@
+{
+  "navigation": {
+    "about": "Giới thiệu",
+    "services": "Dịch vụ",
+    "portfolio": "Portfolio",
+    "reviews": "Đánh giá",
+    "contact": "Liên hệ",
+    "bookNow": "Đặt lịch ngay"
+  },
+  "hero": {
+    "verifiedProfessional": "Chuyên gia đã xác thực",
+    "licensedArtist": "Chuyên gia có giấy phép",
+    "availableToday": "Có sẵn hôm nay",
+    "professionalMakeupArtist": "Chuyên gia trang điểm chuyên nghiệp & Chuyên gia làm đẹp",
+    "yearsExperience": "Năm kinh nghiệm",
+    "happyClients": "Khách hàng hài lòng",
+    "awardsWon": "Giải thưởng đạt được",
+    "specialties": "Chuyên môn",
+    "about": "Giới thiệu",
+    "bookNow": "Đặt lịch ngay",
+    "message": "Tin nhắn"
+  },
+  "services": {
+    "title": "Dịch vụ & Gói dịch vụ",
+    "subtitle": "Chọn từ các dịch vụ trang điểm chuyên nghiệp được điều chỉnh theo nhu cầu của bạn",
+    "mostPopular": "Phổ biến nhất",
+    "bookNow": "Đặt lịch ngay"
+  },
+  "portfolio": {
+    "title": "Portfolio của tôi",
+    "subtitle": "Khám phá những tác phẩm mới nhất của tôi và thấy sự nghệ thuật và sự tỉ mỉ thể hiện đằng sau mỗi vẻ đẹp",
+    "all": "Tất cả",
+    "loading": "Đang tải portfolio...",
+    "noItemsFound": "Không tìm thấy mục portfolio nào",
+    "viewFullPortfolio": "Xem toàn bộ Portfolio",
+    "more": "thêm",
+    "description": "Mô tả",
+    "tags": "Thẻ"
+  },
+  "portfolioDetail": {
+    "close": "Đóng",
+    "description": "Mô tả",
+    "tags": "Thẻ"
+  },
+  "reviews": {
+    "title": "Khách hàng nói gì",
+    "subtitle": "Phản hồi thực tế từ cô dâu, người mẫu và khách hàng đã tin tưởng Elena với những khoảnh khắc đặc biệt của họ",
+    "loading": "Đang tải đánh giá...",
+    "averageRating": "Đánh giá trung bình",
+    "totalReviews": "Tổng số đánh giá",
+    "satisfactionRate": "Tỷ lệ hài lòng",
+    "client": "Khách hàng",
+    "customer": "Khách hàng",
+    "noReviewsMessage": "Hãy là người đầu tiên để lại đánh giá sau trải nghiệm của bạn.",
+    "satisfiedClientsMessage": "Hãy tham gia hàng trăm khách hàng hài lòng đã tin tưởng Elena với những khoảnh khắc quan trọng nhất của họ. Đặt lịch tư vấn ngay hôm nay!"
+  },
+  "categories": {
+    "bridal": "Cô dâu",
+    "party": "Tiệc tùng",
+    "weddingGuest": "Khách mời đám cưới",
+    "graduation": "Tốt nghiệp",
+    "daily": "Hàng ngày",
+    "prom": "Dạ hội",
+    "photoshoot": "Chụp ảnh",
+    "specialEvent": "Sự kiện đặc biệt"
+  },
+  "notFound": {
+    "title": "Không tìm thấy chuyên gia",
+    "backToArtists": "Quay lại danh sách chuyên gia"
+  }
+}

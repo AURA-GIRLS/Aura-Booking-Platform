@@ -17,8 +17,10 @@ import { Separator } from '../lib/ui/separator';
 import DeleteConfirmDialog from '../generalUI/DeleteConfirmDialog';
 import ShareDialog from './ShareDialog';
 import { useAuthCheck } from '../../utils/auth';
+import { useTranslate } from '@/i18n/hooks/useTranslate';
 
-
+export default function PostsFeed({ posts, setPosts, currentUser: _currentUser, fetchMinimalUser, onOpenUserWall }: Readonly<{ posts: PostResponseDTO[]; setPosts: React.Dispatch<React.SetStateAction<PostResponseDTO[]>>; currentUser: UserWallResponseDTO|null; fetchMinimalUser: () => Promise<void>; onOpenUserWall?: (userId: string, userName?: string) => void }>) {
+  const { t } = useTranslate('community');
 export default function PostsFeed({ 
   posts, 
   setPosts, 
@@ -83,6 +85,7 @@ export default function PostsFeed({
       }
     });
   };
+
 
 
   const getInitials = (name: string|undefined) => name?.split(' ').map(n => n[0]).join('').toUpperCase();

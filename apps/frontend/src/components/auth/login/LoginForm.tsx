@@ -7,6 +7,7 @@ import { UserIcon } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
 import { authService } from '@/services/auth';
 import { config } from '@/config/index';
+import { useTranslate } from '@/i18n/hooks/useTranslate';
 import { initSocket, getSocket } from '@/config/socket';
 
 const LoginForm: React.FC = () => {
@@ -18,6 +19,7 @@ const LoginForm: React.FC = () => {
 	const [error, setError] = useState('');
 	const [success, setSuccess] = useState('');
 	const googleBtnRef = useRef<HTMLDivElement>(null);
+	const { t } = useTranslate('auth');
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		setForm({ ...form, [e.target.name]: e.target.value });
@@ -38,7 +40,7 @@ const LoginForm: React.FC = () => {
 				// Dispatch custom event to notify components about user update
 				window.dispatchEvent(new CustomEvent('userUpdated'));
 
-				setSuccess('Login successful!');
+				setSuccess(t('login.loginSuccessful'));
 				// console.log('Logged in user:', res.data.user.role);
 				if(res.data && res.data.user.role === 'ARTIST') {
 					//need change redirect to artist dashboard
@@ -52,10 +54,10 @@ const LoginForm: React.FC = () => {
 				const socket = getSocket();
 				socket?.emit("auth:user", res.data.user._id);
 			} else {
-				setError(res.message || 'Login failed');
+				setError(res.message || t('login.loginFailed'));
 			}
 		} catch (err: any) {
-			setError(err.message || 'Login failed');
+			setError(err.message || t('login.loginFailed'));
 		} finally {
 			setLoading(false);
 		}
@@ -89,7 +91,7 @@ const LoginForm: React.FC = () => {
 							// Dispatch custom event to notify components about user update
 							window.dispatchEvent(new CustomEvent('userUpdated'));
 							
-							setSuccess('Login successful!');
+							setSuccess(t('login.loginSuccessful'));
 							
 							// Small delay before redirect
 							setTimeout(() => {
@@ -100,10 +102,10 @@ const LoginForm: React.FC = () => {
 								}
 							}, 100);
 						} else {
-							setError(res.message || 'Google login failed');
+							setError(res.message || t('login.googleLoginFailed'));
 						}
 					} catch (err: any) {
-						setError(err.message || 'Google login failed');
+						setError(err.message || t('login.googleLoginFailed'));
 					} finally {
 						setLoading(false);
 					}
@@ -117,7 +119,7 @@ const LoginForm: React.FC = () => {
 				shape: 'pill',
 			});
 		}
-	}, []);
+	}, [t]);
 
 				return (
 					<div className="min-h-screen bg-transparent flex items-center justify-center p-4">
@@ -155,10 +157,10 @@ const LoginForm: React.FC = () => {
 								</div>
 								<div>
 									<h2 className="text-2xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
-										Welcome Back!
+										{t('login.title')}
 									</h2>
 									<p className="text-gray-600 text-sm mt-2">
-										Sign in to book makeup and manage your beauty schedule
+										{t('login.subtitle')}
 									</p>
 								</div>
 							</div>
@@ -166,7 +168,7 @@ const LoginForm: React.FC = () => {
 							<div className="space-y-4">
 								<div>
 									<Label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-										Email address
+										{t('login.emailLabel')}
 									</Label>
 									<Input
 										id="email"
@@ -175,13 +177,13 @@ const LoginForm: React.FC = () => {
 										value={form.email}
 										onChange={handleChange}
 										required
-										placeholder="example@gmail.com"
+										placeholder={t('login.emailPlaceholder')}
 										className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all duration-200"
 									/>
 								</div>
 								<div>
 									<Label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-										Password
+										{t('login.passwordLabel')}
 									</Label>
 									<Input
 										id="password"
@@ -190,7 +192,7 @@ const LoginForm: React.FC = () => {
 										value={form.password}
 										onChange={handleChange}
 										required
-										placeholder="Enter your password"
+										placeholder={t('login.passwordPlaceholder')}
 										className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all duration-200"
 									/>
 								</div>
@@ -199,10 +201,10 @@ const LoginForm: React.FC = () => {
 								<div className="flex items-center justify-between text-sm">
 									<label className="flex items-center gap-2 text-gray-600">
 										<input type="checkbox" className="w-4 h-4 text-rose-500 border-gray-300 rounded focus:ring-rose-500" />
-										Remember me
+										{t('login.rememberMe')}
 									</label>
 									<a href="/auth/forgot-password" className="text-rose-600 hover:text-rose-700 font-medium hover:underline transition-colors">
-										Forgot Password?
+										{t('login.forgotPassword')}
 									</a>
 								</div>
 							</div>
@@ -215,10 +217,10 @@ const LoginForm: React.FC = () => {
 								{loading ? (
 									<div className="flex items-center justify-center gap-2">
 										<div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-										Signing in...
+										{t('login.signingIn')}
 									</div>
 								) : (
-									'Sign In'
+									t('login.signInButton')
 								)}
 							</Button>
 
@@ -228,7 +230,7 @@ const LoginForm: React.FC = () => {
 									<div className="w-full border-t border-gray-200"></div>
 								</div>
 								<div className="relative flex justify-center text-sm">
-									<span className="px-2 bg-white text-gray-500">Or continue with</span>
+									<span className="px-2 bg-white text-gray-500">{t('login.orContinueWith')}</span>
 								</div>
 							</div>
 
@@ -240,15 +242,15 @@ const LoginForm: React.FC = () => {
 							{/* Footer Links */}
 							<div className="text-center space-y-2">
 								<div className="text-sm text-gray-600">
-									Don't have an account?{' '}
+									{t('login.noAccount')}{' '}
 									<a href="/auth/register" className="text-rose-600 hover:text-rose-700 font-medium hover:underline transition-colors">
-										Sign up
+										{t('login.signUp')}
 									</a>
 								</div>
 								<div className="text-sm text-gray-600">
-									Haven't received verification email?{' '}
+									{t('login.haventReceivedEmail')}{' '}
 									<a href="/auth/resend-verification" className="text-rose-600 hover:text-rose-700 font-medium hover:underline transition-colors">
-										Resend
+										{t('login.resend')}
 									</a>
 								</div>
 							</div>

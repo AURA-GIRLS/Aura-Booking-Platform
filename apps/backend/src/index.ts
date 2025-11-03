@@ -11,6 +11,7 @@ import { errorHandler } from 'middleware/error.middleware';
 import { connectRedis } from 'config/redis';
 import http from "http";
 import { initSocket } from 'config/socket';
+import { startReminderCron } from './jobs/reminder.cron';
 
 const app = express();
 const server = http.createServer(app);
@@ -38,6 +39,9 @@ async function start() {
     await connectRedis();
     // Initialize Socket.IO
     initSocket(server);
+    
+    // Start reminder cron job
+    startReminderCron();
     
     // Start server
     server.listen(config.port, () => {

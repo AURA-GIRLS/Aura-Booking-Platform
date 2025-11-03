@@ -1,3 +1,4 @@
+import { useTranslate } from "@/i18n/hooks/useTranslate";
 import React from "react";
 import { MapPin, Star } from "lucide-react";
 import { SERVICE_ADDON_LABELS } from "../../constants/constants";
@@ -13,6 +14,7 @@ interface ArtistCardProps {
 }
 
 export default function ArtistCard({ artist, onViewProfile, onBookService }: ArtistCardProps) {
+  const { t } = useTranslate('artists');
   const { checkAuthAndExecute } = useAuthCheck();
   
   const {
@@ -71,7 +73,7 @@ export default function ArtistCard({ artist, onViewProfile, onBookService }: Art
                   {fullName}
                 </h3>
                 <p className="text-gray-600 text-sm mb-1">
-                  {bio || "Professional Makeup Artist & Beauty Expert"}
+                  {bio || t('makeupArtistList.artistCard.professionalBio')}
                 </p>
                 <span className="inline-flex items-center  py-1 rounded-full text-xs font-medium hover:from-rose-200 hover:to-pink-200  gap-2">
                   <div className="flex items-center gap-1">
@@ -83,10 +85,10 @@ export default function ArtistCard({ artist, onViewProfile, onBookService }: Art
                     <span className="font-bold text-gray-900">
                       {ratingAverage.toFixed(1)}
                     </span>
-                    <span className="text-gray-500">({feedbackCount} reviews)</span>
+                    <span className="text-gray-500">({feedbackCount} {t('makeupArtistList.artistCard.reviews')})</span>
                   </div>
                     <span className="bg-rose-600 text-white text-xs px-2 py-1 rounded-sm font-semibold">
-                      Verified
+                      {t('makeupArtistList.artistCard.verified')}
                     </span>
                 </span>
               </div>
@@ -105,7 +107,7 @@ export default function ArtistCard({ artist, onViewProfile, onBookService }: Art
                 onClick={() => onViewProfile(_id, 'portfolio')}
                 className="px-3 py-2 bg-white border border-rose-300 text-rose-600 text-xs font-medium rounded-sm hover:bg-rose-50 hover:border-rose-300 transition-all duration-200"
               >
-                View Portfolio
+                {t('makeupArtistList.artistCard.viewPortfolio')}
               </button>
             </div>
           </div>
@@ -116,7 +118,7 @@ export default function ArtistCard({ artist, onViewProfile, onBookService }: Art
       {servicePreview.length > 0 && (
         <div className="border-t border-gray-100 p-6 pt-4">
           <h4 className="text-lg font-semibold text-gray-900 mb-4 group-hover:text-gray-700 transition-colors duration-300">
-            Featured services ({totalServices} packages)
+            {t('makeupArtistList.artistCard.featuredServices').replace('{count}', totalServices.toString())}
           </h4>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -132,7 +134,7 @@ export default function ArtistCard({ artist, onViewProfile, onBookService }: Art
                         className="w-16 h-16 rounded-lg object-cover border border-rose-200"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
-                          target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjRkVGMkY0Ii8+CjxwYXRoIGQ9Ik0yMCAyMEg0NFY0NEgyMFYyMFoiIHN0cm9rZT0iI0Y0M0Y1RSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPHA+dGggZD0iTTI4IDI4TDM2IDM2TDI4IDI4WiIgc3Ryb2tlPSIjRjQzRjVFIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K';
+                          target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjZGVGMkY0Ii8+CjxwYXRoIGQ9Ik0yMCAyMEg0NFY0NEgyMFYyMFoiIHN0cm9rZT0iI0Y0M0Y1RSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPHA+dGggZD0iTTI4IDI4TDM2IDM2TDI4IDI4WiIgc3Ryb2tlPSIjRjQzRjVFIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K';
                         }}
                       />
                     ) : (
@@ -147,21 +149,21 @@ export default function ArtistCard({ artist, onViewProfile, onBookService }: Art
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <p className="font-medium text-gray-900 text-sm">{service.name}</p>
-                        <p className="text-xs text-gray-600 line-clamp-2 mt-1">Professional makeup service</p>
+                        <p className="text-xs text-gray-600 line-clamp-2 mt-1">{t('makeupArtistList.results.professionalMakeupService')}</p>
                         <div className="flex items-center justify-between mt-2">
                           <div>
                             <p className="text-sm text-rose-600 font-medium">
                               {ArtistService.formatVND(service.price)}
                             </p>
                             <p className="text-xs text-gray-500">
-                              {service.duration} mins
+                              {service.duration} {t('makeupArtistList.results.mins')}
                             </p>
                           </div>
                           <button
                             onClick={() => handleBookService(_id, service._id)}
                             className="px-3 py-1 bg-rose-500 text-white text-xs rounded-md hover:bg-rose-600 transition-colors flex-shrink-0"
                           >
-                            Book
+                            {t('makeupArtistList.artistCard.book')}
                           </button>
                         </div>
                       </div>

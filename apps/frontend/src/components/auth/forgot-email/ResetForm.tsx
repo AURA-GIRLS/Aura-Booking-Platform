@@ -7,9 +7,10 @@ import { Input } from '@/components/lib/ui/input';
 import { Button } from '@/components/lib/ui/button';
 import { Label } from '@radix-ui/react-label';
 import { LockIcon } from 'lucide-react';
-
+import { useTranslate } from '@/i18n/hooks/useTranslate';
 
 const ResetForm: React.FC = () => {
+	const { t, locale } = useTranslate('auth');
 	const [password, setPassword] = useState('');
 	const [confirm, setConfirm] = useState('');
 	const [error, setError] = useState('');
@@ -21,18 +22,18 @@ const ResetForm: React.FC = () => {
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (password.length < 6) {
-			setError('Password must be at least 6 characters');
+			setError(t('resetPassword.passwordMinLength'));
 			return;
 		}
 		if (password !== confirm) {
-			setError('Passwords do not match');
+			setError(t('resetPassword.passwordsNotMatch'));
 			return;
 		}
 		setError('');
 		setLoading(true);
 		const token = searchParams.get('token');
 		if (!token) {
-			setError('Missing or invalid token.');
+			setError(t('resetPassword.missingToken'));
 			setLoading(false);
 			return;
 		}
@@ -42,10 +43,10 @@ const ResetForm: React.FC = () => {
 				setSuccess(true);
 				setTimeout(() => router.push('/auth/login'), 2000);
 			} else {
-				setError(res.message || 'Reset password failed');
+				setError(res.message || t('resetPassword.resetFailed'));
 			}
 		} catch (err: any) {
-			setError(err.message || 'Reset password failed');
+			setError(err.message || t('resetPassword.resetFailed'));
 		} finally {
 			setLoading(false);
 		}
@@ -69,10 +70,10 @@ const ResetForm: React.FC = () => {
 						</div>
 						<div>
 							<h2 className="text-2xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
-								Reset Password
+								{t('resetPassword.title')}
 							</h2>
 							<p className="text-gray-600 text-sm mt-2">
-								Enter your new password below
+								{t('resetPassword.subtitle')}
 							</p>
 						</div>
 					</div>
@@ -84,7 +85,7 @@ const ResetForm: React.FC = () => {
 					)}
 					{success && (
 						<div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-xl text-sm text-center">
-							Password reset successfully! Redirecting...
+							{t('resetPassword.resetSuccess')}
 						</div>
 					)}
 
@@ -92,7 +93,7 @@ const ResetForm: React.FC = () => {
 					<div className="space-y-4">
 						<div>
 							<Label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-								New Password
+								{t('resetPassword.newPasswordLabel')}
 							</Label>
 							<Input
 								id="password"
@@ -101,13 +102,13 @@ const ResetForm: React.FC = () => {
 								value={password}
 								onChange={e => setPassword(e.target.value)}
 								required
-								placeholder="Enter new password"
+								placeholder={t('resetPassword.newPasswordPlaceholder')}
 								className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all duration-200"
 							/>
 						</div>
 						<div>
 							<Label htmlFor="confirm" className="block text-sm font-medium text-gray-700 mb-2">
-								Confirm Password
+								{t('resetPassword.confirmPasswordLabel')}
 							</Label>
 							<Input
 								id="confirm"
@@ -116,7 +117,7 @@ const ResetForm: React.FC = () => {
 								value={confirm}
 								onChange={e => setConfirm(e.target.value)}
 								required
-								placeholder="Confirm new password"
+								placeholder={t('resetPassword.confirmPasswordPlaceholder')}
 								className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all duration-200"
 							/>
 						</div>
@@ -131,19 +132,19 @@ const ResetForm: React.FC = () => {
 						{loading ? (
 							<div className="flex items-center justify-center gap-2">
 								<div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-								Resetting...
+								{t('resetPassword.resetting')}
 							</div>
 						) : (
-							'Reset Password'
+							t('resetPassword.resetPasswordButton')
 						)}
 					</Button>
 
 					{/* Footer Link */}
 					<div className="text-center">
 						<div className="text-sm text-gray-600">
-							Remember your password?{' '}
+							{t('resetPassword.rememberPassword')}{' '}
 							<a href="/auth/login" className="text-rose-600 hover:text-rose-700 font-medium hover:underline transition-colors">
-								Sign In
+								{t('resetPassword.signIn')}
 							</a>
 						</div>
 					</div>

@@ -6,6 +6,7 @@ import FeedbackCard from "./FeedbackCard";
 import { deleteFeedback, getMyFeedback } from "../../lib/api";
 import { StarIcon, XIcon } from "lucide-react";
 import Notification from "../generalUI/Notification";
+import { useTranslate } from "@/i18n/hooks/useTranslate";
 
 type BookingLite = {
   _id: string;
@@ -16,6 +17,7 @@ type BookingLite = {
 const COMPLETED_SET = new Set(["COMPLETED"]);
 
 export default function FeedbackActions({ booking }: { booking: BookingLite }) {
+  const { t } = useTranslate('feedback');
   const isCompleted = useMemo(() => COMPLETED_SET.has((booking?.status || "").toUpperCase()), [booking?.status]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -77,14 +79,14 @@ export default function FeedbackActions({ booking }: { booking: BookingLite }) {
   const handleDelete = async () => {
     try {
       if (!feedback?._id) return;
-      if (!window.confirm("Are you sure you want to delete your feedback? This action cannot be undone.")) return;
+      if (!window.confirm(t('feedbackActions.deleteConfirm'))) return;
       await deleteFeedback(feedback._id);
       setFeedback(null);
       setMode("create");
-      showNotification("success", "Feedback deleted successfully!");
+      showNotification("success", t('feedbackActions.deleteSuccess'));
     } catch (e: any) {
       console.error(e);
-      showNotification("error", e?.message || e?.code || "Failed to delete feedback. Please try again.");
+      showNotification("error", e?.message || e?.code || t('feedbackActions.deleteFailed'));
     }
   };
 
@@ -112,14 +114,14 @@ export default function FeedbackActions({ booking }: { booking: BookingLite }) {
             type="button"
             onClick={handleOpenView}
             className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 px-4 text-sm font-semibold text-white shadow-md transition-transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-pink-400/80 focus:ring-offset-2"            >
-            View feedback
+            {t('feedbackActions.viewFeedback')}
           </button>
       ) : (
         <button
           type="button"
           onClick={handleOpenCreate}
           className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 px-4 text-sm font-semibold text-white shadow-md transition-transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-pink-400/80 focus:ring-offset-2"        >
-          Give Feedback
+          {t('feedbackActions.giveFeedback')}
         </button>
       )}
 
@@ -133,7 +135,7 @@ export default function FeedbackActions({ booking }: { booking: BookingLite }) {
           <div className="relative z-10 w-full max-w-lg rounded-3xl bg-white/70 p-6 shadow-2xl backdrop-blur-xl">
             <div className="mb-2 flex justify-end">
               {/* <h2 className="text-xl font-bold text-gray-800">
-                {mode === "edit" ? "Edit Feedback" : mode === "view" ? "Your Feedback" : "Give Feedback"}
+                {mode === "edit" ? "Edit Feedback" : mode === "view" ? "Your Feedback" : "{t('feedbackActions.giveFeedback')}"}
               </h2> */}
               <button
                 aria-label="Close"
@@ -161,7 +163,7 @@ export default function FeedbackActions({ booking }: { booking: BookingLite }) {
                   const wasEdit = mode === "edit";
                   setFeedback(res);
                   setMode("view");
-                  showNotification("success", wasEdit ? "Feedback updated successfully!" : "Feedback created successfully!");
+                  showNotification("success", wasEdit ? t('feedbackActions.updateSuccess') : t('feedbackActions.createSuccess'));
                   // Do not close on success, user should see the result
                 }}
                 onCancel={() => {

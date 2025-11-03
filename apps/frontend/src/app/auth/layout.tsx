@@ -1,3 +1,4 @@
+import LanguageSwitcher from '@/components/generalUI/LanguageSwitcher';
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -8,6 +9,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <div className="absolute top-40 right-20 w-40 h-40 bg-pink-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse animation-delay-2000"></div>
         <div className="absolute bottom-20 left-1/3 w-36 h-36 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse animation-delay-4000"></div>
         <div className="absolute bottom-40 right-1/4 w-28 h-28 bg-indigo-200 rounded-full mix-blend-multiply filter blur-xl opacity-60 animate-pulse animation-delay-6000"></div>
+      </div>
+      
+      {/* Language Switcher */}
+      <div className="absolute top-6 right-6 z-20">
+        <LanguageSwitcher />
       </div>
       
       <div className="w-full max-w-md relative z-10">{children}</div>

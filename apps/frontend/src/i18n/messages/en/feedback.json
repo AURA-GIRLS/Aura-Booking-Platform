@@ -1,0 +1,32 @@
+{
+  "feedbackActions": {
+    "viewFeedback": "View feedback",
+    "giveFeedback": "Give Feedback",
+    "deleteConfirm": "Are you sure you want to delete your feedback? This action cannot be undone.",
+    "deleteSuccess": "Feedback deleted successfully!",
+    "deleteFailed": "Failed to delete feedback. Please try again.",
+    "updateSuccess": "Feedback updated successfully!",
+    "createSuccess": "Feedback created successfully!"
+  },
+  "feedbackCard": {
+    "title": "Your Feedback",
+    "subtitle": "Thanks for your review! Here is what you shared with us.",
+    "noComments": "No additional comments provided.",
+    "helpsImprove": "Your feedback helps us improve the experience for everyone 💖",
+    "delete": "Delete",
+    "edit": "Edit"
+  },
+  "feedbackForm": {
+    "title": "Rate your experience",
+    "subtitle": "We highly value your feedback! Kindly take a moment to rate your experience and provide us with your valuable feedback.",
+    "commentPlaceholder": "Tell us about your experience!",
+    "ratingRequired": "Please select a rating.",
+    "cancel": "Cancel",
+    "send": "Send",
+    "saveChanges": "Save Changes",
+    "sending": "Sending...",
+    "updateSuccess": "Feedback updated successfully.",
+    "createSuccess": "Feedback created successfully.",
+    "requestFailed": "Request failed"
+  }
+}

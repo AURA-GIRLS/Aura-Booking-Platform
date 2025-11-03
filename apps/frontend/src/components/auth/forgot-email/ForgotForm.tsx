@@ -5,6 +5,7 @@ import { Button } from '@/components/lib/ui/button';
 import { Label } from '@radix-ui/react-label';
 import { authService } from '@/services/auth';
 import { MailIcon } from 'lucide-react';
+import { useTranslate } from '@/i18n/hooks/useTranslate';
 
 const ForgotForm: React.FC = () => {
 	const [email, setEmail] = useState('');
@@ -12,6 +13,8 @@ const ForgotForm: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(''); 
+    const { t } = useTranslate('auth');
+
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		 setLoading(true);
@@ -20,12 +23,12 @@ const ForgotForm: React.FC = () => {
         try {
             const res = await authService.forgotPassword({ email });
             if (res.success) {
-                setSuccess('Reset email sent!');
+                setSuccess(t('forgotPassword.resetEmailSent'));
             } else {
-                setError(res.message || 'Failed to send reset email');
+                setError(res.message || t('forgotPassword.failedToSendReset'));
             }
         } catch (err: any) {
-            setError(err.message || 'Failed to send reset email');
+            setError(err.message || t('forgotPassword.failedToSendReset'));
         } finally {
             setLoading(false);
         }
@@ -49,10 +52,10 @@ const ForgotForm: React.FC = () => {
 						</div>
 						<div>
 							<h2 className="text-2xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
-								Forgot Password?
+								{t('forgotPassword.title')}
 							</h2>
 							<p className="text-gray-600 text-sm mt-2">
-								Enter your email and we'll send a reset link instantly
+								{t('forgotPassword.subtitle')}
 							</p>
 						</div>
 					</div>
@@ -71,7 +74,7 @@ const ForgotForm: React.FC = () => {
 					{/* Form Field */}
 					<div>
 						<Label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-							Email address
+							{t('forgotPassword.emailLabel')}
 						</Label>
 						<Input
 							id="email"
@@ -80,7 +83,7 @@ const ForgotForm: React.FC = () => {
 							value={email}
 							onChange={e => setEmail(e.target.value)}
 							required
-							placeholder="example@gmail.com"
+							placeholder={t('forgotPassword.emailPlaceholder')}
 							className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all duration-200"
 						/>
 					</div>
@@ -94,19 +97,19 @@ const ForgotForm: React.FC = () => {
 						{loading ? (
 							<div className="flex items-center justify-center gap-2">
 								<div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-								Sending...
+								{t('forgotPassword.sending')}
 							</div>
 						) : (
-							'Send Reset Link'
+							t('forgotPassword.sendResetButton')
 						)}
 					</Button>
 
 					{/* Footer Link */}
 					<div className="text-center">
 						<div className="text-sm text-gray-600">
-							Remember your password?{' '}
+							{t('forgotPassword.rememberPassword')}{' '}
 							<a href="/auth/login" className="text-rose-600 hover:text-rose-700 font-medium hover:underline transition-colors">
-								Sign In
+								{t('forgotPassword.signIn')}
 							</a>
 						</div>
 					</div>

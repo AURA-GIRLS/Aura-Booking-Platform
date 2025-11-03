@@ -10,6 +10,7 @@ import { getPublicPortfolios } from "@/lib/api/portfolio";
 import type { Portfolio } from "@/types/portfolio";
 import { PORTFOLIO_CATEGORY_LABELS } from "@/constants/index";
 import PortfolioDetailDialog from "./PortfolioDetailDialog";
+import { useTranslate } from "@/i18n/hooks/useTranslate";
 
 // Category colors mapping - giống PortfolioCard
 const CATEGORY_COLORS: Record<string, string> = {
@@ -32,18 +33,20 @@ export default function PortfolioSection() {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedPortfolio, setSelectedPortfolio] = useState<Portfolio | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  
+  const { t, loading: i18nLoading } = useTranslate('portfolio');
 
   // Categories - giống PortfolioManagement
   const CATEGORIES = [
-    { value: "", label: "All" },
-    { value: "BRIDAL", label: PORTFOLIO_CATEGORY_LABELS.BRIDAL },
-    { value: "PARTY", label: PORTFOLIO_CATEGORY_LABELS.PARTY },
-    { value: "WEDDING_GUEST", label: PORTFOLIO_CATEGORY_LABELS.WEDDING_GUEST },
-    { value: "GRADUATION", label: PORTFOLIO_CATEGORY_LABELS.GRADUATION },
-    { value: "DAILY", label: PORTFOLIO_CATEGORY_LABELS.DAILY },
-    { value: "PROM", label: PORTFOLIO_CATEGORY_LABELS.PROM },
-    { value: "PHOTOSHOOT", label: PORTFOLIO_CATEGORY_LABELS.PHOTOSHOOT },
-    { value: "SPECIAL_EVENT", label: PORTFOLIO_CATEGORY_LABELS.SPECIAL_EVENT },
+    { value: "", label: t('portfolio.all') },
+    { value: "BRIDAL", label: t('categories.bridal') },
+    { value: "PARTY", label: t('categories.party') },
+    { value: "WEDDING_GUEST", label: t('categories.weddingGuest') },
+    { value: "GRADUATION", label: t('categories.graduation') },
+    { value: "DAILY", label: t('categories.daily') },
+    { value: "PROM", label: t('categories.prom') },
+    { value: "PHOTOSHOOT", label: t('categories.photoshoot') },
+    { value: "SPECIAL_EVENT", label: t('categories.specialEvent') },
   ];
 
   // Fetch portfolios from MongoDB
@@ -86,14 +89,25 @@ export default function PortfolioSection() {
     setSelectedPortfolio(null);
   };
 
+  if (i18nLoading) {
+    return (
+      <section id="portfolio" className="py-16 bg-gradient-to-br from-rose-50 to-pink-50">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-rose-500"></div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section id="portfolio" className="py-16 bg-gradient-to-br from-rose-50 to-pink-50">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-black mb-4">My Portfolio</h2>
+          <h2 className="text-3xl font-bold text-black mb-4">{t('portfolio.title')}</h2>
           <p className="text-gray-600 text-lg">
-            Explore my latest work and see the artistry and attention to detail that showcases the artistry and skill
-            behind every look
+            {t('portfolio.subtitle')}
           </p>
         </div>
 
@@ -119,7 +133,7 @@ export default function PortfolioSection() {
         {loading && (
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-rose-500"></div>
-            <p className="mt-4 text-gray-600">Loading portfolios...</p>
+            <p className="mt-4 text-gray-600">{t('portfolio.loading')}</p>
           </div>
         )}
 
@@ -130,7 +144,7 @@ export default function PortfolioSection() {
               portfolios.map((item) => {
                 const categoryColor = CATEGORY_COLORS[item.category || "DAILY"] || "bg-rose-500";
                 const categoryLabel = item.category 
-                  ? PORTFOLIO_CATEGORY_LABELS[item.category as keyof typeof PORTFOLIO_CATEGORY_LABELS] 
+                  ? t(`categories.${item.category.toLowerCase()}`) 
                   : "Portfolio";
 
                 return (
@@ -152,7 +166,7 @@ export default function PortfolioSection() {
                       {/* Multiple images indicator */}
                       {item.images && item.images.length > 1 && (
                         <div className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
-                          +{item.images.length - 1} more
+                          +{item.images.length - 1} {t('portfolio.more')}
                         </div>
                       )}
                     </div>
@@ -162,7 +176,7 @@ export default function PortfolioSection() {
                       </Badge>
                       <h3 className="font-semibold text-black mb-1 line-clamp-1 text-sm">{item.title}</h3>
                       <p className="text-gray-600 text-xs line-clamp-2 mb-2">{item.description || ""}</p>
-                      
+                       
                       {/* Tags */}
                       {item.tags && item.tags.length > 0 && (
                         <div className="flex flex-wrap gap-1">
@@ -189,14 +203,14 @@ export default function PortfolioSection() {
               // Empty state
               <div className="col-span-full text-center py-12">
                 <Camera className="w-16 h-16 text-rose-300 mx-auto mb-4" />
-                <p className="text-gray-600">No portfolio items found</p>
+                <p className="text-gray-600">{t('portfolio.noItemsFound')}</p>
               </div>
             )}
           </div>
         )}
 
         <div className="text-center mt-8">
-          <Button className="bg-rose-500 hover:bg-rose-600 text-white">View Full Portfolio</Button>
+          <Button className="bg-rose-500 hover:bg-rose-600 text-white">{t('portfolio.viewFullPortfolio')}</Button>
         </div>
       </div>
 

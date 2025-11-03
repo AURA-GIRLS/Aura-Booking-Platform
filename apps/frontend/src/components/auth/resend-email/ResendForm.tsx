@@ -6,12 +6,14 @@ import { Button } from '@/components/lib/ui/button';
 import { Label } from '@radix-ui/react-label';
 import { authService } from '@/services/auth';
 import { MailCheck, Send } from 'lucide-react';
+import { useTranslate } from '@/i18n/hooks/useTranslate';
 
 const ResendForm: React.FC = () => {
 	const [email, setEmail] = useState('');
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState('');
 	const [success, setSuccess] = useState('');
+	const { t } = useTranslate('auth');
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -21,12 +23,12 @@ const ResendForm: React.FC = () => {
 		try {
 			const res = await authService.sendEmailVerification({ email });
 			if (res.success) {
-				setSuccess('Verification email sent successfully!');
+				setSuccess(t('resendVerification.verificationEmailSent'));
 			} else {
-				setError(res.message || 'Failed to send verification email');
+				setError(res.message || t('resendVerification.failedToSendVerification'));
 			}
 		} catch (err: any) {
-			setError(err.message || 'Failed to send verification email');
+			setError(err.message || t('resendVerification.failedToSendVerification'));
 		} finally {
 			setLoading(false);
 		}
@@ -45,10 +47,10 @@ const ResendForm: React.FC = () => {
 						<div className="absolute -top-1 -right-1 w-4 h-4 bg-rose-400 rounded-full animate-ping"></div>
 					</div>
 					<h1 className="text-2xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent mb-2">
-						Resend Verification
+						{t('resendVerification.title')}
 					</h1>
 					<p className="text-gray-600 text-sm">
-						Enter your email to receive a new verification link
+						{t('resendVerification.subtitle')}
 					</p>
 				</div>
 
@@ -56,7 +58,7 @@ const ResendForm: React.FC = () => {
 				<form onSubmit={handleSubmit} className="space-y-6">
 					<div className="space-y-2">
 						<Label htmlFor="email" className="text-sm font-medium text-gray-700">
-							Email Address
+							{t('resendVerification.emailLabel')}
 						</Label>
 						<Input
 							id="email"
@@ -65,7 +67,7 @@ const ResendForm: React.FC = () => {
 							value={email}
 							onChange={e => setEmail(e.target.value)}
 							required
-							placeholder="Enter your email address"
+							placeholder={t('resendVerification.emailPlaceholder')}
 							className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all duration-200"
 						/>
 					</div>
@@ -91,26 +93,26 @@ const ResendForm: React.FC = () => {
 						{loading ? (
 							<div className="flex items-center justify-center gap-2">
 								<div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-								Sending...
+								{t('resendVerification.sending')}
 							</div>
 						) : (
 							<div className="flex items-center justify-center gap-2">
 								<Send className="w-5 h-5" />
-								Resend Email
+								{t('resendVerification.resendEmailButton')}
 							</div>
 						)}
 					</Button>
 
 					{/* Footer Links */}
 					<div className="text-center text-sm text-gray-600">
-						Remember your password?{' '}
+						{t('resendVerification.rememberPassword')}{' '}
 						<a href="/auth/login" className="text-rose-600 hover:text-rose-700 font-medium hover:underline transition-colors">
-							Sign In
+							{t('resendVerification.signIn')}
 						</a>
 					</div>
 				</form>
 			</div>
-	);
+		);
 };
 
 

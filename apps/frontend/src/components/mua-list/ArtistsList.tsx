@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslate } from "@/i18n/hooks/useTranslate";
 import React, { useEffect, useMemo, useState } from "react";
 import { PROVINCES, BUDGET_OPTIONS, type ServiceCategory, ServiceAddon } from "../../constants/constants";
 import { BookingService } from "@/services/booking";
@@ -20,6 +21,7 @@ const budgetToRange = (b: string) => {
 };
 
 export default function ArtistsList() {
+  const { t } = useTranslate('artists');
   // Data
   const [artists, setArtists] = useState<Artist[]>([]);
   const [availableMuas, setAvailableMuas] = useState<IAvailableMuaServices[]>([]);
@@ -34,26 +36,26 @@ export default function ArtistsList() {
   // Filters
   const [q, setQ] = useState("");
   const [location, setLocation] = useState("All Areas");
-
+  
   // Tabs = occasion (dịp)
   const [occasion, setOccasion] = useState<ServiceCategory>("ALL");
-
+  
   // Free-text tone
   const [styleText, setStyleText] = useState<string>("");
-
+  
   const [selectedBudgets, setSelectedBudgets] = useState<string[]>([]);
   const [rating, setRating] = useState<number | null>(null);
   const [selectedAddons, setSelectedAddons] = useState<ServiceAddon[]>([]);
   const [sort, setSort] = useState<SortKey>("rating_desc");
   const [page, setPage] = useState(1);
   const limit = 6;
-
+  
   const { priceMin, priceMax } = useMemo(() => {
     const mins = selectedBudgets.map((b) => budgetToRange(b).min).filter((n): n is number => typeof n === "number");
     const maxs = selectedBudgets.map((b) => budgetToRange(b).max).filter((n): n is number => typeof n === "number");
     return { priceMin: mins.length ? Math.min(...mins) : undefined, priceMax: maxs.length ? Math.max(...maxs) : undefined };
   }, [selectedBudgets]);
-
+  
   // Client-side filtering for date-filtered MUAs
   const filteredMuas = useMemo(() => {
     if (!isDateFiltered || availableMuas.length === 0) {
@@ -230,10 +232,10 @@ export default function ArtistsList() {
 
           <div className="text-center mb-8 relative z-10">
           <h1 className="text-3xl lg:text-4xl font-semibold mb-3 bg-gray-900 bg-clip-text text-transparent leading-tight">
-          Find Your Perfect Makeup Artist
+          {t('makeupArtistList.title')}
             </h1>
             <p className="font-normal md:font-lg text-gray-600 max-w-2xl mx-auto animate-slide-up">
-              Discover talented professionals for your special moments
+              {t('makeupArtistList.subtitle')}
             </p>
           </div>
 
@@ -247,7 +249,7 @@ export default function ArtistsList() {
                     <MapPin size={18} strokeWidth={2} />
                   </span>
                   <select
-                    aria-label="Location"
+                    aria-label={t('makeupArtistList.search.location')}
                     value={location}
                     onChange={(e) => { setLocation(e.target.value); setPage(1); }}
                     className="appearance-none h-12 w-full pl-10 pr-8 rounded-lg border border-gray-300 bg-white text-sm
@@ -270,7 +272,7 @@ export default function ArtistsList() {
                     </svg>
                   </span>
                   <input
-                    aria-label="Makeup Date"
+                    aria-label={t('makeupArtistList.search.date')}
                     type="date"
                     value={selectedDate}
                     onChange={(e) => handleDateChange(e.target.value)}
@@ -289,10 +291,10 @@ export default function ArtistsList() {
                     </svg>
                   </span>
                   <input
-                    aria-label="Makeup Style"
+                    aria-label={t('makeupArtistList.search.style')}
                     value={styleText}
                     onChange={(e) => { setStyleText(e.target.value); setPage(1); }}
-                    placeholder="Style (e.g., Natural, Elegant)"
+                    placeholder={t('makeupArtistList.search.stylePlaceholder')}
                     className="h-12 w-full pl-10 pr-3 rounded-lg border border-gray-300 bg-white text-sm
                                focus:outline-none hover:border-rose-300 hover:shadow-md
                                placeholder:text-gray-400 "
@@ -307,7 +309,7 @@ export default function ArtistsList() {
                                focus:outline-none focus:ring-2 focus:ring-rose-300 focus:ring-offset-2 
                                transition-all duration-300 whitespace-nowrap min-w-[140px] transform active:scale-95"
                   >
-                    Find Makeup Artist
+                    {t('makeupArtistList.search.button')}
                   </button>
                 </div>
               </div>

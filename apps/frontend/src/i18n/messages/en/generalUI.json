@@ -1,0 +1,43 @@
+{
+  "navbar": {
+    "home": "Home",
+    "artists": "Makeup Artist", 
+    "community": "Community",
+    "about": "About Us",
+    "login": "Login",
+    "logout": "Logout",
+    "profile": "My Profile",
+    "bookingHistory": "Booking History",
+    "cart": "Cart",
+    "notifications": "Notifications"
+  },
+  "footer": {
+    "company": {
+      "title": "AURA",
+      "description": "Book flawless makeup appointments for your most beautiful moments."
+    },
+    "companyLinks": {
+      "title": "Company",
+      "aboutUs": "About Us",
+      "news": "News",
+      "contact": "Contact"
+    },
+    "termsLinks": {
+      "title": "Terms & Policies",
+      "termsOfService": "Terms of Service",
+      "privacyPolicy": "Privacy Policy",
+      "refundPolicy": "Refund Policy"
+    },
+    "supportLinks": {
+      "title": "Support",
+      "faq": "FAQ",
+      "helpCenter": "Help Center"
+    },
+    "copyright": "© AURA 2025 - Face it, You are Art!"
+  },
+  "language": {
+    "english": "English",
+    "vietnamese": "Vietnamese",
+    "switchLanguage": "Switch Language"
+  }
+}

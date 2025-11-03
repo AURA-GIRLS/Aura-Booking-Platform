@@ -1,0 +1,77 @@
+{
+  "makeupArtistList": {
+    "title": "Tìm Chuyên Gia Trang Điểm Hoàn Hảo",
+    "subtitle": "Khám phá những chuyên gia tài năng cho những khoảnh khắc đặc biệt của bạn",
+    "search": {
+      "location": "Địa điểm",
+      "date": "Ngày trang điểm",
+      "style": "Phong cách trang điểm",
+      "stylePlaceholder": "Phong cách (ví dụ: Tự nhiên, Sang trọng)",
+      "button": "Tìm Chuyên Gia Makeup"
+    },
+    "meta": {
+      "results": "{location}: {count} Chuyên Gia Trang Điểm đang chờ bạn lựa chọn",
+      "recentlyFound": "Vừa tìm thấy các dịch vụ trang điểm chất lượng cao trên toàn quốc",
+      "availableOn": "Có sẵn vào {date}: {count} Chuyên Gia Trang Điểm",
+      "makeupArtistsAvailable": "Chuyên gia trang điểm có sẵn để đặt lịch vào {date}"
+    },
+    "filters": {
+      "dateFilterActive": "Bộ Lọc Ngày Đang Hoạt Động",
+      "showingMuasAvailable": "Hiển thị các Chuyên Gia có sẵn vào {date}",
+      "additionalFilters": "Các bộ lọc bổ sung bên dưới sẽ làm tinh chỉnh kết quả này",
+      "searchByName": "Tìm kiếm theo Tên hoặc Địa điểm",
+      "searchWithinAvailable": "Tìm kiếm trong các Chuyên Gia có sẵn",
+      "searchPlaceholder": "Nhập tên hoặc địa điểm Chuyên Gia...",
+      "searchAvailablePlaceholder": "Tìm kiếm Chuyên Gia có sẵn...",
+      "budget": "Ngân sách",
+      "filterByPrice": "Lọc theo Giá Dịch Vụ",
+      "filterMuasWithPrice": "Lọc các Chuyên Gia có dịch vụ trong khoảng giá này",
+      "minimumRating": "Đánh Giá Tối Thiểu",
+      "filterByRating": "Lọc theo Đánh Giá Chuyên Gia",
+      "showOnlyRating": "Chỉ hiển thị các Chuyên Gia có đánh giá này hoặc cao hơn",
+      "resetFilters": "Đặt Lại Bộ Lọc",
+      "resetAdditionalFilters": "Đặt Lại Bộ Lọc Bổ Sung"
+    },
+    "results": {
+      "sortBy": "Sắp xếp theo:",
+      "sortOptions": {
+        "featured": "Nổi bật",
+        "priceLowToHigh": "Giá: Thấp đến Cao",
+        "priceHighToLow": "Giá: Cao đến Thấp",
+        "newest": "Mới nhất",
+        "popular": "Phổ biến"
+      },
+      "allAreas": "Tất cả khu vực: {count} Chuyên Gia Trang Điểm có sẵn",
+      "availableOnDate": "Có sẵn vào {date}: {count} Chuyên Gia Trang Điểm",
+      "availableForBooking": "Chuyên gia trang điểm có sẵn để đặt lịch vào {date}",
+      "recentlyFound": "Vừa tìm thấy các dịch vụ trang điểm chất lượng cao trên toàn quốc",
+      "noArtistsFound": "Không Tìm Thấy Chuyên Gia Trang Điểm",
+      "noArtistsAvailable": "Không Có Chuyên Gia Trang Điểm Có Sẵn vào {date}",
+      "tryDifferentDate": "Thử chọn ngày khác hoặc kiểm tra lại sau",
+      "tryAdjustingFilters": "Thử điều chỉnh bộ lọc hoặc tìm kiếm với từ khóa khác",
+      "resetSearch": "Đặt Lại Tìm Kiếm",
+      "errorOccurred": "Đã xảy ra lỗi",
+      "tryAgain": "Thử Lại",
+      "loading": "Đang tải...",
+      "availableServices": "Dịch Vụ Có Sẵn ({count})",
+      "professionalMakeupService": "Dịch vụ trang điểm chuyên nghiệp",
+      "verified": "Đã xác minh",
+      "viewPortfolio": "Xem Portfolio",
+      "book": "Đặt lịch",
+      "reviews": "đánh giá",
+      "mins": "phút"
+    },
+    "artistCard": {
+      "verified": "Đã xác minh",
+      "professionalBio": "Chuyên Gia Trang Điểm & Chuyên Gia Sắc Đẹp Chuyên Nghiệp",
+      "viewPortfolio": "Xem Portfolio",
+      "featuredServices": "Dịch vụ nổi bật ({count} gói)",
+      "book": "Đặt lịch",
+      "reviews": "đánh giá"
+    },
+    "portfolio": {
+      "title": "Portfolio",
+      "loading": "Đang tải portfolio..."
+    }
+  }
+}

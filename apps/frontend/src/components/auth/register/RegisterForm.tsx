@@ -6,6 +6,7 @@ import { UserIcon, Sparkles } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
 import { authService } from '@/services/auth';
 import { useRouter } from 'next/navigation';
+import { useTranslate } from '@/i18n/hooks/useTranslate';
 
 const RegisterForm: React.FC = () => {
 	const [form, setForm] = useState({
@@ -19,6 +20,7 @@ const RegisterForm: React.FC = () => {
 	const [success, setSuccess] = useState('');
 	const router = useRouter();
 	const googleBtnRef = useRef<HTMLDivElement>(null);
+	const { t } = useTranslate('auth');
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		setForm({ ...form, [e.target.name]: e.target.value });
@@ -32,13 +34,13 @@ const RegisterForm: React.FC = () => {
 		try {
 			const res = await authService.register(form);
 			if (res.success) {
-				setSuccess('Đăng ký thành công! Vui lòng kiểm tra email để xác thực.');
+				setSuccess(t('register.registrationSuccessful'));
 				router.push('/auth/login');
 			} else {
-				setError(res.message || 'Đăng ký thất bại');
+				setError(res.message || t('register.registrationFailed'));
 			}
 		} catch (err: any) {
-			setError(err.message || 'Đăng ký thất bại');
+			setError(err.message || t('register.registrationFailed'));
 		} finally {
 			setLoading(false);
 		}
@@ -56,13 +58,13 @@ const RegisterForm: React.FC = () => {
 						const res = await authService.loginWithGoogle({ credential: response.credential });
 						if (res.success && res.data?.token) {
 							localStorage.setItem('token', res.data.token);
-							setSuccess('Login successful!');
+							setSuccess(t('login.loginSuccessful'));
 							window.location.href = '/';
 						} else {
-							setError(res.message || 'Google login failed');
+							setError(res.message || t('register.googleLoginFailed'));
 						}
 					} catch (err: any) {
-						setError(err.message || 'Google login failed');
+						setError(err.message || t('register.googleLoginFailed'));
 					} finally {
 						setLoading(false);
 					}
@@ -76,7 +78,7 @@ const RegisterForm: React.FC = () => {
 				shape: 'pill',
 			});
 		}
-	}, []);
+	}, [t]);
 
 					return (
 						<div className="min-h-screen bg-transparent flex items-center justify-center p-4">
@@ -108,10 +110,10 @@ const RegisterForm: React.FC = () => {
 									</div>
 									<div>
 										<h2 className="text-2xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
-											Create Your Account
+											{t('register.title')}
 										</h2>
 										<p className="text-gray-600 text-sm mt-2">
-											Book makeup online with top artists. Fast. Easy. Beautiful.
+											{t('register.subtitle')}
 										</p>
 									</div>
 								</div>
@@ -119,7 +121,7 @@ const RegisterForm: React.FC = () => {
 								<div className="space-y-4">
 									<div>
 										<Label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
-											Full Name
+											{t('register.fullNameLabel')}
 										</Label>
 										<Input
 											id="fullName"
@@ -128,13 +130,13 @@ const RegisterForm: React.FC = () => {
 											value={form.fullName}
 											onChange={handleChange}
 											required
-											placeholder="Alex Smith"
+											placeholder={t('register.fullNamePlaceholder')}
 											className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all duration-200"
 										/>
 									</div>
 									<div>
 										<Label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-											Email address
+											{t('register.emailLabel')}
 										</Label>
 										<Input
 											id="email"
@@ -143,13 +145,13 @@ const RegisterForm: React.FC = () => {
 											value={form.email}
 											onChange={handleChange}
 											required
-											placeholder="example@gmail.com"
+											placeholder={t('register.emailPlaceholder')}
 											className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all duration-200"
 										/>
 									</div>
 									<div>
 										<Label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-											Password
+											{t('register.passwordLabel')}
 										</Label>
 										<Input
 											id="password"
@@ -158,13 +160,13 @@ const RegisterForm: React.FC = () => {
 											value={form.password}
 											onChange={handleChange}
 											required
-											placeholder="Enter your password"
+											placeholder={t('register.passwordPlaceholder')}
 											className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all duration-200"
 										/>
 									</div>
 									<div>
 										<Label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-2">
-											Phone Number (Optional)
+											{t('register.phoneLabel')}
 										</Label>
 										<Input
 											id="phoneNumber"
@@ -172,7 +174,7 @@ const RegisterForm: React.FC = () => {
 											name="phoneNumber"
 											value={form.phoneNumber}
 											onChange={handleChange}
-											placeholder="Phone number"
+											placeholder={t('register.phonePlaceholder')}
 											className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all duration-200"
 										/>
 									</div>
@@ -186,10 +188,10 @@ const RegisterForm: React.FC = () => {
 									{loading ? (
 										<div className="flex items-center justify-center gap-2">
 											<div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-											Registering...
+											{t('register.registering')}
 										</div>
 									) : (
-										'Create Account'
+										t('register.createAccountButton')
 									)}
 								</Button>
 
@@ -199,7 +201,7 @@ const RegisterForm: React.FC = () => {
 										<div className="w-full border-t border-gray-200"></div>
 									</div>
 									<div className="relative flex justify-center text-sm">
-										<span className="px-2 bg-white text-gray-500">Or continue with</span>
+										<span className="px-2 bg-white text-gray-500">{t('register.orContinueWith')}</span>
 									</div>
 								</div>
 
@@ -211,21 +213,21 @@ const RegisterForm: React.FC = () => {
 								{/* Footer Links */}
 								<div className="text-center space-y-2">
 									<div className="text-sm text-gray-600">
-										Want to join as an artist?{' '}
+										{t('register.wantToJoinAsArtist')}{' '}
 										<a href="/auth/register/mua" className="text-rose-600 hover:text-rose-700 font-medium hover:underline transition-colors">
-											Sign up as MUA
+											{t('register.signUpAsMua')}
 										</a>
 									</div>
 									<div className="text-sm text-gray-600">
-										Already have an account?{' '}
+										{t('register.alreadyHaveAccount')}{' '}
 										<a href="/auth/login" className="text-rose-600 hover:text-rose-700 font-medium hover:underline transition-colors">
-											Sign In
+											{t('register.signIn')}
 										</a>
 									</div>
 									<div className="text-sm text-gray-600">
-										Haven't received verification email?{' '}
+										{t('register.haventReceivedEmail')}{' '}
 										<a href="/auth/resend-verification" className="text-rose-600 hover:text-rose-700 font-medium hover:underline transition-colors">
-											Resend
+											{t('register.resend')}
 										</a>
 									</div>
 								</div>

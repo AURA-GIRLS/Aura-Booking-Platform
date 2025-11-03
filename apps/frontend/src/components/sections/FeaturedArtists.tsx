@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { Star, Heart, Award, Sparkles, Calendar } from "lucide-react";
 import Link from "next/link";
+import { useTranslate } from "../../i18n/hooks/useTranslate";
 import { useAuthCheck } from "../../utils/auth";
 
 export default function FeaturedArtists() {
+  const { t } = useTranslate('sections');
   const { checkAuthAndExecute } = useAuthCheck();
   const [artists] = useState([
     { 
@@ -71,18 +73,18 @@ export default function FeaturedArtists() {
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-pink-100 to-rose-100 rounded-full text-pink-700 font-medium text-sm mb-6 border border-pink-200">
             <Award size={16} className="text-pink-500" />
-            Featured Artists
+            {t('featuredArtists.badge')}
           </div>
           
           <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
-            Meet Our Top
+            {t('featuredArtists.title.line1')}
             <span className="block bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">
-              Beauty Experts
+              {t('featuredArtists.title.line2')}
             </span>
           </h2>
           
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            Discover talented makeup artists who have mastered the art of enhancing natural beauty with their exceptional skills
+            {t('featuredArtists.description')} who have mastered the art of enhancing natural beauty with their exceptional skills
           </p>
         </div>
 
@@ -154,7 +156,7 @@ export default function FeaturedArtists() {
                       />
                     ))}
                   </div>
-                  <span className="text-sm text-gray-600">({artist.reviews} reviews)</span>
+                  <span className="text-sm text-gray-600">({artist.reviews} {t('featuredArtists.reviews')})</span>
                 </div>
 
                 {/* Book Button */}
@@ -166,7 +168,7 @@ export default function FeaturedArtists() {
                   }}
                 >
                   <Calendar size={18} />
-                  Book Now
+                  {t('featuredArtists.bookButton')}
                 </button>
               </div>
 
@@ -188,7 +190,7 @@ export default function FeaturedArtists() {
             className="inline-flex items-center gap-2 px-10 py-4 bg-gradient-to-r from-pink-600 to-rose-600 text-white rounded-full font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
           >
             <Award size={20} />
-            View All Artists
+            {t('featuredArtists.viewAllButton')}
             <Sparkles size={18} className="animate-pulse" />
           </Link>
         </div>

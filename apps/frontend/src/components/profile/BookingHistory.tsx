@@ -21,6 +21,7 @@ import DeleteConfirmDialog from "@/components/generalUI/DeleteConfirmDialog";
 import { authService } from "@/services/auth";
 import { BOOKING_STATUS, BookingStatus, TRANSACTION_STATUS } from "@/constants/index";
 import { TransactionService } from "@/services/transaction";
+import { useTranslate } from "@/i18n/hooks/useTranslate";
 
 // Types & Interfaces
 interface BookingHistoryItem {
@@ -59,17 +60,8 @@ interface NotificationState {
   isVisible: boolean;
 }
 
-// Constants
-const STATUS_OPTIONS = [
-  { value: 'ALL', label: 'All', color: 'bg-gray-100 text-gray-800' },
-  { value: 'PENDING', label: 'Pending', color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'CONFIRMED', label: 'Confirmed', color: 'bg-blue-100 text-blue-800' },
-  { value: 'COMPLETED', label: 'Completed', color: 'bg-green-100 text-green-800' },
-  { value: 'CANCELLED', label: 'Cancelled', color: 'bg-red-100 text-red-800' },
-  { value: 'REJECTED', label: 'Rejected', color: 'bg-red-100 text-red-800' }
-];
-
 const BookingHistory: React.FC = () => {
+  const { t, locale } = useTranslate('profile');
   const router = useRouter();
 
   // State Management
@@ -88,6 +80,16 @@ const BookingHistory: React.FC = () => {
     bookingId: "",
     bookingName: ""
   });
+
+  // Constants
+  const STATUS_OPTIONS = [
+    { value: 'ALL', label: t('bookingHistory.all'), color: 'bg-gray-100 text-gray-800' },
+    { value: 'PENDING', label: t('bookingHistory.pending'), color: 'bg-yellow-100 text-yellow-800' },
+    { value: 'CONFIRMED', label: t('bookingHistory.confirmed'), color: 'bg-blue-100 text-blue-800' },
+    { value: 'COMPLETED', label: t('bookingHistory.completed'), color: 'bg-green-100 text-green-800' },
+    { value: 'CANCELLED', label: t('bookingHistory.cancelled'), color: 'bg-red-100 text-red-800' },
+    { value: 'REJECTED', label: t('bookingHistory.rejected'), color: 'bg-red-100 text-red-800' }
+  ];
 
   // Effects
   useEffect(() => {
@@ -109,7 +111,7 @@ const BookingHistory: React.FC = () => {
         setBookings(response.data);
       }
     } catch (error: any) {
-      showNotification("error", error.message || "Failed to load booking history");
+      showNotification("error", error.message || t('bookingHistory.loadBookingHistoryFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -122,7 +124,7 @@ const BookingHistory: React.FC = () => {
         setUserStats(response.data);
       }
     } catch (error: any) {
-      showNotification("error", error.message || "Failed to load user stats");
+      showNotification("error", error.message || t('bookingHistory.loadUserStatsFailed'));
     }
   };
 
@@ -161,13 +163,13 @@ const BookingHistory: React.FC = () => {
       console.log("Cancelling booking:", cancelDialog.bookingId);
       const response = await TransactionService.makeRefundBeforeConfirm(cancelDialog.bookingId, BOOKING_STATUS.CANCELLED);
       if (response.success) {
-        showNotification("success", "Booking cancelled successfully");
+        showNotification("success", t('bookingHistory.bookingCancelled'));
         loadBookingHistory();
       } else {
-        showNotification("error", response.message || "Failed to cancel booking");
+        showNotification("error", response.message || t('bookingHistory.cancelBookingFailed'));
       }
     } catch (error: any) {
-      showNotification("error", error?.message || "Failed to cancel booking");
+      showNotification("error", error?.message || t('bookingHistory.cancelBookingFailed'));
     } finally {
       setCancelDialog(prev => ({ ...prev, open: false }));
       loadBookingHistory();
@@ -188,7 +190,8 @@ const BookingHistory: React.FC = () => {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    const locale = 'en-US'; // Default to English for date formatting
+    return new Date(dateString).toLocaleDateString(locale, {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -200,7 +203,8 @@ const BookingHistory: React.FC = () => {
       if (!date) return "";
       const d = new Date(date);
       if (isNaN(d.getTime())) return "";
-      return d.toLocaleTimeString('en-US', {
+      const locale = 'en-US'; // Default to English for time formatting
+      return d.toLocaleTimeString(locale, {
         hour: 'numeric',
         minute: '2-digit',
         hour12: true
@@ -212,9 +216,9 @@ const BookingHistory: React.FC = () => {
 
   const getLocationTypeLabel = (type: string) => {
     switch (type) {
-      case 'HOME': return 'At Home';
-      case 'STUDIO': return 'At Studio';
-      case 'VENUE': return 'At Venue';
+      case 'HOME': return t('bookingHistory.atHome');
+      case 'STUDIO': return t('bookingHistory.atStudio');
+      case 'VENUE': return t('bookingHistory.atVenue');
       default: return type;
     }
   };
@@ -256,12 +260,12 @@ const BookingHistory: React.FC = () => {
     <div className="text-center py-12">
       <Calendar size={48} className="mx-auto mb-4 text-pink-300" />
       <h3 className="text-lg font-medium text-gray-900 mb-2">
-        {selectedStatus === 'ALL' ? 'No bookings yet' : `No ${selectedStatus.toLowerCase()} bookings`}
+        {selectedStatus === 'ALL' ? t('bookingHistory.noBookingsYet') : t('bookingHistory.noStatusBookings').replace('{status}', selectedStatus.toLowerCase())}
       </h3>
       <p className="text-gray-600 mb-6">
         {selectedStatus === 'ALL' 
-          ? 'Start exploring makeup artists and book your first appointment!'
-          : `You don't have any ${selectedStatus.toLowerCase()} bookings at the moment.`
+          ? t('bookingHistory.noBookingsDescription')
+          : t('bookingHistory.noStatusBookingsDescription').replace('{status}', selectedStatus.toLowerCase())
         }
       </p>
       {selectedStatus === 'ALL' && (
@@ -276,7 +280,7 @@ const BookingHistory: React.FC = () => {
           className="relative z-10 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 px-4 py-2 text-sm font-semibold text-white shadow-md transition-transform hover:scale-[1.02] cursor-pointer"
           style={{ pointerEvents: 'auto' }}
         >
-          Browse Artists
+          {t('bookingHistory.browseArtists')}
         </button>
       )}
     </div>
@@ -361,7 +365,7 @@ const BookingHistory: React.FC = () => {
           </span>
           {booking.transaction?.status === TRANSACTION_STATUS.PENDING_REFUND && (
             <span className="rounded-full px-2 py-1 text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200">
-              Refund Processing
+              {t('bookingHistory.refundProcessing')}
             </span>
           )}
         </div>
@@ -374,21 +378,21 @@ const BookingHistory: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="space-y-1">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Service Price:</span>
+                <span className="text-gray-600">{t('bookingHistory.servicePrice')}</span>
                 <span className="font-medium">{formatCurrency(booking.servicePackage.price)}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Transport Fee:</span>
+                <span className="text-gray-600">{t('bookingHistory.transportFee')}</span>
                 <span className="font-medium">{booking.transportFee != null ? formatCurrency(booking.transportFee) : "0"}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Duration:</span>
-                <span className="font-medium">{booking.servicePackage.duration} minutes</span>
+                <span className="text-gray-600">{t('bookingHistory.duration')}</span>
+                <span className="font-medium">{booking.servicePackage.duration} {t('bookingHistory.minutes')}</span>
               </div>
             </div>
             <div className="text-right">
               <div className="text-xl font-semibold text-pink-700">{formatCurrency(booking.totalPrice)}</div>
-              <div className="text-xs text-gray-500">Total Amount</div>
+              <div className="text-xs text-gray-500">{t('bookingHistory.totalAmount')}</div>
             </div>
           </div>
         </div>
@@ -410,16 +414,16 @@ const BookingHistory: React.FC = () => {
                   className="relative z-30 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold shadow-sm transition-colors border border-red-200 bg-white text-red-700 hover:bg-red-50 cursor-pointer"
                   style={{ pointerEvents: 'auto' }}
                 >
-                  <X size={16} /> Cancel Booking
+                  <X size={16} /> {t('bookingHistory.cancelBooking')}
                 </button>
               ) : (
                 <button
                   type="button"
                   disabled={true}
                   className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold shadow-sm transition-colors border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
-                  title="Refund is being processed"
+                  title={t('bookingHistory.processingRefund')}
                 >
-                  <Hourglass size={16} /> Processing Refund
+                  <Hourglass size={16} /> {t('bookingHistory.processingRefund')}
                 </button>
               )}
             </>
@@ -453,7 +457,7 @@ const BookingHistory: React.FC = () => {
               position: 'relative'
             }}
           >
-            <RefreshCcw size={16} /> Book Again
+            <RefreshCcw size={16} /> {t('bookingHistory.bookAgain')}
           </button>
         </div>
       </div>
@@ -482,7 +486,7 @@ const BookingHistory: React.FC = () => {
             <Calendar size={18} />
           </div>
           <div>
-            <div className="text-xs text-gray-600">Total Bookings</div>
+            <div className="text-xs text-gray-600">{t('bookingHistory.totalBookings')}</div>
             <div className="text-xl font-semibold text-gray-900">{totalBookings}</div>
           </div>
         </div>
@@ -495,7 +499,7 @@ const BookingHistory: React.FC = () => {
             <CheckCircle2 size={18} />
           </div>
           <div>
-            <div className="text-xs text-gray-600">Completed</div>
+            <div className="text-xs text-gray-600">{t('bookingHistory.completedBookings')}</div>
             <div className="text-xl font-semibold text-gray-900">{completedBookings}</div>
           </div>
         </div>
@@ -508,7 +512,7 @@ const BookingHistory: React.FC = () => {
             <Hourglass size={18} />
           </div>
           <div>
-            <div className="text-xs text-gray-600">Pending</div>
+            <div className="text-xs text-gray-600">{t('bookingHistory.pendingBookings')}</div>
             <div className="text-xl font-semibold text-gray-900">{pendingBookings}</div>
           </div>
         </div>
@@ -521,7 +525,7 @@ const BookingHistory: React.FC = () => {
             <Wallet size={18} />
           </div>
           <div>
-            <div className="text-xs text-gray-600">Total Spent</div>
+            <div className="text-xs text-gray-600">{t('bookingHistory.totalSpent')}</div>
             <div className="text-xl font-semibold text-pink-700">{formatCurrency(totalSpent)}</div>
           </div>
         </div>
@@ -546,18 +550,18 @@ const BookingHistory: React.FC = () => {
         open={cancelDialog.open}
         onOpenChange={(open) => setCancelDialog(prev => ({ ...prev, open }))}
         onConfirm={confirmCancelBooking}
-        title="Cancel Booking"
-        description={`Are you sure you want to cancel the booking for "${cancelDialog.bookingName}"? Your payment will be refunded, but this action cannot be undone.`}
-        confirmText="Cancel Booking"
-        cancelText="Keep Booking"
+        title={t('bookingHistory.cancelBookingTitle')}
+        description={t('bookingHistory.cancelBookingDescription').replace('{bookingName}', cancelDialog.bookingName)}
+        confirmText={t('bookingHistory.cancelBookingConfirm')}
+        cancelText={t('bookingHistory.keepBooking')}
       />
       
       <div className="space-y-6">
         {/* Header + Tabs */}
         <div className="rounded-2xl border border-pink-100 bg-gradient-to-b from-pink-50 to-white p-6 shadow-sm">
           <div className="mb-4">
-            <h1 className="text-2xl font-semibold text-gray-900">Booking History</h1>
-            <p className="mt-1 text-sm text-gray-600">Track your past and upcoming appointments</p>
+            <h1 className="text-2xl font-semibold text-gray-900">{t('bookingHistory.title')}</h1>
+            <p className="mt-1 text-sm text-gray-600">{t('bookingHistory.subtitle')}</p>
           </div>
 
           {/* Tabs */}

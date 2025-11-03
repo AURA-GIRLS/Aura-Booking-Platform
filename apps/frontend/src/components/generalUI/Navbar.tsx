@@ -3,12 +3,15 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/lib/ui/dropdown-menu';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/lib/ui/avatar';
+import LanguageSwitcher from './LanguageSwitcher';
 import { NavbarProps } from '@/types/user.dtos';
+import { useTranslate } from '@/i18n/hooks/useTranslate';
 import { initSocket, getSocket } from '@/config/socket';
 
 export default function Navbar({ user, setUser }: Readonly<NavbarProps>)  {
   const [isOpen, setIsOpen] = useState(false);
   const [isUserLoaded, setIsUserLoaded] = useState(false);
+  const { t } = useTranslate('generalUI');
 
   useEffect(() => {
     // Simulate checking for user from localStorage or other async source
@@ -73,20 +76,20 @@ export default function Navbar({ user, setUser }: Readonly<NavbarProps>)  {
 
         {/* Center: Menu */}
         <ul className="hidden md:flex items-center gap-6 text-gray-700 font-medium">
-          <li><Link href="/">Home</Link></li>
-          <li><Link href="/user/artists/makeup-artist-list">Makeup Artist</Link></li>
+          <li><Link href="/">{t('navbar.home')}</Link></li>
+          <li><Link href="/user/artists/makeup-artist-list">{t('navbar.artists')}</Link></li>
           {/* <li><Link href="/booking">Booking</Link></li> */}
-          <li><Link href="/user/community">Community</Link></li>
-          <li><Link href={{ pathname: "/user/about" }}>About Us</Link></li>
+          <li><Link href="/user/community">{t('navbar.community')}</Link></li>
+          <li><Link href={{ pathname: "/user/about" }}>{t('navbar.about')}</Link></li>
         </ul>
 
         {/* Right: Icons */}
         <div className="hidden md:flex items-center gap-3 text-gray-700">
-          <button aria-label="Cart" className="p-2 hover:bg-gray-100 rounded">🛒</button>
+          <LanguageSwitcher />
           <button aria-label="Notifications" className="p-2 hover:bg-gray-100 rounded">🔔</button>
           {!user ? (
             <Link href="/auth/login">
-              <button className="h-8 px-4 rounded-full bg-rose-500 text-white font-semibold hover:bg-rose-600 transition">Login</button>
+              <button className="h-8 px-4 rounded-full bg-rose-500 text-white font-semibold hover:bg-rose-600 transition">{t('navbar.login')}</button>
             </Link>
           ) : (
             <DropdownMenu>
@@ -100,12 +103,12 @@ export default function Navbar({ user, setUser }: Readonly<NavbarProps>)  {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44 bg-white rounded-xl shadow-lg py-2 z-50 border border-pink-100">
                 <DropdownMenuItem asChild className="cursor-pointer focus:bg-rose-100">
-                  <Link href="/user/profile">My Profile</Link>
+                  <Link href="/user/profile">{t('navbar.profile')}</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild className="cursor-pointer focus:bg-rose-100">
-                  <Link href={{ pathname: "/user/profile/booking-history" }}>Booking History</Link>
+                  <Link href={{ pathname: "/user/profile/booking-history" }}>{t('navbar.bookingHistory')}</Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleLogout} className="px-2 py-2 text-red-500 cursor-pointer focus:bg-rose-100">Logout</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout} className="px-2 py-2 text-red-500 cursor-pointer focus:bg-rose-100">{t('navbar.logout')}</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           )}
@@ -119,18 +122,18 @@ export default function Navbar({ user, setUser }: Readonly<NavbarProps>)  {
       {isOpen && (
         <div className="md:hidden px-6 pb-4">
           <ul className="flex flex-col gap-2 text-gray-700 font-medium">
-          <li><Link href="/">Home</Link></li>
-          <li><Link href="/user/artists/makeup-artist-list">Makeup Artist</Link></li>
+          <li><Link href="/">{t('navbar.home')}</Link></li>
+          <li><Link href="/user/artists/makeup-artist-list">{t('navbar.artists')}</Link></li>
           {/* <li><Link href="/booking">Booking</Link></li> */}
-          <li><Link href="/user/community">Community</Link></li>
-          <li><Link href={{ pathname: "/user/about" }}>About Us</Link></li>
+          <li><Link href="/user/community">{t('navbar.community')}</Link></li>
+          <li><Link href={{ pathname: "/user/about" }}>{t('navbar.about')}</Link></li>
           </ul>
           <div className="mt-3 flex items-center gap-3">
-            <button aria-label="Cart" className="p-2 hover:bg-gray-100 rounded">🛒</button>
+            <LanguageSwitcher />
             <button aria-label="Notifications" className="p-2 hover:bg-gray-100 rounded">🔔</button>
             {!user ? (
               <Link href="/auth/login">
-                <button className="h-8 px-4 rounded-full bg-rose-500 text-white font-semibold hover:bg-rose-600 transition">Login</button>
+                <button className="h-8 px-4 rounded-full bg-rose-500 text-white font-semibold hover:bg-rose-600 transition">{t('navbar.login')}</button>
               </Link>
             ) : (
             <DropdownMenu>
@@ -144,12 +147,12 @@ export default function Navbar({ user, setUser }: Readonly<NavbarProps>)  {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44 bg-white rounded-xl shadow-lg py-2 z-50 border border-pink-100">
                 <DropdownMenuItem asChild className="cursor-pointer focus:bg-rose-100">
-                  <Link href="/user/profile">My Profile</Link>
+                  <Link href="/user/profile">{t('navbar.profile')}</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild className="cursor-pointer focus:bg-rose-100">
-                  <Link href={{ pathname: "/user/profile/booking-history" }}>Booking History</Link>
+                  <Link href={{ pathname: "/user/profile/booking-history" }}>{t('navbar.bookingHistory')}</Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleLogout} className="px-2 py-2 text-red-500 cursor-pointer focus:bg-rose-100">Logout</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout} className="px-2 py-2 text-red-500 cursor-pointer focus:bg-rose-100">{t('navbar.logout')}</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             )}

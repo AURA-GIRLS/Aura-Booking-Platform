@@ -4,6 +4,7 @@ import type { Event } from './community.types';
 import type { ConversationDTO } from '../../types/chat.dtos';
 import { Input } from '../lib/ui/input';
 import { useAuthCheck } from '../../utils/auth';
+import { useTranslate } from '@/i18n/hooks/useTranslate';
 import { ChatService } from '../../services/chat';
 import { UserWallResponseDTO } from '@/types/community.dtos';
 import { initSocket, getSocket } from '@/config/socket';
@@ -21,6 +22,8 @@ export default function RightSidebar({
   events: Event[];
   onConversationClick: (conversation: ConversationDTO) => void;
 }>) {
+  const { t } = useTranslate('community');
+  const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
   const [conversations, setConversations] = useState<ConversationDTO[]>([]);
   const [loading, setLoading] = useState(false);
   const { isAuthenticated } = useAuthCheck();
@@ -92,27 +95,22 @@ const getInitials = (name?: string) => {
   return (
     <div className="w-80 bg-white h-screen sticky top-0 border-l border-gray-200 relative">
       <div className="px-4 relative w-full max-w-sm mt-4 mb-2">
-        <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-        <Input
-          type="text"
-          placeholder="Search posts, users, tags..."
-          className="pl-10 bg-white text-gray-800 placeholder-gray-400 border-[0.5px] border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300 rounded-md"
-        />
-      </div>
-      
+      <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+      <Input
+        type="text"
+        placeholder={t('rightSidebar.searchPlaceholder')}
+        className="pl-10 bg-white text-gray-800 placeholder-gray-400 border-[0.5px] border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300 rounded-md"
+      />
+    </div>
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-gray-900">Messages</h3>
+          <h3 className="font-semibold text-gray-900">{t('rightSidebar.messages')}</h3>
           <Search className="w-5 h-5 text-gray-400" />
         </div>
         <div className="flex space-x-4">
           {['Primary', 'General'].map(tab => (
-            <button 
-              key={tab} 
-              onClick={() => setSelectedTab(tab)} 
-              className={`text-sm font-medium pb-2 border-b-2 ${selectedTab === tab ? 'text-rose-600 border-rose-600' : 'text-gray-500 border-transparent'}`}
-            >
-              {tab}
+            <button key={tab} onClick={() => setSelectedTab(tab)} className={`text-sm font-medium pb-2 border-b-2 ${selectedTab === tab ? 'text-rose-600 border-rose-600' : 'text-gray-500 border-transparent'}`}>
+              {tab === 'Primary' ? t('rightSidebar.primary') : t('rightSidebar.general')}
             </button>
           ))}
         </div>
@@ -191,7 +189,7 @@ const getInitials = (name?: string) => {
             onClick={() => window.location.href = '/auth/login'}
             className="bg-rose-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-rose-700 transition-colors"
           >
-            Login to experience
+            {t('rightSidebar.loginToExperience')}
           </button>
         </div>
       )}

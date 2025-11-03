@@ -1,0 +1,43 @@
+{
+  "navbar": {
+    "home": "Trang chủ",
+    "artists": "Chuyên gia trang điểm", 
+    "community": "Cộng đồng",
+    "about": "Về chúng tôi",
+    "login": "Đăng nhập",
+    "logout": "Đăng xuất",
+    "profile": "Hồ sơ của tôi",
+    "bookingHistory": "Lịch sử đặt lịch",
+    "cart": "Giỏ hàng",
+    "notifications": "Thông báo"
+  },
+  "footer": {
+    "company": {
+      "title": "AURA",
+      "description": "Đặt lịch trang điểm hoàn hảo cho những khoảnh khắc đẹp nhất của bạn."
+    },
+    "companyLinks": {
+      "title": "Công ty",
+      "aboutUs": "Về chúng tôi",
+      "news": "Tin tức",
+      "contact": "Liên hệ"
+    },
+    "termsLinks": {
+      "title": "Điều khoản & Chính sách",
+      "termsOfService": "Điều khoản dịch vụ",
+      "privacyPolicy": "Chính sách bảo mật",
+      "refundPolicy": "Chính sách hoàn tiền"
+    },
+    "supportLinks": {
+      "title": "Hỗ trợ",
+      "faq": "Câu hỏi thường gặp",
+      "helpCenter": "Trung tâm trợ giúp"
+    },
+    "copyright": "© AURA 2025 - Hãy đối mặt, bạn là nghệ thuật!"
+  },
+  "language": {
+    "english": "Tiếng Anh",
+    "vietnamese": "Tiếng Việt",
+    "switchLanguage": "Chuyển Ngôn Ngữ"
+  }
+}

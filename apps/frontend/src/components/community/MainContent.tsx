@@ -16,6 +16,8 @@ import { PostResponseDTO, TagResponseDTO, UserWallResponseDTO } from '@/types/co
 import type { UserResponseDTO } from '@/types/user.dtos'
 import { POST_STATUS } from '@/constants/index'
 import { Skeleton } from '@/components/lib/ui/skeleton'
+import { GeneralSkeleton } from '../generalUI/GeneralSkeleton'
+import { useTranslate } from '@/i18n/hooks/useTranslate';
 import { toast } from 'sonner'
 
 // Reusable filter state
@@ -25,6 +27,7 @@ export type FilterState =
   | { type: 'search'; value: string }
 
 export default function MainContent() {
+  const { t } = useTranslate('community');
   const [postText, setPostText] = useState('')
   const [selectedTab, setSelectedTab] = useState('Primary')
   const [posts, setPosts] = useState<PostResponseDTO[]>([])
@@ -328,11 +331,11 @@ export default function MainContent() {
           {!isSelf && (
             <div className="mb-4 text-sm text-gray-500">
               <button type="button" className="hover:underline" onClick={handleCloseUserWall}>
-                Community
+                {t('mainContent.community')}
               </button>
               <span className="px-1">/</span>
               <span className="text-gray-900 font-medium">
-                {openWallUserName || 'User Wall'}
+                {openWallUserName || t('mainContent.userWall')}
               </span>
             </div>
           )}
@@ -345,7 +348,7 @@ export default function MainContent() {
       return (
         <>
           <div className="mb-4 flex items-center gap-2">
-            <span className="text-sm text-gray-500">Filtering by:</span>
+            <span className="text-sm text-gray-500">{t('mainContent.filteringBy')}</span>
             {activeFilter.type === 'tag' && (
               <span className="px-2 py-1 rounded bg-rose-100 text-rose-700 text-sm">
                 #{activeFilter.value}
@@ -353,14 +356,14 @@ export default function MainContent() {
             )}
             {activeFilter.type === 'search' && (
               <span className="px-2 py-1 rounded bg-blue-100 text-blue-700 text-sm">
-                “{activeFilter.value}”
+                "{activeFilter.value}"
               </span>
             )}
             <button
               onClick={clearFilter}
               className="ml-auto text-sm text-rose-600 hover:underline"
             >
-              Clear filter
+              {t('mainContent.clearFilter')}
             </button>
           </div>
           <PostsFeed
@@ -396,7 +399,7 @@ export default function MainContent() {
           setPosts={setPosts}
           currentUser={currentUser}
           fetchMinimalUser={fetchMinimalUser}
-          onOpenUserWall={handleOpenUserWall}
+          onOpenUserWall={handleOpenUserWall}   
           onOpenMiniChat={handleOpenMiniChat}
         />
 
@@ -405,7 +408,7 @@ export default function MainContent() {
           <div className="flex justify-center py-8">
             <div className="flex items-center gap-2 text-gray-500">
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-rose-600"></div>
-              <span className="text-sm">Loading more posts...</span>
+              <span className="text-sm">{t('mainContent.loadingMorePosts')}</span>
             </div>
           </div>
         )}
@@ -413,7 +416,7 @@ export default function MainContent() {
         {/* End of posts indicator */}
         {!hasMorePosts && posts.length > 0 && (
           <div className="flex justify-center py-8">
-            <span className="text-sm text-gray-400">You've reached the end of the feed</span>
+            <span className="text-sm text-gray-400">{t('mainContent.endOfFeed')}</span>
           </div>
         )}
       </>
@@ -464,7 +467,6 @@ export default function MainContent() {
         </div>
       </div>
     )
-
   }
 
   // 🔹 UI thật

@@ -423,7 +423,10 @@ export async function createBooking(bookingData: CreateBookingDTO): Promise<Book
         const booking = new Booking({
             ...bookingData,
             status: BOOKING_STATUS.PENDING,
-            createdAt: new Date()
+            createdAt: new Date(),
+            reminded24h: false,
+            reminded1h: false,
+            lastReminderAt: null
         });
 
         const savedBooking = await booking.save();
@@ -466,7 +469,10 @@ export async function createRedisPendingBooking(bookingData: CreateBookingDTO): 
         const booking = new Booking({
             ...bookingData,
             status: BOOKING_STATUS.PENDING,
-            createdAt: new Date()
+            createdAt: new Date(),
+            reminded24h: false,
+            reminded1h: false,
+            lastReminderAt: null
         });
         const orderCode = generateOrderCode();
         const pendingBooking: PendingBookingResponseDTO = {
