@@ -1,0 +1,32 @@
+{
+  "feedbackActions": {
+    "viewFeedback": "Xem phản hồi",
+    "giveFeedback": "Gửi phản hồi",
+    "deleteConfirm": "Bạn có chắc chắn muốn xóa phản hồi của mình? Hành động này không thể hoàn tác.",
+    "deleteSuccess": "Xóa phản hồi thành công!",
+    "deleteFailed": "Xóa phản hồi thất bại. Vui lòng thử lại.",
+    "updateSuccess": "Cập nhật phản hồi thành công!",
+    "createSuccess": "Tạo phản hồi thành công!"
+  },
+  "feedbackCard": {
+    "title": "Phản hồi của bạn",
+    "subtitle": "Cảm ơn vì đã đánh giá! Dưới đây là những gì bạn đã chia sẻ với chúng tôi.",
+    "noComments": "Không có bình luận bổ sung nào được cung cấp.",
+    "helpsImprove": "Phản hồi của bạn giúp chúng tôi cải thiện trải nghiệm cho mọi người 💖",
+    "delete": "Xóa",
+    "edit": "Chỉnh sửa"
+  },
+  "feedbackForm": {
+    "title": "Đánh giá trải nghiệm của bạn",
+    "subtitle": "Chúng tôi rất trân trọng phản hồi của bạn! Vui lòng dành một chút thời gian để đánh giá trải nghiệm và cung cấp cho chúng tôi những phản hồi quý báu.",
+    "commentPlaceholder": "Chia sẻ với chúng tôi về trải nghiệm của bạn!",
+    "ratingRequired": "Vui lòng chọn đánh giá.",
+    "cancel": "Hủy",
+    "send": "Gửi",
+    "saveChanges": "Lưu thay đổi",
+    "sending": "Đang gửi...",
+    "updateSuccess": "Cập nhật phản hồi thành công.",
+    "createSuccess": "Tạo phản hồi thành công.",
+    "requestFailed": "Yêu cầu thất bại"
+  }
+}

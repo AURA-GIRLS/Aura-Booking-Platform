@@ -1,0 +1,77 @@
+{
+  "makeupArtistList": {
+    "title": "Find Your Perfect Makeup Artist",
+    "subtitle": "Discover talented professionals for your special moments",
+    "search": {
+      "location": "Location",
+      "date": "Makeup Date",
+      "style": "Makeup Style",
+      "stylePlaceholder": "Style (e.g., Natural, Elegant)",
+      "button": "Find Makeup Artist"
+    },
+    "meta": {
+      "results": "{location}: {count} Makeup Artists waiting for you to choose",
+      "recentlyFound": "Recently found high-quality makeup services nationwide",
+      "availableOn": "Available on {date}: {count} Makeup Artists",
+      "makeupArtistsAvailable": "Makeup artists available for booking on {date}"
+    },
+    "filters": {
+      "dateFilterActive": "Date Filter Active",
+      "showingMuasAvailable": "Showing MUAs available on {date}",
+      "additionalFilters": "Additional filters below will refine these results",
+      "searchByName": "Search by Name or Location",
+      "searchWithinAvailable": "Search within available MUAs",
+      "searchPlaceholder": "Enter MUA name or location...",
+      "searchAvailablePlaceholder": "Search available MUAs...",
+      "budget": "Budget",
+      "filterByPrice": "Filter by Service Price",
+      "filterMuasWithPrice": "Filter MUAs who have services in this price range",
+      "minimumRating": "Minimum Rating",
+      "filterByRating": "Filter by MUA Rating",
+      "showOnlyRating": "Show only MUAs with this rating or higher",
+      "resetFilters": "Reset Filters",
+      "resetAdditionalFilters": "Reset Additional Filters"
+    },
+    "results": {
+      "sortBy": "Sort by:",
+      "sortOptions": {
+        "featured": "Featured",
+        "priceLowToHigh": "Price: Low to High",
+        "priceHighToLow": "Price: High to Low",
+        "newest": "Newest",
+        "popular": "Popular"
+      },
+      "allAreas": "All Areas: {count} Makeup Artists available",
+      "availableOnDate": "Available on {date}: {count} Makeup Artists",
+      "availableForBooking": "Makeup artists available for booking on {date}",
+      "recentlyFound": "Recently found high-quality makeup services nationwide",
+      "noArtistsFound": "No Makeup Artist found",
+      "noArtistsAvailable": "No Makeup Artists available on {date}",
+      "tryDifferentDate": "Try selecting a different date or check back later",
+      "tryAdjustingFilters": "Try adjusting the filters or searching with different keywords",
+      "resetSearch": "Reset Search",
+      "errorOccurred": "An error occurred",
+      "tryAgain": "Try Again",
+      "loading": "Loading...",
+      "availableServices": "Available Services ({count})",
+      "professionalMakeupService": "Professional makeup service",
+      "verified": "Verified",
+      "viewPortfolio": "View Portfolio",
+      "book": "Book",
+      "reviews": "reviews",
+      "mins": "mins"
+    },
+    "artistCard": {
+      "verified": "Verified",
+      "professionalBio": "Professional Makeup Artist & Beauty Expert",
+      "viewPortfolio": "View Portfolio",
+      "featuredServices": "Featured services ({count} packages)",
+      "book": "Book",
+      "reviews": "reviews"
+    },
+    "portfolio": {
+      "title": "Portfolio",
+      "loading": "Loading portfolio..."
+    }
+  }
+}

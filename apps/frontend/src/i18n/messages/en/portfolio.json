@@ -1,0 +1,71 @@
+{
+  "navigation": {
+    "about": "About",
+    "services": "Services",
+    "portfolio": "Portfolio",
+    "reviews": "Reviews",
+    "contact": "Contact",
+    "bookNow": "Book Now"
+  },
+  "hero": {
+    "verifiedProfessional": "Verified Professional",
+    "licensedArtist": "Licensed Artist",
+    "availableToday": "Available Today",
+    "professionalMakeupArtist": "Professional Makeup Artist & Beauty Specialist",
+    "yearsExperience": "Years Experience",
+    "happyClients": "Happy Clients",
+    "awardsWon": "Awards Won",
+    "specialties": "Specialties",
+    "about": "About",
+    "bookNow": "Book Now",
+    "message": "Message"
+  },
+  "services": {
+    "title": "Services & Packages",
+    "subtitle": "Choose from professional makeup services tailored to your needs",
+    "mostPopular": "Most Popular",
+    "bookNow": "Book now"
+  },
+  "portfolio": {
+    "title": "My Portfolio",
+    "subtitle": "Explore my latest work and see the artistry and attention to detail that showcases the artistry and skill behind every look",
+    "all": "All",
+    "loading": "Loading portfolios...",
+    "noItemsFound": "No portfolio items found",
+    "viewFullPortfolio": "View Full Portfolio",
+    "more": "more",
+    "description": "Description",
+    "tags": "Tags"
+  },
+  "portfolioDetail": {
+    "close": "Close",
+    "description": "Description",
+    "tags": "Tags"
+  },
+  "reviews": {
+    "title": "What Clients Say",
+    "subtitle": "Real feedback from brides, models, and clients who trusted Elena with their special moments",
+    "loading": "Loading reviews...",
+    "averageRating": "Average Rating",
+    "totalReviews": "Total Reviews",
+    "satisfactionRate": "Satisfaction Rate",
+    "client": "Client",
+    "customer": "Customer",
+    "noReviewsMessage": "Be the first to leave a review after your experience.",
+    "satisfiedClientsMessage": "Join hundreds of satisfied clients who trusted Elena with their most important moments. Book your consultation today!"
+  },
+  "categories": {
+    "bridal": "Bridal",
+    "party": "Party",
+    "weddingGuest": "Wedding Guest",
+    "graduation": "Graduation",
+    "daily": "Daily",
+    "prom": "Prom",
+    "photoshoot": "Photoshoot",
+    "specialEvent": "Special Event"
+  },
+  "notFound": {
+    "title": "Artist Not Found",
+    "backToArtists": "Back to Artists"
+  }
+}
