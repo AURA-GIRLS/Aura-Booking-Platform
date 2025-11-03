@@ -1,9 +1,11 @@
 "use client";
 
 import { MapPin, Users, Sparkles } from "lucide-react";
+import { useTranslate } from "../../i18n/hooks/useTranslate";
 import Link from "next/link";
 
 export default function FeaturedLocations() {
+  const { t } = useTranslate('sections');
   const cities = [
     { 
       name: "Hanoi", 
@@ -44,18 +46,18 @@ export default function FeaturedLocations() {
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-pink-100 to-rose-100 rounded-full text-pink-700 font-medium text-sm mb-6 border border-pink-200">
             <MapPin size={16} className="text-pink-500" />
-            Popular Locations
+            {t('featuredLocations.badge')}
           </div>
           
           <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
-            Enhance Your Natural
+            {t('featuredLocations.title.line1')}
             <span className="block bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">
-              Beauty Everywhere
+              {t('featuredLocations.title.line2')}
             </span>
           </h2>
           
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            Professional makeup artists in major cities across Vietnam, ready to make you shine on your special day
+            {t('featuredLocations.description')}
           </p>
         </div>
 
@@ -102,10 +104,10 @@ export default function FeaturedLocations() {
                 {/* Stats */}
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-500">
-                    {city.artistCount} Makeup Artists
+                    {city.artistCount} {t('featuredLocations.makeupArtists')}
                   </span>
                   <div className="flex items-center gap-1 text-pink-500 group-hover:text-pink-600 transition-colors">
-                    <span className="font-medium">Explore</span>
+                    <span className="font-medium">{t('featuredLocations.explore')}</span>
                     <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
@@ -126,7 +128,7 @@ export default function FeaturedLocations() {
             className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-pink-600 to-rose-600 text-white rounded-full font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
           >
             <MapPin size={20} />
-            View All Locations
+            {t('featuredLocations.viewAllButton')}
             <Sparkles size={18} className="animate-pulse" />
           </Link>
         </div>

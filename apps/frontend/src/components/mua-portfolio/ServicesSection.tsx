@@ -5,9 +5,11 @@ import { Badge } from "../lib/ui/badge"
 import { services } from "./data"
 import { ServiceDetail } from "@/types/artist.dto"
 import { useAuthCheck } from "../../utils/auth"
+import { useTranslate } from "@/i18n/hooks/useTranslate"
 
 export default function ServicesSection({services,handleBook}:Readonly<{services: ServiceDetail[], handleBook?: (serviceId?: string) => void}>) {
   const { checkAuthAndExecute } = useAuthCheck();
+  const { t, loading: i18nLoading } = useTranslate('portfolio');
 
   function formatPrice(price?: number) {
     return typeof price === "number" ? `${price.toLocaleString("vi-VN")} VND` : "Contact";
@@ -36,12 +38,35 @@ export default function ServicesSection({services,handleBook}:Readonly<{services
     });
   };
 
+  if (i18nLoading) {
+    return (
+      <section id="services" className="py-16 bg-white min-h-[45rem]">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="text-center mb-12">
+            <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mx-auto mb-4"></div>
+            <div className="h-4 w-96 bg-gray-200 rounded animate-pulse mx-auto"></div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="border-2 border-gray-200 rounded-lg p-6">
+                <div className="h-4 w-32 bg-gray-200 rounded animate-pulse mb-4"></div>
+                <div className="h-3 w-full bg-gray-200 rounded animate-pulse mb-2"></div>
+                <div className="h-3 w-3/4 bg-gray-200 rounded animate-pulse mb-4"></div>
+                <div className="h-8 w-24 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
     return (
     <section id="services" className="py-16 bg-white min-h-[45rem]">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-black mb-4">Services & Packages</h2>
-            <p className="text-gray-600 text-lg">Choose from professional makeup services tailored to your needs</p>
+            <h2 className="text-3xl font-bold text-black mb-4">{t('services.title')}</h2>
+            <p className="text-gray-600 text-lg">{t('services.subtitle')}</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -53,7 +78,7 @@ export default function ServicesSection({services,handleBook}:Readonly<{services
               >
                 {/* {service.popular && ( */}
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <Badge className="bg-rose-500 text-white">Most Popular</Badge>
+                    <Badge className="bg-rose-500 text-white">{t('services.mostPopular')}</Badge>
                   </div>
                 {/* )} */}
                 <CardHeader>
@@ -82,7 +107,7 @@ export default function ServicesSection({services,handleBook}:Readonly<{services
                     <Button 
                     onClick={() => handleBookService(service._id)}
                     size="sm" className="bg-rose-500 hover:bg-rose-600 text-white">
-                      Book now
+                      {t('services.bookNow')}
                     </Button>
                   </div>
                 </CardContent>

@@ -5,8 +5,10 @@ import { User, Mail, Phone, Camera, Edit2, Save, X, Upload } from "lucide-react"
 import Notification from "@/components/generalUI/Notification";
 import { authService } from "@/services/auth";
 import { UserResponseDTO } from "@/types/user.dtos";
+import { useTranslate } from "@/i18n/hooks/useTranslate";
 
 const EditProfile: React.FC = () => {
+  const { t } = useTranslate('profile');
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -47,7 +49,7 @@ const EditProfile: React.FC = () => {
         });
       }
     } catch (error: any) {
-      showNotification("error", error.message || "Failed to load profile");
+      showNotification("error", error.message || t('editProfile.profileLoadFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -63,17 +65,17 @@ const EditProfile: React.FC = () => {
 
   const validateForm = () => {
     if (!editedProfile.fullName.trim()) {
-      showNotification("error", "Full name is required");
+      showNotification("error", t('editProfile.fullNameRequired'));
       return false;
     }
 
     if (editedProfile.fullName.length < 2 || editedProfile.fullName.length > 50) {
-      showNotification("error", "Full name must be between 2 and 50 characters");
+      showNotification("error", t('editProfile.fullNameLength'));
       return false;
     }
 
     if (editedProfile.phoneNumber && !/^[\+]?[0-9][\d]{0,10}$/.test(editedProfile.phoneNumber)) {
-      showNotification("error", "Please enter a valid phone number");
+      showNotification("error", t('editProfile.validPhone'));
       return false;
     }
 
@@ -115,7 +117,7 @@ const EditProfile: React.FC = () => {
       if (response.success && response.data) {
         setProfile(response.data);
         setIsEditing(false);
-        showNotification("success", "Profile updated successfully!");
+        showNotification("success", t('editProfile.profileUpdateSuccess'));
 
         try {
           localStorage.setItem('currentUser', JSON.stringify(response.data));
@@ -129,7 +131,7 @@ const EditProfile: React.FC = () => {
         setAvatarFile(null);
       }
     } catch (error: any) {
-      showNotification("error", error.message || "Failed to update profile");
+      showNotification("error", error.message || t('editProfile.profileUpdateFailed'));
     } finally {
       setIsSaving(false);
     }
@@ -156,12 +158,12 @@ const EditProfile: React.FC = () => {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      showNotification("error", "Please select an image file");
+      showNotification("error", t('editProfile.selectImageFile'));
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      showNotification("error", "Image size must be less than 5MB");
+      showNotification("error", t('editProfile.imageSizeLimit'));
       return;
     }
 
@@ -209,8 +211,8 @@ const EditProfile: React.FC = () => {
         <div className="bg-gradient-to-r from-pink-100 to-rose-100 px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Edit Profile</h1>
-              <p className="text-gray-600 mt-1">Update your personal information</p>
+              <h1 className="text-2xl font-bold text-gray-900">{t('editProfile.title')}</h1>
+              <p className="text-gray-600 mt-1">{t('editProfile.subtitle')}</p>
             </div>
             {!isEditing ? (
               <button
@@ -218,7 +220,7 @@ const EditProfile: React.FC = () => {
                 className="flex items-center gap-2 px-4 py-2 bg-pink-600 text-white rounded-xl hover:bg-pink-700 transition"
               >
                 <Edit2 size={16} />
-                Edit Profile
+                {t('editProfile.editProfileButton')}
               </button>
             ) : (
               <div className="flex gap-2">
@@ -228,7 +230,7 @@ const EditProfile: React.FC = () => {
                   className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Save size={16} />
-                  {isSaving ? "Saving..." : "Save"}
+                  {isSaving ? t('editProfile.saving') : t('editProfile.save')}
                 </button>
                 <button
                   onClick={handleCancel}
@@ -236,7 +238,7 @@ const EditProfile: React.FC = () => {
                   className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-xl hover:bg-gray-600 transition disabled:opacity-50"
                 >
                   <X size={16} />
-                  Cancel
+                  {t('editProfile.cancel')}
                 </button>
               </div>
             )}
@@ -266,7 +268,7 @@ const EditProfile: React.FC = () => {
                     <>
                       <input
                        title="file"
-                       placeholder="Upload Avatar"
+                       placeholder={t('editProfile.uploadAvatar')}
                         type="file"
                         accept="image/*"
                         onChange={handleAvatarUpload}
@@ -277,6 +279,7 @@ const EditProfile: React.FC = () => {
                       <label
                         htmlFor="avatar-upload"
                         className="absolute bottom-0 right-0 w-8 h-8 bg-pink-600 rounded-full flex items-center justify-center text-white hover:bg-pink-700 transition cursor-pointer"
+                        title={t('editProfile.changeAvatar')}
                       >
                         <Camera size={16} />
                       </label>
@@ -284,9 +287,9 @@ const EditProfile: React.FC = () => {
                   )}
                 </div>
                 <h2 className="mt-4 text-xl font-semibold text-gray-900">
-                  {profile?.fullName || "Loading..."}
+                  {profile?.fullName || t('editProfile.loading')}
                 </h2>
-                <p className="text-gray-600">Customer</p>
+                <p className="text-gray-600">{t('editProfile.customer')}</p>
               </div>
             </div>
 
@@ -296,7 +299,7 @@ const EditProfile: React.FC = () => {
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                   <User size={16} />
-                  Full Name
+                  {t('editProfile.fullName')}
                 </label>
                 {isEditing ? (
                   <input
@@ -304,11 +307,11 @@ const EditProfile: React.FC = () => {
                     value={editedProfile.fullName}
                     onChange={(e) => setEditedProfile({...editedProfile, fullName: e.target.value})}
                     className="w-full px-4 py-3 border border-rose-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-300"
-                    placeholder="Enter your full name"
+                    placeholder={t('editProfile.enterFullName')}
                   />
                 ) : (
                   <div className="px-4 py-3 bg-gray-50 rounded-xl text-gray-900">
-                    {profile?.fullName || "Not provided"}
+                    {profile?.fullName || t('editProfile.notProvided')}
                   </div>
                 )}
               </div>
@@ -317,19 +320,19 @@ const EditProfile: React.FC = () => {
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                   <Mail size={16} />
-                  Email
+                  {t('editProfile.email')}
                 </label>
                 <div className="px-4 py-3 bg-gray-50 rounded-xl text-gray-900">
-                  {profile?.email || "Not provided"}
+                  {profile?.email || t('editProfile.notProvided')}
                 </div>
-                <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
+                <p className="text-xs text-gray-500 mt-1">{t('editProfile.emailCannotBeChanged')}</p>
               </div>
 
               {/* Phone */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                   <Phone size={16} />
-                  Phone Number
+                  {t('editProfile.phoneNumber')}
                 </label>
                 {isEditing ? (
                   <input
@@ -337,31 +340,31 @@ const EditProfile: React.FC = () => {
                     value={editedProfile.phoneNumber}
                     onChange={(e) => setEditedProfile({...editedProfile, phoneNumber: e.target.value})}
                     className="w-full px-4 py-3 border border-rose-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-300"
-                    placeholder="Enter your phone number"
+                    placeholder={t('editProfile.enterPhoneNumber')}
                   />
                 ) : (
                   <div className="px-4 py-3 bg-gray-50 rounded-xl text-gray-900">
-                    {profile?.phoneNumber || "Not provided"}
+                    {profile?.phoneNumber || t('editProfile.notProvided')}
                   </div>
                 )}
               </div>
 
               {/* Account Information */}
               <div className="bg-gray-50 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Information</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('editProfile.accountInformation')}</h3>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-700">Account Status</span>
-                    <span className="text-green-600 font-medium">{profile?.status || 'Active'}</span>
+                    <span className="text-gray-700">{t('editProfile.accountStatus')}</span>
+                    <span className="text-green-600 font-medium">{profile?.status || t('editProfile.active')}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-700">Email Verified</span>
+                    <span className="text-gray-700">{t('editProfile.emailVerified')}</span>
                     <span className={`font-medium ${profile?.isEmailVerified ? 'text-green-600' : 'text-red-600'}`}>
-                      {profile?.isEmailVerified ? 'Verified' : 'Not Verified'}
+                      {profile?.isEmailVerified ? t('editProfile.verified') : t('editProfile.notVerified')}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-700">Member Since</span>
+                    <span className="text-gray-700">{t('editProfile.memberSince')}</span>
                     <span className="text-gray-600">
                       {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString('en-US') : 'N/A'}
                     </span>

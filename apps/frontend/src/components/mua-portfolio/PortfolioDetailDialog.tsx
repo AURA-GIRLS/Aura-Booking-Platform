@@ -7,6 +7,7 @@ import { X, Calendar, Tag, Camera } from "lucide-react";
 import type { Portfolio } from "@/types/portfolio";
 import { PORTFOLIO_CATEGORY_LABELS } from "@/constants/index";
 import { useState } from "react";
+import { useTranslate } from "@/i18n/hooks/useTranslate";
 
 interface PortfolioDetailDialogProps {
   portfolio: Portfolio | null;
@@ -30,12 +31,13 @@ export default function PortfolioDetailDialog({
   onClose 
 }: PortfolioDetailDialogProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const { t, loading: i18nLoading } = useTranslate('portfolio');
 
   if (!portfolio) return null;
 
   const categoryColor = CATEGORY_COLORS[portfolio.category || "DAILY"] || "bg-rose-500";
   const categoryLabel = portfolio.category 
-    ? PORTFOLIO_CATEGORY_LABELS[portfolio.category as keyof typeof PORTFOLIO_CATEGORY_LABELS] 
+    ? t(`categories.${portfolio.category.toLowerCase()}`) 
     : "Portfolio";
 
   const images = portfolio.images || [];
@@ -54,12 +56,17 @@ export default function PortfolioDetailDialog({
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    const locale = navigator.language || 'en-US';
+    return new Date(dateString).toLocaleDateString(locale, {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     });
   };
+
+  if (i18nLoading) {
+    return null;
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -120,7 +127,7 @@ export default function PortfolioDetailDialog({
                   >
                     ›
                   </Button>
-                  
+                   
                   {/* Image Counter */}
                   <div className="absolute bottom-2 right-2 bg-black/50 text-white px-2 py-1 rounded text-sm">
                     {currentImageIndex + 1} / {images.length}
@@ -160,7 +167,7 @@ export default function PortfolioDetailDialog({
           {/* Description */}
           {portfolio.description && (
             <div className="space-y-2">
-              <h3 className="text-base font-semibold text-gray-900">Description</h3>
+              <h3 className="text-base font-semibold text-gray-900">{t('portfolioDetail.description')}</h3>
               <p className="text-gray-700 whitespace-pre-wrap leading-relaxed text-sm">
                 {portfolio.description}
               </p>
@@ -172,7 +179,7 @@ export default function PortfolioDetailDialog({
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Tag className="w-4 h-4 text-gray-500" />
-                <h3 className="text-base font-semibold text-gray-900">Tags</h3>
+                <h3 className="text-base font-semibold text-gray-900">{t('portfolioDetail.tags')}</h3>
               </div>
               <div className="flex flex-wrap gap-2">
                 {portfolio.tags.map((tag) => (

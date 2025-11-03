@@ -1,0 +1,70 @@
+{
+  "sidebar": {
+    "myPersonalWall": "Tường cá nhân của tôi",
+    "follower": "Người theo dõi",
+    "following": "Đang theo dõi",
+    "post": "Bài viết",
+    "feed": "Bảng tin",
+    "followingUsers": "Người dùng đang theo dõi",
+    "trendingTags": "TAGS PHỔ BIẾN",
+    "loginToExperience": "Đăng nhập để trải nghiệm"
+  },
+  "postCreator": {
+    "placeholder": "Bạn đang nghĩ gì?",
+    "selectedServices": "Dịch vụ đã chọn",
+    "imageVideo": "Hình ảnh/Video",
+    "hashtag": "Hashtag",
+    "services": "Dịch vụ",
+    "public": "Công khai",
+    "onlyMe": "Chỉ mình tôi",
+    "sharePost": "Chia sẻ bài viết",
+    "posting": "Đang đăng...",
+    "searchOrCreateTag": "Tìm kiếm hoặc tạo tag...",
+    "noTagsFound": "Không tìm thấy tag nào.",
+    "noTagsFoundSimple": "Không tìm thấy tag nào.",
+    "createTag": "Tạo \"{tag}\"",
+    "allTags": "Tất cả tags",
+    "loginToExperience": "Đăng nhập để trải nghiệm",
+    "selectPrivacy": "Chọn quyền riêng tư"
+  },
+  "postsFeed": {
+    "justNow": "Vừa xong",
+    "ago": "trước",
+    "verifiedArtist": "Huy hiệu nghệ sĩ đã xác minh",
+    "following": "Đang theo dõi",
+    "follow": "Theo dõi",
+    "viewDetails": "Xem chi tiết",
+    "editPost": "Chỉnh sửa bài viết",
+    "deletePost": "Xóa bài viết",
+    "copyLink": "Sao chép liên kết",
+    "report": "Báo cáo",
+    "likes": "Lượt thích",
+    "comments": "Bình luận",
+    "share": "Chia sẻ",
+    "deletePostTitle": "Xóa bài viết",
+    "deletePostConfirm": "Bạn có chắc chắn muốn xóa bài viết này? Hành động này không thể hoàn tác và sẽ xóa tất cả bình luận và lượt thích.",
+    "delete": "Xóa",
+    "cancel": "Hủy",
+    "postActions": "Hành động bài viết",
+    "private": "Riêng tư",
+    "public": "Công khai",
+    "openMedia": "Mở phương tiện {index}",
+    "postMedia": "Phương tiện bài viết {index}",
+    "openGallery": "Mở thư viện với {count} hình ảnh"
+  },
+  "rightSidebar": {
+    "searchPlaceholder": "Tìm kiếm bài viết, người dùng, tags...",
+    "messages": "Tin nhắn",
+    "primary": "Chính",
+    "general": "Chung",
+    "loginToExperience": "Đăng nhập để trải nghiệm"
+  },
+  "mainContent": {
+    "community": "Cộng đồng",
+    "userWall": "Tường người dùng",
+    "filteringBy": "Đang lọc theo:",
+    "clearFilter": "Xóa bộ lọc",
+    "loadingMorePosts": "Đang tải thêm bài viết...",
+    "endOfFeed": "Bạn đã xem hết bảng tin"
+  }
+}

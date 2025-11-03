@@ -1,0 +1,70 @@
+{
+  "sidebar": {
+    "myPersonalWall": "My Personal Wall",
+    "follower": "Follower",
+    "following": "Following",
+    "post": "Post",
+    "feed": "Feed",
+    "followingUsers": "Following Users",
+    "trendingTags": "TRENDING TAGS",
+    "loginToExperience": "Login to experience"
+  },
+  "postCreator": {
+    "placeholder": "What's on your mind?",
+    "selectedServices": "Selected services",
+    "imageVideo": "Image/Video",
+    "hashtag": "Hashtag",
+    "services": "Services",
+    "public": "Public",
+    "onlyMe": "Only Me",
+    "sharePost": "Share Post",
+    "posting": "Posting...",
+    "searchOrCreateTag": "Search or create tag...",
+    "noTagsFound": "No tags found.",
+    "noTagsFoundSimple": "No tags found.",
+    "createTag": "Create \"{tag}\"",
+    "allTags": "All tags",
+    "loginToExperience": "Login to experience",
+    "selectPrivacy": "Select privacy"
+  },
+  "postsFeed": {
+    "justNow": "Just now",
+    "ago": "ago",
+    "verifiedArtist": "Verified Artist badge",
+    "following": "Following",
+    "follow": "Follow",
+    "viewDetails": "View details",
+    "editPost": "Edit post",
+    "deletePost": "Delete post",
+    "copyLink": "Copy link",
+    "report": "Report",
+    "likes": "Likes",
+    "comments": "Comments",
+    "share": "Share",
+    "deletePostTitle": "Delete Post",
+    "deletePostConfirm": "Are you sure you want to delete this post? This action cannot be undone and will remove all comments and likes.",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "postActions": "Post actions",
+    "private": "Private",
+    "public": "Public",
+    "openMedia": "Open media {index}",
+    "postMedia": "Post media {index}",
+    "openGallery": "Open gallery with {count} images"
+  },
+  "rightSidebar": {
+    "searchPlaceholder": "Search posts, users, tags...",
+    "messages": "Messages",
+    "primary": "Primary",
+    "general": "General",
+    "loginToExperience": "Login to experience"
+  },
+  "mainContent": {
+    "community": "Community",
+    "userWall": "User Wall",
+    "filteringBy": "Filtering by:",
+    "clearFilter": "Clear filter",
+    "loadingMorePosts": "Loading more posts...",
+    "endOfFeed": "You've reached the end of the feed"
+  }
+}

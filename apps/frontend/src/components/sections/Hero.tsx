@@ -1,9 +1,11 @@
 "use client";
 
 import { Sparkles, Heart, Star } from "lucide-react";
+import { useTranslate } from "../../i18n/hooks/useTranslate";
 import Link from "next/link";
 
 export default function Hero() {
+  const { t } = useTranslate('sections');
   return (
     <section className="relative w-full px-6 py-16 overflow-hidden">
       {/* Background with gradient */}
@@ -23,7 +25,7 @@ export default function Hero() {
           <div className="text-center lg:text-left">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-pink-100 to-rose-100 rounded-full text-pink-700 font-medium text-sm mb-6 border border-pink-200">
               <Sparkles size={16} className="text-pink-500" />
-              Professional Beauty Services
+              {t('hero.badge')}
             </div>
             
             <h1 className="text-5xl lg:text-7xl font-bold mb-6 bg-gradient-to-r from-pink-600 via-rose-500 to-pink-700 bg-clip-text text-transparent leading-tight">
@@ -31,15 +33,15 @@ export default function Hero() {
             </h1>
             
             <h2 className="text-2xl lg:text-3xl font-semibold text-gray-800 mb-4">
-              Booking Makeup Online
+              {t('hero.subtitle')}
             </h2>
             
             <p className="text-xl lg:text-2xl text-pink-600 font-medium mb-8 italic">
-              Face it, You are Art! ✨
+              {t('hero.tagline')}
             </p>
             
             <p className="text-gray-600 text-lg mb-10 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
-              Connect with professional makeup artists for weddings, parties, photoshoots, and special occasions. Book your perfect look today.
+              {t('hero.description')}
             </p>
 
             {/* CTA Buttons */}
@@ -49,7 +51,7 @@ export default function Hero() {
                 className="group px-8 py-4 bg-gradient-to-r from-pink-600 to-rose-600 text-white rounded-full font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex items-center gap-2"
               >
                 <Sparkles size={20} className="group-hover:rotate-12 transition-transform" />
-                Find Your Artist
+                {t('hero.findArtistButton')}
               </Link>
             
             </div>
@@ -116,10 +118,10 @@ export default function Hero() {
 
               {/* Service types badges */}
               <div className="flex flex-wrap gap-2 mt-6 justify-center">
-                <span className="px-3 py-1 bg-pink-100 text-pink-700 rounded-full text-xs font-medium">Wedding</span>
-                <span className="px-3 py-1 bg-rose-100 text-rose-700 rounded-full text-xs font-medium">Party</span>
-                <span className="px-3 py-1 bg-pink-100 text-pink-700 rounded-full text-xs font-medium">Photoshoot</span>
-                <span className="px-3 py-1 bg-rose-100 text-rose-700 rounded-full text-xs font-medium">Special Events</span>
+                <span className="px-3 py-1 bg-pink-100 text-pink-700 rounded-full text-xs font-medium">{t('hero.services.wedding')}</span>
+                <span className="px-3 py-1 bg-rose-100 text-rose-700 rounded-full text-xs font-medium">{t('hero.services.party')}</span>
+                <span className="px-3 py-1 bg-pink-100 text-pink-700 rounded-full text-xs font-medium">{t('hero.services.photoshoot')}</span>
+                <span className="px-3 py-1 bg-rose-100 text-rose-700 rounded-full text-xs font-medium">{t('hero.services.specialEvents')}</span>
               </div>
             </div>
 

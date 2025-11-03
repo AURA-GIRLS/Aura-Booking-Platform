@@ -7,8 +7,10 @@ import Footer from "@/components/generalUI/Footer";
 import Notification from "@/components/generalUI/Notification";
 import { authService } from "@/services/auth";
 import { UserResponseDTO } from "@/types/user.dtos";
+import { useTranslate } from "@/i18n/hooks/useTranslate";
 
 export default function MyProfilePage() {
+  const { t } = useTranslate('profile');
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -48,7 +50,7 @@ export default function MyProfilePage() {
         });
       }
     } catch (error: any) {
-      showNotification("error", error.message || "Failed to load profile");
+      showNotification("error", error.message || t('myProfile.profileLoadFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -64,17 +66,17 @@ export default function MyProfilePage() {
 
   const validateForm = () => {
     if (!editedProfile.fullName.trim()) {
-      showNotification("error", "Full name is required");
+      showNotification("error", t('myProfile.fullNameRequired'));
       return false;
     }
 
     if (editedProfile.fullName.length < 2 || editedProfile.fullName.length > 50) {
-      showNotification("error", "Full name must be between 2 and 50 characters");
+      showNotification("error", t('myProfile.fullNameLength'));
       return false;
     }
 
     if (editedProfile.phoneNumber && !/^[\+]?[0-9][\d]{0,10}$/.test(editedProfile.phoneNumber)) {
-      showNotification("error", "Please enter a valid phone number");
+      showNotification("error", t('myProfile.validPhone'));
       return false;
     }
 
@@ -98,10 +100,10 @@ export default function MyProfilePage() {
       if (response.success && response.data) {
         setProfile(response.data);
         setIsEditing(false);
-        showNotification("success", "Profile updated successfully!");
+        showNotification("success", t('myProfile.profileUpdateSuccess'));
       }
     } catch (error: any) {
-      showNotification("error", error.message || "Failed to update profile");
+      showNotification("error", error.message || t('myProfile.profileUpdateFailed'));
     } finally {
       setIsSaving(false);
     }
@@ -157,14 +159,14 @@ export default function MyProfilePage() {
         <div className="bg-white rounded-2xl shadow-sm border border-rose-200/60 overflow-hidden">
           <div className="bg-gradient-to-r from-pink-100 to-rose-100 px-8 py-6">
             <div className="flex items-center justify-between">
-              <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
+              <h1 className="text-3xl font-bold text-gray-900">{t('myProfile.title')}</h1>
               {!isEditing ? (
                 <button
                   onClick={() => setIsEditing(true)}
                   className="flex items-center gap-2 px-4 py-2 bg-pink-600 text-white rounded-xl hover:bg-pink-700 transition"
                 >
                   <Edit2 size={16} />
-                  Edit Profile
+                  {t('myProfile.editProfile')}
                 </button>
               ) : (
                 <div className="flex gap-2">
@@ -174,7 +176,7 @@ export default function MyProfilePage() {
                     className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Save size={16} />
-                    {isSaving ? "Saving..." : "Save"}
+                    {isSaving ? t('myProfile.saving') : t('myProfile.save')}
                   </button>
                   <button
                     onClick={handleCancel}
@@ -182,7 +184,7 @@ export default function MyProfilePage() {
                     className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-xl hover:bg-gray-600 transition disabled:opacity-50"
                   >
                     <X size={16} />
-                    Cancel
+                    {t('myProfile.cancel')}
                   </button>
                 </div>
               )}
@@ -204,15 +206,15 @@ export default function MyProfilePage() {
                       )}
                     </div>
                     {isEditing && (
-                      <button title="Change avatar" className="absolute bottom-0 right-0 w-8 h-8 bg-pink-600 rounded-full flex items-center justify-center text-white hover:bg-pink-700 transition">
+                      <button title={t('myProfile.changeAvatar')} className="absolute bottom-0 right-0 w-8 h-8 bg-pink-600 rounded-full flex items-center justify-center text-white hover:bg-pink-700 transition">
                         <Camera size={16} />
                       </button>
                     )}
                   </div>
                   <h2 className="mt-4 text-xl font-semibold text-gray-900">
-                    {profile?.fullName || "Loading..."}
+                    {profile?.fullName || t('myProfile.loading')}
                   </h2>
-                  <p className="text-gray-600">Customer</p>
+                  <p className="text-gray-600">{t('myProfile.customer')}</p>
                 </div>
               </div>
 
@@ -222,7 +224,7 @@ export default function MyProfilePage() {
                 <div>
                   <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                     <User size={16} />
-                    Full Name
+                    {t('myProfile.fullName')}
                   </label>
                   {isEditing ? (
                     <input
@@ -230,11 +232,11 @@ export default function MyProfilePage() {
                       value={editedProfile.fullName}
                       onChange={(e) => setEditedProfile({...editedProfile, fullName: e.target.value})}
                       className="w-full px-4 py-3 border border-rose-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-300"
-                      placeholder="Enter your full name"
+                      placeholder={t('myProfile.enterFullName')}
                     />
                   ) : (
                     <div className="px-4 py-3 bg-gray-50 rounded-xl text-gray-900">
-                      {profile?.fullName || "Not provided"}
+                      {profile?.fullName || t('myProfile.notProvided')}
                     </div>
                   )}
                 </div>
@@ -243,19 +245,19 @@ export default function MyProfilePage() {
                 <div>
                   <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                     <Mail size={16} />
-                    Email
+                    {t('myProfile.email')}
                   </label>
                   <div className="px-4 py-3 bg-gray-50 rounded-xl text-gray-900">
-                    {profile?.email || "Not provided"}
+                    {profile?.email || t('myProfile.notProvided')}
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
+                  <p className="text-xs text-gray-500 mt-1">{t('myProfile.emailCannotBeChanged')}</p>
                 </div>
 
                 {/* Phone */}
                 <div>
                   <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                     <Phone size={16} />
-                    Phone Number
+                    {t('myProfile.phoneNumber')}
                   </label>
                   {isEditing ? (
                     <input
@@ -263,11 +265,11 @@ export default function MyProfilePage() {
                       value={editedProfile.phoneNumber}
                       onChange={(e) => setEditedProfile({...editedProfile, phoneNumber: e.target.value})}
                       className="w-full px-4 py-3 border border-rose-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-300"
-                      placeholder="Enter your phone number"
+                      placeholder={t('myProfile.enterPhoneNumber')}
                     />
                   ) : (
                     <div className="px-4 py-3 bg-gray-50 rounded-xl text-gray-900">
-                      {profile?.phoneNumber || "Not provided"}
+                      {profile?.phoneNumber || t('myProfile.notProvided')}
                     </div>
                   )}
                 </div>
@@ -277,14 +279,14 @@ export default function MyProfilePage() {
                   <div>
                     <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                       <Camera size={16} />
-                      Avatar URL
+                      {t('myProfile.avatarUrl')}
                     </label>
                     <input
                       type="url"
                       value={editedProfile.avatarUrl}
                       onChange={(e) => setEditedProfile({...editedProfile, avatarUrl: e.target.value})}
                       className="w-full px-4 py-3 border border-rose-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-300"
-                      placeholder="Enter avatar image URL"
+                      placeholder={t('myProfile.enterAvatarUrl')}
                     />
                   </div>
                 )}
@@ -297,28 +299,28 @@ export default function MyProfilePage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
           {/* Booking History */}
           <div className="bg-white rounded-2xl shadow-sm border border-rose-200/60 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Bookings</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('myProfile.recentBookings')}</h3>
             <div className="text-gray-500 text-center py-8">
-              No bookings yet. Start exploring makeup artists!
+              {t('myProfile.noBookingsYet')}
             </div>
           </div>
 
           {/* Account Info */}
           <div className="bg-white rounded-2xl shadow-sm border border-rose-200/60 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Information</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('myProfile.accountInformation')}</h3>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-gray-700">Account Status</span>
-                <span className="text-green-600 font-medium">{profile?.status || 'Active'}</span>
+                <span className="text-gray-700">{t('myProfile.accountStatus')}</span>
+                <span className="text-green-600 font-medium">{profile?.status || t('myProfile.active')}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-gray-700">Email Verified</span>
+                <span className="text-gray-700">{t('myProfile.emailVerified')}</span>
                 <span className={`font-medium ${profile?.isEmailVerified ? 'text-green-600' : 'text-red-600'}`}>
-                  {profile?.isEmailVerified ? 'Verified' : 'Not Verified'}
+                  {profile?.isEmailVerified ? t('myProfile.verified') : t('myProfile.notVerified')}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-gray-700">Member Since</span>
+                <span className="text-gray-700">{t('myProfile.memberSince')}</span>
                 <span className="text-gray-600">
                   {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString('en-US') : 'N/A'}
                 </span>

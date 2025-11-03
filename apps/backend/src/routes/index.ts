@@ -17,6 +17,8 @@ import adminTransactionRoutes from "./admin.transaction";
 import adminUserRoutes from "./admin.user";
 import refundRoutes from "./admin.refund";
 import withdrawalRoutes from "./admin.withdrawal";
+import chatRoutes from "./chat";
+import userRoutes from "./user";
 const router = Router();
 
 // API routes
@@ -49,5 +51,7 @@ router.use('/admin/transactions', adminTransactionRoutes);
 router.use('/admin', adminUserRoutes);
 router.use('/admin/refunds', refundRoutes);
 router.use('/admin/withdrawals', withdrawalRoutes);
+router.use('/chat', chatRoutes);
+router.use('/user', userRoutes);
 
 export default router;

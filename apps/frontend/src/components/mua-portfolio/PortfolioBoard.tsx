@@ -15,6 +15,8 @@ import { ArtistDetailDTO } from "@/types/artist.dto"
 import Navigation from "./Navigation"
 import Link from "next/link"
 import LoadingPortfolio from "./LoadingPortfolio"
+import LanguageUpdater from "../generalUI/LanguageUpdater"
+import { useTranslate } from "@/i18n/hooks/useTranslate"
 
 export default function MakeupArtistPortfolio() {
  const params = useParams();
@@ -29,6 +31,7 @@ export default function MakeupArtistPortfolio() {
   
   // Add user state management
   const [user, setUser] = useState<UserResponseDTO | null>(null);
+  const { t, loading: i18nLoading } = useTranslate('portfolio');
   
   useEffect(() => {
     (async () => {
@@ -68,7 +71,7 @@ export default function MakeupArtistPortfolio() {
           <div className="w-[85%] mx-auto px-3 sm:px-4 lg:px-6 py-6">
             <div className="text-center py-8">
               <div className="text-4xl mb-4">💄</div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-3">Artist Not Found</h1>
+              <h1 className="text-2xl font-bold text-gray-900 mb-3">{t('notFound.title')}</h1>
               <p className="text-gray-600 mb-6 text-base">{error}</p>
               <Link
                 href="/user/artists/makeup-artist-list"
@@ -78,7 +81,7 @@ export default function MakeupArtistPortfolio() {
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ecbdc5'}
               >
                 <ArrowLeft size={16} />
-                Back to Artists
+                {t('notFound.backToArtists')}
               </Link>
             </div>
           </div>
@@ -88,8 +91,11 @@ export default function MakeupArtistPortfolio() {
 
   return (
     <div className="min-h-screen bg-white">
-    {/* Hero Section */}
-    {data?.artist && <HeroSection  muaDetail={data.artist} handleBook={handleBookService} />}
+      {/* Language Updater */}
+      <LanguageUpdater />
+      
+      {/* Hero Section */}
+      {data?.artist && <HeroSection  muaDetail={data.artist} handleBook={handleBookService} />}
       {/* Navigation */}
       <Navigation handleBook={handleBookService}/>
       {/* Services & Packages */}

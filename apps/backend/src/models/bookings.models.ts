@@ -1,14 +1,6 @@
 import { BOOKING_STATUS, BOOKING_TYPES } from "constants/index";
 import { Schema, model } from "mongoose";
 
-
-// const FeedbackSchema = new Schema({
-//   bookingId: { type: Schema.Types.ObjectId, ref: "Booking" },
-//   rating: Number,
-//   comment: String,
-//   createdAt: { type: Date, default: Date.now }
-// });
-
 const BookingSchema = new Schema({
   customerId: { type: Schema.Types.ObjectId, ref: "User" },
   serviceId: { type: Schema.Types.ObjectId, ref: "ServicePackage" },
@@ -28,6 +20,9 @@ const BookingSchema = new Schema({
   feedbackId:  { type: Schema.Types.ObjectId, ref: "Feedback", default: null },
   paymentId: { type: Schema.Types.ObjectId, ref: 'Transaction' },
   completedAt: { type: Date, default: null },
+  reminded24h: { type: Boolean, default: false },
+  reminded1h: { type: Boolean, default: false },
+  lastReminderAt: { type: Date, default: null },
 });
 
 export const Booking = model("Booking", BookingSchema);

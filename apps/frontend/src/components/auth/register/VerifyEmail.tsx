@@ -3,8 +3,10 @@ import React, { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { authService } from '@/services/auth';
 import { MailCheck, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { useTranslate } from '@/i18n/hooks/useTranslate';
 
 const VerifyEmail: React.FC = () => {
+	const { t, locale } = useTranslate('auth');
 	const searchParams = useSearchParams();
 	const router = useRouter();
 	const [status, setStatus] = useState<'idle'|'loading'|'success'|'error'>("idle");
@@ -15,7 +17,7 @@ const VerifyEmail: React.FC = () => {
 		const token = searchParams.get("token");
 		if (!token) {
 			setStatus("error");
-			setMessage("Invalid or missing verification token.");
+			setMessage(t('verifyEmail.invalidToken'));
 			return;
 		}
 		setStatus("loading");
@@ -23,17 +25,17 @@ const VerifyEmail: React.FC = () => {
 			.then(res => {
 				if (res.success) {
 					setStatus("success");
-					setMessage("Email verified successfully! Redirecting to login...");
+					setMessage(t('verifyEmail.verificationSuccess'));
 				} else {
 					setStatus("error");
-					setMessage(res.message || "Verification failed.");
+					setMessage(res.message || t('verifyEmail.verificationFailed'));
 				}
 			})
 			.catch(err => {
 				setStatus("error");
-				setMessage(err.message || "Verification failed.");
+				setMessage(err.message || t('verifyEmail.verificationFailed'));
 			});
-	}, [searchParams]);
+	}, [searchParams, t]);
 
 	useEffect(() => {
 		if (status === 'success' && countdown > 0) {
@@ -89,7 +91,7 @@ const VerifyEmail: React.FC = () => {
 						)}
 					</div>
 					<h1 className="text-2xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent mb-2">
-						Email Verification
+						{t('verifyEmail.title')}
 					</h1>
 				</div>
 
@@ -99,9 +101,9 @@ const VerifyEmail: React.FC = () => {
 						<div className="space-y-4">
 							<div className="flex items-center justify-center gap-2">
 								<Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
-								<p className="text-gray-700 font-medium">Verifying your email...</p>
+								<p className="text-gray-700 font-medium">{t('verifyEmail.verifying')}</p>
 							</div>
-							<p className="text-gray-600 text-sm">Please wait while we verify your account</p>
+							<p className="text-gray-600 text-sm">{t('verifyEmail.pleaseWait')}</p>
 						</div>
 					)}
 
@@ -112,9 +114,9 @@ const VerifyEmail: React.FC = () => {
 							</div>
 							<div className="text-center">
 								<p className="text-gray-600 text-sm">
-									Redirecting in{' '}
+									{t('verifyEmail.redirectingIn')}{' '}
 									<span className="font-bold text-green-600 text-lg">{countdown}</span>{' '}
-									seconds...
+									{t('verifyEmail.seconds')}
 								</p>
 								<div className="w-full bg-gray-200 rounded-full h-2 mt-3">
 									<div 
@@ -136,12 +138,12 @@ const VerifyEmail: React.FC = () => {
 									href="/auth/resend-verification" 
 									className="inline-block bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-300 transform hover:scale-105"
 								>
-									Resend Verification
+									{t('verifyEmail.resendVerification')}
 								</a>
 								<p className="text-sm text-gray-600">
 									or{' '}
 									<a href="/auth/login" className="text-rose-600 hover:text-rose-700 font-medium hover:underline">
-										Go to Login
+										{t('verifyEmail.goToLogin')}
 									</a>
 								</p>
 							</div>

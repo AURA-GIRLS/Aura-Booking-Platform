@@ -3,6 +3,7 @@ import { Card, CardContent } from "../lib/ui/card"
 import { useEffect, useState } from "react"
 import { api } from "@/config/api"
 import { testimonials } from "./data"
+import { useTranslate } from "@/i18n/hooks/useTranslate"
 
 interface Review {
   _id: string;
@@ -18,6 +19,7 @@ export default function TestimonialsSection({ muaId }: { muaId: string }) {
   const [loading, setLoading] = useState(true);
   const [avg, setAvg] = useState<number>(0);
   const [satisfaction, setSatisfaction] = useState<number>(0);
+  const { t, loading: i18nLoading } = useTranslate('portfolio');
 
   useEffect(() => {
     let active = true;
@@ -51,11 +53,24 @@ export default function TestimonialsSection({ muaId }: { muaId: string }) {
     return () => { active = false };
   }, [muaId]);
 
+  if (i18nLoading) {
+    return (
+      <section id="reviews" className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="text-center">
+            <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mx-auto mb-4"></div>
+            <div className="h-4 w-96 bg-gray-200 rounded animate-pulse mx-auto"></div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   if (loading) {
     return (
       <section id="reviews" className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center text-gray-500">Loading reviews...</div>
+          <div className="text-center text-gray-500">{t('reviews.loading')}</div>
         </div>
       </section>
     );
@@ -65,9 +80,9 @@ export default function TestimonialsSection({ muaId }: { muaId: string }) {
     <section id="reviews" className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-black mb-4">What Clients Say</h2>
+            <h2 className="text-3xl font-bold text-black mb-4">{t('reviews.title')}</h2>
             <p className="text-gray-600 text-lg">
-              Real feedback from brides, models, and clients who trusted Elena with their special moments
+              {t('reviews.subtitle')}
             </p>
           </div>
 
@@ -97,8 +112,8 @@ export default function TestimonialsSection({ muaId }: { muaId: string }) {
                       </div>
                     )}
                     <div>
-                      <div className="font-semibold text-black">{review.reviewerName || 'Customer'}</div>
-                      <div className="text-sm text-rose-600">Client</div>
+                      <div className="font-semibold text-black">{review.reviewerName || t('reviews.customer')}</div>
+                      <div className="text-sm text-rose-600">{t('reviews.client')}</div>
                     </div>
                   </div>
                 </CardContent>
@@ -114,21 +129,21 @@ export default function TestimonialsSection({ muaId }: { muaId: string }) {
                   <span className="text-4xl font-bold text-rose-500">{avg.toFixed(1)}</span>
                   <Star className="w-6 h-6 fill-rose-400 text-rose-400" />
                 </div>
-                <p className="text-gray-600">Average Rating</p>
+                <p className="text-gray-600">{t('reviews.averageRating')}</p>
               </div>
               <div>
                 <div className="text-4xl font-bold text-pink-500 mb-2">{reviews.length}</div>
-                <p className="text-gray-600">Total Reviews</p>
+                <p className="text-gray-600">{t('reviews.totalReviews')}</p>
               </div>
               <div>
                 <div className="text-4xl font-bold text-rose-600 mb-2">{satisfaction}%</div>
-                <p className="text-gray-600">Satisfaction Rate</p>
+                <p className="text-gray-600">{t('reviews.satisfactionRate')}</p>
               </div>
             </div>
             <p className="text-gray-600 mt-6 max-w-2xl mx-auto">
               {reviews.length > 0
-                ? 'Join hundreds of satisfied clients who trusted Elena with their most important moments. Book your consultation today!'
-                : 'Be the first to leave a review after your experience.'}
+                ? t('reviews.satisfiedClientsMessage')
+                : t('reviews.noReviewsMessage')}
             </p>
           </div>
         </div>

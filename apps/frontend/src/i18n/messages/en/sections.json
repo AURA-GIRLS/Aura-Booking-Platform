@@ -1,0 +1,62 @@
+{
+  "hero": {
+    "badge": "Professional Beauty Services",
+    "title": "AURA",
+    "subtitle": "Booking Makeup Online",
+    "tagline": "Face it, You are Art!",
+    "description": "Connect with professional makeup artists for weddings, parties, photoshoots, and special occasions. Book your perfect look today.",
+    "findArtistButton": "Find Your Artist",
+    "services": {
+      "wedding": "Wedding",
+      "party": "Party",
+      "photoshoot": "Photoshoot",
+      "specialEvents": "Special Events"
+    }
+  },
+  "featuredArtists": {
+    "badge": "Featured Artists",
+    "title": {
+      "line1": "Meet Our Top",
+      "line2": "Beauty Experts"
+    },
+    "description": "Discover talented makeup artists who have mastered the art of enhancing natural beauty with their exceptional skills",
+    "bookButton": "Book Now",
+    "reviews": "reviews",
+    "viewAllButton": "View All Artists"
+  },
+  "featuredLocations": {
+    "badge": "Popular Locations",
+    "title": {
+      "line1": "Enhance Your Natural",
+      "line2": "Beauty Everywhere"
+    },
+    "description": "Professional makeup artists in major cities across Vietnam, ready to make you shine on your special day",
+    "makeupArtists": "Makeup Artists",
+    "explore": "Explore",
+    "viewAllButton": "View All Locations"
+  },
+  "callToAction": {
+    "badge": "Ready to Transform?",
+    "title": {
+      "line1": "Not Sure Which",
+      "line2": "Artist to Choose?"
+    },
+    "subtitle": "Let AURA help you shine on your special day! ✨",
+    "description": "Our expert team will match you with the perfect makeup artist who understands your style and vision. Book your consultation today and discover your most beautiful self.",
+    "bookButton": "Book Now",
+    "features": {
+      "quality": {
+        "title": "Premium Quality",
+        "description": "Only verified professional artists"
+      },
+      "service": {
+        "title": "Personalized Service",
+        "description": "Tailored to your unique style"
+      },
+      "satisfaction": {
+        "title": "Satisfaction Guaranteed",
+        "description": "Your beauty, our commitment"
+      }
+    }
+  }
+}

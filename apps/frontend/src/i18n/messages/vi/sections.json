@@ -1,0 +1,62 @@
+{
+  "hero": {
+    "badge": "Dịch vụ làm đẹp chuyên nghiệp",
+    "title": "AURA",
+    "subtitle": "Đặt lịch trang điểm online",
+    "tagline": "Hãy đối mặt, bạn là nghệ thuật!",
+    "description": "Kết nối với các chuyên gia trang điểm chuyên nghiệp cho đám cưới, tiệc tùng, chụp ảnh và các dịp đặc biệt. Đặt lịch hoàn hảo của bạn ngay hôm nay.",
+    "findArtistButton": "Tìm chuyên gia của bạn",
+    "services": {
+      "wedding": "Đám cưới",
+      "party": "Tiệc tùng",
+      "photoshoot": "Chụp ảnh",
+      "specialEvents": "Sự kiện đặc biệt"
+    }
+  },
+  "featuredArtists": {
+    "badge": "chuyên gia nổi bật",
+    "title": {
+      "line1": "Gặp gỡ những chuyên gia",
+      "line2": "Làm đẹp hàng đầu"
+    },
+    "description": "Khám phá những chuyên gia trang điểm tài năng đã thành thạo nghệ thuật nâng cao vẻ đẹp tự nhiên với kỹ năng xuất sắc của họ",
+    "bookButton": "Đặt lịch ngay",
+    "reviews": "đánh giá",
+    "viewAllButton": "Xem tất cả chuyên gia"
+  },
+  "featuredLocations": {
+    "badge": "Địa điểm phổ biến",
+    "title": {
+      "line1": "Nâng cao vẻ đẹp tự nhiên",
+      "line2": "Mọi nơi"
+    },
+    "description": "chuyên gia trang điểm chuyên nghiệp tại các thành phố lớn trên khắp Việt Nam, sẵn sàng làm bạn tỏa sáng trong ngày đặc biệt của mình",
+    "makeupArtists": "chuyên gia trang điểm",
+    "explore": "Khám phá",
+    "viewAllButton": "Xem tất cả địa điểm"
+  },
+  "callToAction": {
+    "badge": "Sẵn sàng thay đổi?",
+    "title": {
+      "line1": "Không chắc chọn",
+      "line2": "chuyên gia nào?"
+    },
+    "subtitle": "Để AURA giúp bạn tỏa sáng trong ngày đặc biệt! ✨",
+    "description": "Đội ngũ chuyên gia của chúng tôi sẽ kết nối bạn với chuyên gia trang điểm hoàn hảo, người hiểu rõ phong cách và tầm nhìn của bạn. Đặt lịch tư vấn ngay hôm nay và khám phá phiên bản đẹp nhất của chính mình.",
+    "bookButton": "Đặt lịch ngay",
+    "features": {
+      "quality": {
+        "title": "Chất lượng cao cấp",
+        "description": "Chỉ có chuyên gia chuyên nghiệp đã xác thực"
+      },
+      "service": {
+        "title": "Dịch vụ cá nhân hóa",
+        "description": "Được điều chỉnh theo phong cách độc đáo của bạn"
+      },
+      "satisfaction": {
+        "title": "Đảm bảo hài lòng",
+        "description": "Vẻ đẹp của bạn, cam kết của chúng tôi"
+      }
+    }
+  }
+}

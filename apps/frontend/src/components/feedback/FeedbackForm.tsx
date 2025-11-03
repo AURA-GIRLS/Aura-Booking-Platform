@@ -3,6 +3,7 @@
 import { StarIcon } from "@heroicons/react/24/solid";
 import React, { useMemo, useState } from "react";
 
+import { useTranslate } from "@/i18n/hooks/useTranslate";
 import { createFeedback, updateFeedback } from "../../lib/api";
 
 export interface FeedbackFormProps {
@@ -46,6 +47,7 @@ function StarRatingInput({ value, onChange, disabled }: { value: number; onChang
 }
 
 export default function FeedbackForm({ bookingId, defaultValue, onSuccess, onCancel }: FeedbackFormProps) {
+  const { t } = useTranslate('feedback');
   const isEdit = useMemo(() => Boolean(defaultValue?.id), [defaultValue]);
   const [rating, setRating] = useState<number>(defaultValue?.rating ?? 0);
   const [comment, setComment] = useState<string>(defaultValue?.comment ?? "");
@@ -60,7 +62,7 @@ export default function FeedbackForm({ bookingId, defaultValue, onSuccess, onCan
     setSuccess("");
     try {
       if (rating === 0) {
-        setError({ message: "Please select a rating." });
+        setError({ message: t('feedbackForm.ratingRequired') });
         setLoading(false);
         return;
       }
@@ -74,10 +76,10 @@ export default function FeedbackForm({ bookingId, defaultValue, onSuccess, onCan
       } else {
         res = await createFeedback({ bookingId, rating: rating, comment });
       }
-      setSuccess(isEdit ? "Feedback updated successfully." : "Feedback created successfully.");
+      setSuccess(isEdit ? t('feedbackForm.updateSuccess') : t('feedbackForm.createSuccess'));
       onSuccess?.(res);
     } catch (err: any) {
-      setError({ code: err?.code, message: err?.message || "Request failed" });
+      setError({ code: err?.code, message: err?.message || t('feedbackForm.requestFailed') });
     } finally {
       setLoading(false);
     }
@@ -86,8 +88,8 @@ export default function FeedbackForm({ bookingId, defaultValue, onSuccess, onCan
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h3 className="mb-2 text-2xl font-semibold text-[#111]">Rate your experience</h3>
-        <p className="mb-2 max-w-prose mx-auto text-sm text-neutral-500">We highly value your feedback! Kindly take a moment to rate your experience and provide us with your valuable feedback.</p>
+        <h3 className="mb-2 text-2xl font-semibold text-[#111]">{t('feedbackForm.title')}</h3>
+        <p className="mb-2 max-w-prose mx-auto text-sm text-neutral-500">{t('feedbackForm.subtitle')}</p>
       </div>
 
       <form onSubmit={onSubmit} className="w-full overflow-hidden">
@@ -105,7 +107,7 @@ export default function FeedbackForm({ bookingId, defaultValue, onSuccess, onCan
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               className="w-full min-h-[120px] rounded-2xl bg-[#F7FAFF] shadow-inner p-4 text-sm placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-pink-200"
-              placeholder="Tell us about your experience!"
+              placeholder={t('feedbackForm.commentPlaceholder')}
             />
           </div>
 
@@ -124,7 +126,7 @@ export default function FeedbackForm({ bookingId, defaultValue, onSuccess, onCan
                 onClick={onCancel}
                 className="px-6 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 disabled:opacity-50"
               >
-                Cancel
+                {t('feedbackForm.cancel')}
               </button>
             ) : null}
             <button
@@ -132,7 +134,7 @@ export default function FeedbackForm({ bookingId, defaultValue, onSuccess, onCan
               aria-busy={loading}
               className="rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white px-6 py-2 font-medium shadow-lg hover:brightness-110 active:translate-y-px disabled:opacity-60 disabled:active:translate-y-0"
             >
-              {loading ? "Sending..." : isEdit ? "Save Changes" : "Send"}
+              {loading ? t('feedbackForm.sending') : isEdit ? t('feedbackForm.saveChanges') : t('feedbackForm.send')}
             </button>
           </div>
         </fieldset>

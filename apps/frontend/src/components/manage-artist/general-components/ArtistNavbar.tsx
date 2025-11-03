@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/lib/ui/dropdown-menu';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/lib/ui/avatar';
 import { ArtistNavbarProps } from "@/types/user.dtos";
+import LanguageSwitcher from '../../generalUI/LanguageSwitcher';
+import { getSocket } from "@/config/socket";
 
 export default function ArtistNavbar({ mua, setMua }:  Readonly<ArtistNavbarProps>) {
   const [isOpen, setIsOpen] = useState(false);
@@ -31,6 +33,10 @@ export default function ArtistNavbar({ mua, setMua }:  Readonly<ArtistNavbarProp
   
   useEffect(() => {
     setId(mua?._id || null);
+     if(user){
+      const socket = getSocket();
+          socket?.emit("auth:user", user?._id);
+        }
   }, [mua]);
   
   const handleLogout = () => {
@@ -96,7 +102,7 @@ export default function ArtistNavbar({ mua, setMua }:  Readonly<ArtistNavbarProp
 
         {/* Right: Icons */}
         <div className="hidden md:flex items-center gap-3 text-gray-700">
-          <button aria-label="Cart" className="p-2 hover:bg-gray-100 rounded">🛒</button>
+          <LanguageSwitcher />
           <button aria-label="Notifications" className="p-2 hover:bg-gray-100 rounded">🔔</button>
           {!user ? (
             <Link href="/auth/login">
@@ -118,11 +124,11 @@ export default function ArtistNavbar({ mua, setMua }:  Readonly<ArtistNavbarProp
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild  className="cursor-pointer focus:bg-rose-100">
                     <Link href={`/manage-artist/${id}/public-portfolio`}>My Public Portfolio</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href={`/manage-artist/${id}/certificates` as any} className="cursor-pointer focus:bg-rose-100">My Certificates</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleLogout} className="px-2 py-2 text-red-500 cursor-pointer">Logout</DropdownMenuItem>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href={`/manage-artist/${id}/certificates` as any} className="cursor-pointer focus:bg-rose-100">My Certificates</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleLogout} className="px-2 py-2 text-red-500 cursor-pointer">Logout</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           )}
@@ -146,7 +152,7 @@ export default function ArtistNavbar({ mua, setMua }:  Readonly<ArtistNavbarProp
             </ul>
           )}
           <div className="mt-3 flex items-center gap-3">
-            <button aria-label="Cart" className="p-2 hover:bg-gray-100 rounded">🛒</button>
+            <LanguageSwitcher />
             <button aria-label="Notifications" className="p-2 hover:bg-gray-100 rounded">🔔</button>
             {!user ? (
               <Link href="/auth/login">

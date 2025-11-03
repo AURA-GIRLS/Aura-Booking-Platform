@@ -37,6 +37,9 @@ export const config = {
   // Email Service
   smtpUser: process.env.SMTP_USER || '',
   sendgridApiKey: process.env.SENDGRID_API_KEY || '',
+  smtpHost: process.env.SMTP_HOST || 'smtp.gmail.com',
+  smtpPort: Number(process.env.SMTP_PORT || 587),
+  smtpPass: process.env.SMTP_PASS || '',
   
   // Third-party services
   googleClientId: process.env.GOOGLE_CLIENT_ID || '',

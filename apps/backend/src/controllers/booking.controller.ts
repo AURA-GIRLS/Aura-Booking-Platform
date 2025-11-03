@@ -22,6 +22,7 @@ import type { ApiResponseDTO } from "types";
 import { handleBalanceConfirmBooking, handleRefundBookingBeforeConfirm } from "@services/transaction.service";
 import { BOOKING_STATUS } from "constants/index";
 import { MUA } from "@models/muas.models";
+import { ReminderEmailService } from "../services/reminder.email.service";
 
 export class BookingController {
 
@@ -536,6 +537,7 @@ export class BookingController {
   async cancel(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
+      
       const data = await cancelBooking(id);
 
       if (!data) {
@@ -546,6 +548,36 @@ export class BookingController {
         };
         res.status(404).json(response);
         return;
+      }
+
+      // Gửi email thông báo hủy
+      try {
+        const reminderService = new ReminderEmailService();
+        const User = require('../models/users.models').User;
+        
+        // Lấy thông tin customer
+        const customer = await User.findById(data.customerId).select('email fullName').lean();
+        
+        // Lấy thông tin MUA
+        let muaName = 'Makeup Artist';
+        if (data.artistId) {
+          const mua = await MUA.findById(data.artistId).populate('userId', 'fullName').lean();
+          muaName = (mua as any)?.userId?.fullName || muaName;
+        }
+
+        if (customer?.email) {
+          await reminderService.sendCancelNotice({
+            to: customer.email,
+            customerName: customer.fullName,
+            muaName,
+            serviceName: data.serviceName,
+            bookingDate: new Date(`${data.bookingDate} ${data.startTime}`)
+            // Không có reason vì chưa lưu trong DB
+          });
+        }
+      } catch (emailError) {
+        console.error('❌ Error sending cancellation email:', emailError);
+        // Không throw lỗi, vẫn trả về success
       }
 
       const response: ApiResponseDTO = {

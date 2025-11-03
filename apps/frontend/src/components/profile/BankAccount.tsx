@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger
 } from "@/components/lib/ui/dropdown-menu";
 import { Button } from "@/components/lib/ui/button";
+import { useTranslate } from "@/i18n/hooks/useTranslate";
 
 interface NotificationState {
   type: "success" | "error";
@@ -23,6 +24,7 @@ interface NotificationState {
 }
 
 const BankAccount: React.FC = () => {
+  const { t } = useTranslate('profile');
   const [bankAccount, setBankAccount] = useState<BankAccountResponseDTO | null | undefined>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [hasActiveBookings, setHasActiveBookings] = useState(false);
@@ -51,7 +53,7 @@ const BankAccount: React.FC = () => {
     } catch (error: any) {
       // Don't show error if no bank account exists
       if (!error.message?.includes('not found')) {
-        showNotification("error", error.message || "Failed to load bank account");
+        showNotification("error", error.message || t('bankAccount.loadBankAccountFailed'));
       }
     } finally {
       setIsLoading(false);
@@ -87,10 +89,10 @@ const BankAccount: React.FC = () => {
 
       if (bankAccount) {
         response = await ProfileBankAccountService.updateBankAccount(data);
-        showNotification("success", "Bank account updated successfully!");
+        showNotification("success", t('bankAccount.bankAccountUpdated'));
       } else {
         response = await ProfileBankAccountService.createBankAccount(data);
-        showNotification("success", "Bank account created successfully!");
+        showNotification("success", t('bankAccount.bankAccountCreated'));
       }
 
       if (response.success) {
@@ -98,7 +100,7 @@ const BankAccount: React.FC = () => {
         setModalOpen(false);
       }
     } catch (error: any) {
-      showNotification("error", error.message || "Failed to save bank account");
+      showNotification("error", error.message || t('bankAccount.saveBankAccountFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -111,10 +113,10 @@ const BankAccount: React.FC = () => {
 
       if (response.success) {
         setBankAccount(null);
-        showNotification("success", "Bank account deleted successfully!");
+        showNotification("success", t('bankAccount.bankAccountDeleted'));
       }
     } catch (error: any) {
-      showNotification("error", error.message || "Failed to delete bank account");
+      showNotification("error", error.message || t('bankAccount.deleteBankAccountFailed'));
     } finally {
       setIsLoading(false);
       setDeleteDialogOpen(false);
@@ -133,7 +135,7 @@ const BankAccount: React.FC = () => {
 
   const handleDeleteClick = () => {
     if (hasActiveBookings) {
-      showNotification("error", "Cannot delete bank account while you have pending or confirmed bookings");
+      showNotification("error", t('bankAccount.activeBookingsMessage'));
       return;
     }
     setDeleteDialogOpen(true);
@@ -175,10 +177,10 @@ const BankAccount: React.FC = () => {
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDelete}
-        title="Delete Bank Account"
-        description="Are you sure you want to delete your bank account? This action cannot be undone and you won't be able to receive payments."
-        confirmText="Delete Account"
-        cancelText="Keep Account"
+        title={t('bankAccount.deleteBankAccountTitle')}
+        description={t('bankAccount.deleteBankAccountDescription')}
+        confirmText={t('bankAccount.deleteAccount')}
+        cancelText={t('bankAccount.keepAccount')}
       />
 
       <div className="space-y-6">
@@ -186,9 +188,9 @@ const BankAccount: React.FC = () => {
         <div className="rounded-2xl border border-pink-100 bg-gradient-to-b from-pink-50 to-white p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-semibold text-gray-900">Bank Account</h1>
+              <h1 className="text-2xl font-semibold text-gray-900">{t('bankAccount.title')}</h1>
               <p className="mt-1 text-sm text-gray-600">
-                Manage your bank account for receiving payments
+                {t('bankAccount.subtitle')}
               </p>
             </div>
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-pink-100 text-pink-600">
@@ -206,10 +208,10 @@ const BankAccount: React.FC = () => {
                 <CreditCard size={32} />
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No Bank Account Added
+                {t('bankAccount.noBankAccountAdded')}
               </h3>
               <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                Add your bank account information to receive payments from completed bookings.
+                {t('bankAccount.noBankAccountDescription')}
               </p>
               <button
                 onClick={openCreateModal}
@@ -217,14 +219,14 @@ const BankAccount: React.FC = () => {
                 className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 px-6 py-3 text-sm font-semibold text-white shadow-md transition-transform hover:scale-[1.02] disabled:opacity-50"
               >
                 <Plus size={16} />
-                Add Bank Account
+                {t('bankAccount.addBankAccount')}
               </button>
             </div>
           ) : (
             // Bank Account Details
             <div>
               <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-900">Account Information</h3>
+                <h3 className="text-lg font-semibold text-gray-900">{t('bankAccount.accountInformation')}</h3>
               </div>
 
               {/* Bank Account Card - Compact Format */}
@@ -245,7 +247,7 @@ const BankAccount: React.FC = () => {
                           className="space-x-2 focus:bg-pink-100 cursor-pointer"
                         >
                           <Edit className="w-4 h-4" />
-                          <span>Edit Account</span>
+                          <span>{t('bankAccount.editAccount')}</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={handleDeleteClick}
@@ -253,7 +255,7 @@ const BankAccount: React.FC = () => {
                           className="space-x-2 text-red-600 focus:text-red-600 focus:bg-pink-100 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Trash2 className="w-4 h-4" />
-                          <span>Delete Account</span>
+                          <span>{t('bankAccount.deleteAccount')}</span>
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -281,7 +283,7 @@ const BankAccount: React.FC = () => {
                       </div>
                       <div className="flex items-center space-x-2">
                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span className="text-xs text-green-700 font-medium">Active Account</span>
+                        <span className="text-xs text-green-700 font-medium">{t('bankAccount.activeAccount')}</span>
                       </div>
                     </div>
                   </div>
@@ -292,10 +294,10 @@ const BankAccount: React.FC = () => {
                 <div className="mt-6 p-4 rounded-xl bg-amber-50 border border-amber-200">
                   <div className="flex items-center gap-2 text-amber-800">
                     <Zap size={16} />
-                    <span className="text-sm font-medium">Active Bookings</span>
+                    <span className="text-sm font-medium">{t('bankAccount.activeBookings')}</span>
                   </div>
                   <p className="text-sm text-amber-700 mt-1">
-                    You have active bookings. Bank account cannot be deleted while bookings are pending or confirmed.
+                    {t('bankAccount.activeBookingsMessage')}
                   </p>
                 </div>
               )}
