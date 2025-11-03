@@ -23,7 +23,6 @@ export default function RightSidebar({
   onConversationClick: (conversation: ConversationDTO) => void;
 }>) {
   const { t } = useTranslate('community');
-  const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
   const [conversations, setConversations] = useState<ConversationDTO[]>([]);
   const [loading, setLoading] = useState(false);
   const { isAuthenticated } = useAuthCheck();
