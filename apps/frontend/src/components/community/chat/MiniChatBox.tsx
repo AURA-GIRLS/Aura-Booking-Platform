@@ -51,6 +51,7 @@ export default function MiniChatBox({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [isFileUploading, setIsFileUploading] = useState(false);
   const [showGroupModal, setShowGroupModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messageInputRef = useRef<HTMLInputElement>(null);
@@ -409,6 +410,8 @@ const sendMessage = async (fileUrl?: string) => {
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    
+    setIsFileUploading(true);
 
     // Validate file type
     const validTypes = [
@@ -473,6 +476,7 @@ const sendMessage = async (fileUrl?: string) => {
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
+      setIsFileUploading(false);
       // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
@@ -831,15 +835,15 @@ const handleTogglePin = async () => {
         </div>
 
         {/* Input Area */}
-        <div className="p-3 border-t border-gray-200">
-          <div className="flex items-center space-x-2">
+        <div className="p-2 border-t border-gray-200">
+          <div className="flex items-center space-x-1">
             <div className="relative">
               <button
                 type="button"
                 onClick={triggerFileInput}
                 disabled={isUploading}
                 title="Attach a file"
-                className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 text-gray-500 hover:text-rose-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isUploading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -855,7 +859,7 @@ const handleTogglePin = async () => {
                 accept=".zip,.rar,.7z,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.pdf,application/zip,application/x-zip-compressed,application/x-rar-compressed,application/x-7z-compressed,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,application/pdf,.jpg,.jpeg,.png,.gif,.webp"
               />
               {isUploading && (
-                <div className="absolute bottom-full left-0 w-24 h-1 bg-gray-200 rounded-full overflow-hidden mb-1">
+                <div className="absolute bottom-full left-0 right-0 h-1 bg-gray-200 rounded-full overflow-hidden mb-1">
                   <div
                     className="h-full bg-rose-500 transition-all duration-300"
                     style={{ width: `${uploadProgress}%` }}
@@ -863,12 +867,13 @@ const handleTogglePin = async () => {
                 </div>
               )}
             </div>
+            
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                 title="Add an emoji"
-                className="p-1 text-gray-400 hover:text-gray-600"
+                className="p-2 text-gray-500 hover:text-rose-500"
               >
                 <Smile className="w-4 h-4" />
               </button>
@@ -880,35 +885,33 @@ const handleTogglePin = async () => {
                       setShowEmojiPicker(false);
                       messageInputRef.current?.focus();
                     }}
-                    width={300}
+                    width={280}
                     height={350}
-                    previewConfig={{
-                      showPreview: false
-                    }}
+                    previewConfig={{ showPreview: false }}
                     skinTonesDisabled
                     searchDisabled={false}
                   />
                 </div>
               )}
             </div>
-            <div className="flex-1 flex">
+            
+            <div className="flex-1 flex border border-gray-300 rounded-lg overflow-hidden">
               <input
                 ref={messageInputRef}
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={handleKeyPress}
-                onClick={() => setShowEmojiPicker(false)}
-                placeholder="Type a message..."
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-1 focus:ring-rose-500 focus:border-rose-500 text-sm"
-                disabled={loading}
+                placeholder={isFileUploading ? "Uploading..." : "Type a message..."}
+                disabled={isFileUploading}
+                className="flex-1 w-10 px-3 py-2 text-sm border-0 focus:ring-0 focus:outline-none"
               />
               <button
                 type="button"
                 title="Send message"
                 onClick={() => sendMessage()}
                 disabled={loading || (!inputValue.trim() && !isUploading)}
-                className="px-3 py-2 bg-rose-500 text-white rounded-r-lg hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 bg-rose-500 text-white hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
                 <Send className="w-4 h-4" />
               </button>
