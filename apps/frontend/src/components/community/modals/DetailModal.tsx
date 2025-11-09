@@ -231,8 +231,8 @@ export default function DetailModal({
         socket?.on('comment:delete', handleCommentDelete);
         socket?.on('comment:update', handleCommentUpdate);
 
-        // Join post room for realtime updates
-        socket?.emit('post:join', { postId: post._id });
+    // Join post room for realtime updates (server expects room join via 'join' with room name)
+    socket?.emit('join', `post:${post._id}`);
 
         // Cleanup function
         return () => {
@@ -241,7 +241,7 @@ export default function DetailModal({
             socket?.off('comment:like', handleCommentLike);
             socket?.off('comment:delete', handleCommentDelete);
             socket?.off('comment:update', handleCommentUpdate);
-            socket?.emit('post:leave', { postId: post._id });
+            socket?.emit('leave', `post:${post._id}`);
         };
     }, [post?._id, open]);
 
@@ -351,13 +351,6 @@ export default function DetailModal({
                 if (response.success && response.data) {
                     // Don't add to local state immediately, wait for socket event
                     setReplyInputs(prev => ({ ...prev, [parentCommentId]: "" }));
-                    const socket = getSocket();
-                    // Emit socket event to notify other users
-                    socket?.emit('comment:reply', {
-                        postId: post._id,
-                        parentCommentId,
-                        reply: response.data,
-                    });
                 }
             } catch (error) {
                 console.error('Error creating reply:', error);
