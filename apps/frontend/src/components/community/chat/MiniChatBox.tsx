@@ -852,6 +852,8 @@ const handleTogglePin = async () => {
                 )}
               </button>
               <input
+              title="Upload file"
+              placeholder="Upload file"
                 type="file"
                 ref={fileInputRef}
                 onChange={handleFileChange}

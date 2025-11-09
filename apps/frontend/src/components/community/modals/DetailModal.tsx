@@ -572,34 +572,37 @@ export default function DetailModal({
                             >
                                 <DialogTitle>{post.authorName}</DialogTitle>
                             </button>
+                            {/* Follow and Message buttons */}
+                            {isAuthenticated() && post.authorId !== _currentUser?._id && (
+                                <div className="flex items-center space-x-2 pr-3">
+                                    <button
+                                        onClick={() => handleToggleFollow(post.authorId, following[post.authorId])}
+                                        disabled={followLoading[post.authorId]}
+                                        className={
+                                            `text-xs px-2 py-[1px] my-0 shadow-xs rounded-md border cursor-pointer ` +
+                                            (following[post.authorId]
+                                                ? `border-rose-200 text-white bg-rose-600 hover:bg-rose-700`
+                                                : `border-gray-300`)
+                                        }
+                                    >
+                                        {(() => {
+                                            if (followLoading[post.authorId]) return '...';
+                                            return following[post.authorId] ? 'Following' : 'Follow';
+                                        })()}
+                                    </button>
+
+                                    <button
+                                        onClick={() => handleOpenChat(post.authorId)}
+                                        title="Send message"
+                                        className="p-1 text-gray-600 hover:text-blue-500 hover:bg-gray-100 rounded-md"
+                                    >
+                                        <MessageCircle size={16} />
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
-                        {/* Follow and Message buttons */}
-                        {post.authorId !== _currentUser?._id && (
-                            <div className="flex items-center space-x-2">
-                                <button
-                                    onClick={() => handleToggleFollow(post.authorId, following[post.authorId])}
-                                    disabled={followLoading[post.authorId]}
-                                    className={`px-3 py-1 text-sm rounded-md ${following[post.authorId]
-                                            ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                            : 'bg-blue-500 text-white hover:bg-blue-600'
-                                        } disabled:opacity-50`}
-                                >
-                                    {(() => {
-                                        if (followLoading[post.authorId]) return '...';
-                                        return following[post.authorId] ? 'Unfollow' : 'Follow';
-                                    })()}
-                                </button>
 
-                                <button
-                                    onClick={() => handleOpenChat(post.authorId)}
-                                    title="Send message"
-                                    className="p-1 text-gray-600 hover:text-blue-500 hover:bg-gray-100 rounded-md"
-                                >
-                                    <MessageCircle size={16} />
-                                </button>
-                            </div>
-                        )}
                     </div>
                     <DialogDescription>{post.content}</DialogDescription>
                 </DialogHeader>
@@ -741,7 +744,7 @@ export default function DetailModal({
                                                 <div className="text-sm text-gray-800">{comment.content}</div>
                                             )}
                                         </div>
-                                     
+
                                         {/* Comment Actions */}
                                         <div className="flex items-center space-x-4 mt-1 text-xs text-gray-500">
                                             <span>{formatTimeAgo(comment.createdAt)}</span>
@@ -796,7 +799,7 @@ export default function DetailModal({
                                                         )}
                                                         <DropdownMenuItem
                                                             className="text-rose-600 cursor-pointer focus:bg-rose-100"
-                                                            onClick={() => alert('Comment reported')}
+                                                            onClick={() => checkAuthAndExecute(async () => { alert('Comment reported'); })}
                                                         >
                                                             Report
                                                         </DropdownMenuItem>
@@ -807,203 +810,224 @@ export default function DetailModal({
 
                                         {/* Reply Input */}
                                         {comment.showReplyInput && (
-                                            <div className="flex items-start space-x-3 mt-3">
-                                                {_currentUser?.avatarUrl ? (
-                                                    <img src={_currentUser.avatarUrl} alt="avatar" className="w-6 h-6 rounded-full object-cover" />
-                                                ) : (
-                                                    <div className="w-6 h-6 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full flex items-center justify-center">
-                                                        <span className="text-white text-xs font-semibold">{getInitials(_currentUser?.fullName)}</span>
-                                                    </div>
-                                                )}
-                                                <div className="flex-1">
-                                                    <div className="flex items-center border border-gray-200 rounded-lg px-3">
-                                                        <input
-                                                            value={replyInputs[comment._id] || ""}
-                                                            onChange={(e) => updateReplyInput(comment._id, e.target.value)}
-                                                            placeholder="Write a reply..."
-                                                            className="flex-1 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none"
-                                                            onKeyDown={(e) => e.key === 'Enter' && onAddReply(comment._id)}
-                                                        />
-                                                        <button
-                                                            onClick={() => onAddReply(comment._id)}
-                                                            disabled={!replyInputs[comment._id]?.trim()}
-                                                            aria-label="Send reply"
-                                                            className="p-1 text-rose-600 disabled:opacity-40"
-                                                        >
-                                                            <Send className="w-4 h-4" />
-                                                        </button>
+                                            isAuthenticated() ? (
+                                                <div className="flex items-start space-x-3 mt-3">
+                                                    {_currentUser?.avatarUrl ? (
+                                                        <img src={_currentUser.avatarUrl} alt="avatar" className="w-6 h-6 rounded-full object-cover" />
+                                                    ) : (
+                                                        <div className="w-6 h-6 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full flex items-center justify-center">
+                                                            <span className="text-white text-xs font-semibold">{getInitials(_currentUser?.fullName)}</span>
+                                                        </div>
+                                                    )}
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center border border-gray-200 rounded-lg px-3">
+                                                            <input
+                                                                value={replyInputs[comment._id] || ""}
+                                                                onChange={(e) => updateReplyInput(comment._id, e.target.value)}
+                                                                placeholder="Write a reply..."
+                                                                className="flex-1 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none"
+                                                                onKeyDown={(e) => e.key === 'Enter' && onAddReply(comment._id)}
+                                                            />
+                                                            <button
+                                                                onClick={() => onAddReply(comment._id)}
+                                                                disabled={!replyInputs[comment._id]?.trim()}
+                                                                aria-label="Send reply"
+                                                                className="p-1 text-rose-600 disabled:opacity-40"
+                                                            >
+                                                                <Send className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
+                                            ) : (
+                                                <div className="mt-3">
+                                                    <button
+                                                        onClick={() => globalThis.location.href = '/auth/login'}
+                                                        className="bg-rose-600 text-white px-3 py-1 rounded-md text-sm"
+                                                    >
+                                                        Login to reply
+                                                    </button>
+                                                </div>
+                                            )
                                         )}
 
                                         {/* Replies */}
-                                       {comment.showReplies && comment.replies && (
-                                          <>
-                                            {/* Reply input (optional) */}
-                                            <div className="flex items-start space-x-3 mt-3">
-                                              {_currentUser?.avatarUrl ? (
-                                                <img src={_currentUser.avatarUrl} alt="avatar" className="w-6 h-6 rounded-full object-cover" />
-                                              ) : (
-                                                <div className="w-6 h-6 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full flex items-center justify-center">
-                                                  <span className="text-white text-xs font-semibold">{getInitials(_currentUser?.fullName || '')}</span>
-                                                </div>
-                                              )}
-                                              <div className="flex-1">
-                                                <div className="flex items-center border border-gray-200 rounded-lg px-3">
-                                                  <input
-                                                    value={replyInputs[comment._id] || ""}
-                                                    onChange={(e) => updateReplyInput(comment._id, e.target.value)}
-                                                    placeholder="Write a reply..."
-                                                    className="flex-1 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none"
-                                                    onKeyDown={(e) => e.key === 'Enter' && onAddReply(comment._id)}
-                                                  />
-                                                  <button
-                                                    onClick={() => onAddReply(comment._id)}
-                                                    disabled={!replyInputs[comment._id]?.trim()}
-                                                    aria-label="Send reply"
-                                                    className="p-1 text-rose-600 disabled:opacity-40"
-                                                  >
-                                                    <Send className="w-4 h-4" />
-                                                  </button>
-                                                </div>
-                                              </div>
-                                            </div>
-                                        
-                                            {/* Replies list */}
-                                            <div className="ml-6 mt-3 space-y-3 border-l-2 border-gray-100 pl-4">
-                                              {comment.replies.map((reply) => (
-                                                <div key={reply._id} className="flex items-start space-x-3">
-                                                  {reply.authorAvatarUrl ? (
-                                                    <img src={reply.authorAvatarUrl} alt="avatar" className="w-6 h-6 rounded-full object-cover" />
-                                                  ) : (
-                                                    <div className="w-6 h-6 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full flex items-center justify-center">
-                                                      <span className="text-white text-xs font-semibold">{getInitials(reply.authorName)}</span>
-                                                    </div>
-                                                  )}
-                                        
-                                                  <div className="flex-1">
-                                                    <div className="bg-gray-50 rounded-lg px-3 py-2">
-                                                      <div className="text-sm font-medium text-gray-900">
-                                                        <button
-                                                          type="button"
-                                                          onClick={() => onOpenUserWall?.(reply.authorId, reply.authorName)}
-                                                          className="text-gray-900 hover:underline"
-                                                        >
-                                                          {reply.authorName}
-                                                        </button>
-                                                        {reply.authorRole && reply.authorRole.toUpperCase() === USER_ROLES.ARTIST && (
-                                                          <span className="relative group ml-1 cursor-pointer">
-                                                            <TooltipProvider>
-                                                              <Tooltip>
-                                                                <TooltipTrigger asChild>
-                                                                  <span className="inline-flex items-center justify-center rounded-full bg-rose-600 p-[0.1rem]">
-                                                                    <Check className="w-2 h-2 text-white font-semibold" />
-                                                                  </span>
-                                                                </TooltipTrigger>
-                                                                <TooltipContent className="bg-gray-900 text-white text-xs">
-                                                                  <p>Verified Artist badge</p>
-                                                                </TooltipContent>
-                                                              </Tooltip>
-                                                            </TooltipProvider>
-                                                          </span>
-                                                        )}
-                                                        {reply.authorId === post.authorId && (
-                                                          <span className="ml-2 inline-block bg-rose-100 text-rose-600 text-xs px-2 py-0.5 rounded-full">Author</span>
-                                                        )}
-                                                      </div>
-                                        
-                                                      {editingComment === reply._id ? (
-                                                        <div className="mt-2">
-                                                          <textarea
-                                                            value={editContent}
-                                                            onChange={(e) => setEditContent(e.target.value)}
-                                                            aria-label="Edit reply"
-                                                            placeholder="Edit your reply..."
-                                                            className="w-full p-2 text-sm border border-gray-200 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-rose-500"
-                                                            rows={2}
-                                                            onKeyDown={(e) => {
-                                                              if (e.key === 'Enter' && !e.shiftKey) {
-                                                                e.preventDefault();
-                                                                onSaveEditComment(reply._id);
-                                                              }
-                                                              if (e.key === 'Escape') {
-                                                                onCancelEditComment();
-                                                              }
-                                                            }}
-                                                          />
-                                                          <div className="flex justify-end space-x-2 mt-2">
-                                                            <button onClick={onCancelEditComment} className="px-3 py-1 text-xs text-gray-600 hover:text-gray-800">
-                                                              Cancel
-                                                            </button>
-                                                            <button
-                                                              onClick={() => onSaveEditComment(reply._id)}
-                                                              disabled={!editContent.trim()}
-                                                              className="px-3 py-1 text-xs bg-rose-600 text-white rounded hover:bg-rose-700 disabled:opacity-50"
-                                                            >
-                                                              Save
-                                                            </button>
-                                                          </div>
-                                                        </div>
-                                                      ) : (
-                                                        <div className="text-sm text-gray-800">{reply.content}</div>
-                                                      )}
-                                                    </div>
-                                        
-                                                    <div className="flex items-center space-x-4 mt-1 text-xs text-gray-500">
-                                                      <span>{formatTimeAgo(reply.createdAt)}</span>
-                                                      <button
-                                                        onClick={() => onLikeComment(reply._id, true)}
-                                                        className={`hover:text-rose-600 ${likedComments.has(reply._id) ? 'text-rose-600' : ''}`}
-                                                      >
-                                                        Like • {reply.likeCount}
-                                                      </button>
-                                                      <div className="ml-auto">
-                                                        <DropdownMenu>
-                                                          <DropdownMenuTrigger asChild>
-                                                            <button
-                                                              type="button"
-                                                              aria-label="Reply options"
-                                                              className="border-none p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600"
-                                                            >
-                                                              <MoreHorizontal className="w-3 h-3" />
-                                                            </button>
-                                                          </DropdownMenuTrigger>
-                                                          <DropdownMenuContent
-                                                            align="end"
-                                                            className="w-44 bg-white rounded-xl shadow-lg py-2 z-50 border border-pink-100"
-                                                          >
-                                                            {isSelfUser(reply.authorId) && (
-                                                              <>
-                                                                <DropdownMenuItem
-                                                                  className="cursor-pointer focus:bg-rose-100"
-                                                                  onClick={() => onEditComment(reply._id, reply.content)}
-                                                                >
-                                                                  Edit reply
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem
-                                                                  className="text-rose-600 cursor-pointer focus:bg-rose-100"
-                                                                  onClick={() => onDeleteComment(reply._id)}
-                                                                >
-                                                                  Delete reply
-                                                                </DropdownMenuItem>
-                                                              </>
+                                        {comment.showReplies && comment.replies && (
+                                            <>
+                                                {/* Replies list */}
+                                                <div className="ml-6 mt-3 space-y-3 border-l-2 border-gray-100 pl-4">
+                                                    {comment.replies.map((reply) => (
+                                                        <div key={reply._id} className="flex items-start space-x-3">
+                                                            {reply.authorAvatarUrl ? (
+                                                                <img src={reply.authorAvatarUrl} alt="avatar" className="w-6 h-6 rounded-full object-cover" />
+                                                            ) : (
+                                                                <div className="w-6 h-6 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full flex items-center justify-center">
+                                                                    <span className="text-white text-xs font-semibold">{getInitials(reply.authorName)}</span>
+                                                                </div>
                                                             )}
-                                                            <DropdownMenuItem
-                                                              className="text-rose-600 cursor-pointer focus:bg-rose-100"
-                                                              onClick={() => alert('Reply reported')}
-                                                            >
-                                                              Report
-                                                            </DropdownMenuItem>
-                                                          </DropdownMenuContent>
-                                                        </DropdownMenu>
-                                                      </div>
-                                                    </div>
-                                                  </div>
+
+                                                            <div className="flex-1">
+                                                                <div className="bg-gray-50 rounded-lg px-3 py-2">
+                                                                    <div className="text-sm font-medium text-gray-900">
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => onOpenUserWall?.(reply.authorId, reply.authorName)}
+                                                                            className="text-gray-900 hover:underline"
+                                                                        >
+                                                                            {reply.authorName}
+                                                                        </button>
+                                                                        {reply.authorRole && reply.authorRole.toUpperCase() === USER_ROLES.ARTIST && (
+                                                                            <span className="relative group ml-1 cursor-pointer">
+                                                                                <TooltipProvider>
+                                                                                    <Tooltip>
+                                                                                        <TooltipTrigger asChild>
+                                                                                            <span className="inline-flex items-center justify-center rounded-full bg-rose-600 p-[0.1rem]">
+                                                                                                <Check className="w-2 h-2 text-white font-semibold" />
+                                                                                            </span>
+                                                                                        </TooltipTrigger>
+                                                                                        <TooltipContent className="bg-gray-900 text-white text-xs">
+                                                                                            <p>Verified Artist badge</p>
+                                                                                        </TooltipContent>
+                                                                                    </Tooltip>
+                                                                                </TooltipProvider>
+                                                                            </span>
+                                                                        )}
+                                                                        {reply.authorId === post.authorId && (
+                                                                            <span className="ml-2 inline-block bg-rose-100 text-rose-600 text-xs px-2 py-0.5 rounded-full">Author</span>
+                                                                        )}
+                                                                    </div>
+
+                                                                    {editingComment === reply._id ? (
+                                                                        <div className="mt-2">
+                                                                            <textarea
+                                                                                value={editContent}
+                                                                                onChange={(e) => setEditContent(e.target.value)}
+                                                                                aria-label="Edit reply"
+                                                                                placeholder="Edit your reply..."
+                                                                                className="w-full p-2 text-sm border border-gray-200 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-rose-500"
+                                                                                rows={2}
+                                                                                onKeyDown={(e) => {
+                                                                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                                                                        e.preventDefault();
+                                                                                        onSaveEditComment(reply._id);
+                                                                                    }
+                                                                                    if (e.key === 'Escape') {
+                                                                                        onCancelEditComment();
+                                                                                    }
+                                                                                }}
+                                                                            />
+                                                                            <div className="flex justify-end space-x-2 mt-2">
+                                                                                <button onClick={onCancelEditComment} className="px-3 py-1 text-xs text-gray-600 hover:text-gray-800">
+                                                                                    Cancel
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={() => onSaveEditComment(reply._id)}
+                                                                                    disabled={!editContent.trim()}
+                                                                                    className="px-3 py-1 text-xs bg-rose-600 text-white rounded hover:bg-rose-700 disabled:opacity-50"
+                                                                                >
+                                                                                    Save
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="text-sm text-gray-800">{reply.content}</div>
+                                                                    )}
+                                                                </div>
+
+                                                                <div className="flex items-center space-x-4 mt-1 text-xs text-gray-500">
+                                                                    <span>{formatTimeAgo(reply.createdAt)}</span>
+                                                                    <button
+                                                                        onClick={() => onLikeComment(reply._id, true)}
+                                                                        className={`hover:text-rose-600 ${likedComments.has(reply._id) ? 'text-rose-600' : ''}`}
+                                                                    >
+                                                                        Like • {reply.likeCount}
+                                                                    </button>
+                                                                    <div className="ml-auto">
+                                                                        <DropdownMenu>
+                                                                            <DropdownMenuTrigger asChild>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    aria-label="Reply options"
+                                                                                    className="border-none p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600"
+                                                                                >
+                                                                                    <MoreHorizontal className="w-3 h-3" />
+                                                                                </button>
+                                                                            </DropdownMenuTrigger>
+                                                                            <DropdownMenuContent
+                                                                                align="end"
+                                                                                className="w-44 bg-white rounded-xl shadow-lg py-2 z-50 border border-pink-100"
+                                                                            >
+                                                                                {isSelfUser(reply.authorId) && (
+                                                                                    <>
+                                                                                        <DropdownMenuItem
+                                                                                            className="cursor-pointer focus:bg-rose-100"
+                                                                                            onClick={() => onEditComment(reply._id, reply.content)}
+                                                                                        >
+                                                                                            Edit reply
+                                                                                        </DropdownMenuItem>
+                                                                                        <DropdownMenuItem
+                                                                                            className="text-rose-600 cursor-pointer focus:bg-rose-100"
+                                                                                            onClick={() => onDeleteComment(reply._id)}
+                                                                                        >
+                                                                                            Delete reply
+                                                                                        </DropdownMenuItem>
+                                                                                    </>
+                                                                                )}
+                                                                                <DropdownMenuItem
+                                                                                    className="text-rose-600 cursor-pointer focus:bg-rose-100"
+                                                                                    onClick={() => checkAuthAndExecute(async () => { alert('Reply reported'); })}
+                                                                                >
+                                                                                    Report
+                                                                                </DropdownMenuItem>
+                                                                            </DropdownMenuContent>
+                                                                        </DropdownMenu>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
                                                 </div>
-                                              ))}
-                                            </div>
-                                          </>
+                                                {/* Reply input (optional) */}
+                                                {isAuthenticated() ? (
+                                                    <div className="flex items-start space-x-3 mt-3">
+                                                        {_currentUser?.avatarUrl ? (
+                                                            <img src={_currentUser.avatarUrl} alt="avatar" className="w-6 h-6 rounded-full object-cover" />
+                                                        ) : (
+                                                            <div className="w-6 h-6 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full flex items-center justify-center">
+                                                                <span className="text-white text-xs font-semibold">{getInitials(_currentUser?.fullName || '')}</span>
+                                                            </div>
+                                                        )}
+                                                        <div className="flex-1">
+                                                            <div className="flex items-center border border-gray-200 rounded-lg px-3">
+                                                                <input
+                                                                    value={replyInputs[comment._id] || ""}
+                                                                    onChange={(e) => updateReplyInput(comment._id, e.target.value)}
+                                                                    placeholder="Write a reply..."
+                                                                    className="flex-1 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none"
+                                                                    onKeyDown={(e) => e.key === 'Enter' && onAddReply(comment._id)}
+                                                                />
+                                                                <button
+                                                                    onClick={() => onAddReply(comment._id)}
+                                                                    disabled={!replyInputs[comment._id]?.trim()}
+                                                                    aria-label="Send reply"
+                                                                    className="p-1 text-rose-600 disabled:opacity-40"
+                                                                >
+                                                                    <Send className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="mt-3">
+                                                        <button
+                                                            onClick={() => globalThis.location.href = '/auth/login'}
+                                                            className="bg-rose-600 text-white px-3 py-1 rounded-md text-sm"
+                                                        >
+                                                            Login to reply
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </>
                                         )}
                                     </div>
                                 </div>

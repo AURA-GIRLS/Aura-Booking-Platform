@@ -1,6 +1,6 @@
 import { Heart, MessageCircle, Share, MoreHorizontal, Check, Globe, Lock, Earth } from 'lucide-react';
 import React, { useEffect, useState, useCallback } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import type { CommentResponseDTO, PostResponseDTO, UserWallResponseDTO } from '@/types/community.dtos';
 import { CommunityService } from '@/services/community';
 import { TARGET_TYPES, USER_ROLES, POST_STATUS, RESOURCE_TYPES } from '../../constants';
@@ -56,7 +56,7 @@ export default function PostsFeed({
   const [hasScrolledToPost, setHasScrolledToPost] = useState(false);
 
   const { checkAuthAndExecute, isAuthenticated } = useAuthCheck();
-
+  const router = useRouter(); 
   const formatTimeAgo = (date: string | Date) => {
     const d = new Date(date);
     const diffInHours = Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60));
@@ -565,7 +565,31 @@ export default function PostsFeed({
 
                           </span>
                         )}
-                        {post.authorId !== (_currentUser as any)._id && (
+                      {_currentUser === undefined && (
+                        <div className="flex items-center space-x-2 ml-2">
+                            <button
+                              type="button"
+                              title="Login to follow"
+                              onClick={() =>  router.push('/auth/login')}
+                              disabled={!!followLoading[post.authorId]}
+                              className={
+                                `text-xs px-2 py-[1px] my-0 shadow-xs rounded-md border cursor-pointer border-gray-300` 
+                              }
+                            >
+                               Follow
+                            </button>
+                            
+                            <button
+                              type="button"
+                              onClick={() =>  router.push('/auth/login')}
+                              title="Login to send message"
+                              className="p-1 text-gray-600 hover:text-blue-500 hover:bg-gray-100 rounded-md"
+                            >
+                              <MessageCircle size={14} />
+                            </button>
+                          </div>
+                      )}
+                        {_currentUser && (post.authorId !== (_currentUser as any)._id) && (
                           <div className="flex items-center space-x-2 ml-2">
                             <button
                               type="button"
@@ -626,7 +650,7 @@ export default function PostsFeed({
                       >
                         View details
                       </DropdownMenuItem>
-                      {post.authorId === (_currentUser as any)._id && (
+                      {_currentUser && post.authorId === (_currentUser as any)._id && (
                         <>
                           <DropdownMenuItem
                             className="cursor-pointer focus:bg-rose-100 data-[highlighted]:bg-rose-100"
