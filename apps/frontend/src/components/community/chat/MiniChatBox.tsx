@@ -105,6 +105,46 @@ export default function MiniChatBox({
         return exists ? prev : [...prev, payload.message];
       });
       scrollToBottom();
+      // Play notification sound for incoming messages from other users
+      try {
+        const senderId = typeof payload.message.senderId === 'object' ? payload.message.senderId._id : payload.message.senderId;
+        if (String(senderId) !== String(currentUser?._id)) {
+          // small beep using WebAudio API
+          const playBeep = (volume = 0.6) => {
+            try {
+              const AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
+              if (!AudioContext) return;
+              const ctx = new AudioContext();
+              const o = ctx.createOscillator();
+              const g = ctx.createGain();
+              // Use a brighter frequency and slightly wider bandwidth for clarity
+              o.type = 'sine';
+              o.frequency.value = 1200; // Hz
+              o.connect(g);
+              g.connect(ctx.destination);
+              // Start from near-zero gain, ramp quickly to target volume then fade out
+              const now = ctx.currentTime;
+              g.gain.setValueAtTime(0.00001, now);
+              // Quick attack
+              g.gain.linearRampToValueAtTime(Math.min(Math.max(volume, 0.05), 1), now + 0.01);
+              o.start(now);
+              // Short decay to make it less jarring
+              g.gain.linearRampToValueAtTime(0.00001, now + 0.28);
+              // Stop oscillator and close context after sound
+              setTimeout(() => {
+                try { o.stop(); ctx.close(); } catch { }
+              }, 350);
+            } catch (e) {
+              // ignore sound errors
+            }
+          };
+
+          // Try to resume AudioContext on user gesture if needed
+          playBeep();
+        }
+      } catch (e) {
+        // ignore
+      }
     };
 
     const handleReact = (payload: any) => {

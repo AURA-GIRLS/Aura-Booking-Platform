@@ -32,6 +32,16 @@ const getInitials = (name?: string) => {
   if (!name) return 'U'; // Return 'U' for unknown users
   return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
 };
+
+  const getOtherParticipantFromList = (participants: any[], currentUserId?: string | null) => {
+    if (!Array.isArray(participants) || participants.length === 0) return null;
+    if (!currentUserId) return participants[0] || null;
+    // remove only the first occurrence that matches currentUserId
+    const copy = participants.slice();
+    const idx = copy.findIndex((p: any) => String(p._id) === String(currentUserId));
+    if (idx !== -1) copy.splice(idx, 1);
+    return copy[0] || null;
+  };
   // Fetch initial list
   useEffect(() => {
     const fetchConversations = async () => {
@@ -55,7 +65,7 @@ const getInitials = (name?: string) => {
           console.log("participants",conv);
           console.log("currentUser",currentUser);
 
-          const other = conv.participants.find((p: any) => p._id != currentUser?._id);
+          const other = getOtherParticipantFromList(conv.participants, currentUser?._id);
           console.log("other",other);
           if (other) {
             try {
@@ -106,15 +116,48 @@ const getInitials = (name?: string) => {
       );
     };
 
+    // When a new message is sent to a conversation, update that conversation's lastMessage
+    const handleMessageNew = (payload: any) => {
+      try {
+        const { conversationId, message } = payload;
+        setConversations((prev) => {
+          const existing = prev.find((c) => c._id === conversationId);
+          if (!existing) return prev;
+
+          // try to enrich sender info from conversation participants if possible
+          let sender = message.senderId;
+          if (typeof sender === 'string' || typeof sender === 'number') {
+            const part = existing.participants?.find((p: any) => String(p._id) === String(sender));
+            if (part) sender = { _id: part._id, fullName: part.fullName, avatarUrl: part.avatarUrl };
+            else sender = { _id: sender };
+          }
+
+          const updatedConv = {
+            ...existing,
+            lastMessage: { ...message, senderId: sender },
+            updatedAt: message.createdAt || new Date().toISOString(),
+          } as ConversationDTO;
+
+          // move updated conversation to top
+          const others = prev.filter((c) => c._id !== conversationId);
+          return [updatedConv, ...others];
+        });
+      } catch (e) {
+        // ignore
+      }
+    };
+
     const socket = getSocket();
     socket?.on("conversation:created", handleCreated);
     socket?.on("conversation:deleted", handleDeleted);
     socket?.on("conversation:update", handleUpdate);
+  socket?.on('message:new', handleMessageNew);
 
     return () => {
       socket?.off("conversation:created", handleCreated);
       socket?.off("conversation:deleted", handleDeleted);
       socket?.off("conversation:update", handleUpdate);
+      socket?.off('message:new', handleMessageNew);
     };
   }, [isAuthenticated]);
 
@@ -164,8 +207,8 @@ const getInitials = (name?: string) => {
         ) : (
           filteredConversations.map(conv => {
             // For private conversations, find the other participant
-            const otherParticipant = conv.type === 'private' 
-              ? conv.participants.find(p => p._id !== currentUser?._id)
+            const otherParticipant = conv.type === 'private'
+              ? getOtherParticipantFromList(conv.participants, currentUser?._id)
               : null;
             const displayName = conv.type === 'group' 
               ? conv.name || 'Group Chat'
