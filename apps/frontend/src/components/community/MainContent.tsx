@@ -12,6 +12,7 @@ import MiniChatBox from './chat/MiniChatBox'
 
 import type { Event } from './community.types'
 import { CommunityService } from '@/services/community'
+import { UserService } from '@/services/user'
 import { PostResponseDTO, TagResponseDTO, UserWallResponseDTO } from '@/types/community.dtos'
 import type { UserResponseDTO } from '@/types/user.dtos'
 import { POST_STATUS } from '@/constants/index'
@@ -162,6 +163,7 @@ export default function MainContent() {
     const existsInMinimized = minimizedChats.some((c) => c.conversation._id === conversation._id);
 
     if (existsInActive) return; // Đã mở
+
     if (existsInMinimized) {
       // Mở lại nếu còn chỗ trống
       if (activeChats.length < 5) {
@@ -179,8 +181,8 @@ export default function MainContent() {
         ...prev,
         { conversation, user: otherUser },
       ]);
-    } else {
-      // Nếu đủ 5 -> tự thu nhỏ
+    } else if (conversation.lastMessage) {
+      // Nếu đủ 5 -> tự thu nhỏ, but only if conversation already has messages
       setMinimizedChats((prev) => [
         ...prev,
         { conversation, user: otherUser },
@@ -191,7 +193,15 @@ export default function MainContent() {
     setActiveChats((prev) =>
       prev.filter((c) => c.conversation._id !== chat.conversation._id)
     );
-    setMinimizedChats((prev) => [...prev, chat]); // thêm vào danh sách thu nhỏ
+    // Only add to minimized if it's not a temporary conversation without messages
+    const isTemp = !!chat.conversation?._isTemp;
+    const hasMessages = !!chat.conversation?.lastMessage;
+    if (!isTemp || hasMessages) {
+      setMinimizedChats((prev) => {
+        const exists = prev.some((c) => c.conversation._id === chat.conversation._id);
+        return exists ? prev : [...prev, chat];
+      });
+    }
   }
 
 
@@ -295,9 +305,10 @@ export default function MainContent() {
       return;
     }
 
-    // If chat is not open, create a new one
-    const newChat = {
-      conversation: {
+    // If chat is not open, create a new temporary conversation and try to fetch
+    // the user's details so avatar and name are available immediately.
+    (async () => {
+      const tempConv: any = {
         _id: `temp-${Date.now()}`,
         participants: [
           { _id: userId },
@@ -306,17 +317,21 @@ export default function MainContent() {
         type: 'private',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        lastMessage: null
-      },
-      user: {
-        _id: userId,
-        // You might want to fetch user details here or pass them as parameters
-        fullName: 'Loading...',
-        avatarUrl: ''
-      }
-    };
+        lastMessage: null,
+        _isTemp: true,
+      };
 
-    setActiveChats(prev => [...prev, newChat]);
+      let userData: any = { _id: userId, fullName: 'Loading...', avatarUrl: '' };
+      try {
+        const res = await UserService.getUserById(userId);
+        if (res && res.success && res.data) userData = res.data;
+      } catch (e) {
+        // ignore, keep placeholder
+      }
+
+      const newChat = { conversation: tempConv, user: userData };
+      setActiveChats(prev => [...prev, newChat]);
+    })();
   }, [activeChats, currentUser?._id]);
 
   const isSelf = useMemo(
@@ -535,10 +550,15 @@ export default function MainContent() {
               );
 
               // Nếu đã có trong minimized => không thêm nữa
-              setMinimizedChats((prev) => {
-                const exists = prev.some((c) => c.conversation._id === chat.conversation._id);
-                return exists ? prev : [...prev, chat];
-              });
+              // Only add to minimized if it's not a temporary convo without messages
+              const isTemp = !!chat.conversation?._isTemp;
+              const hasMessages = !!chat.conversation?.lastMessage;
+              if (!isTemp || hasMessages) {
+                setMinimizedChats((prev) => {
+                  const exists = prev.some((c) => c.conversation._id === chat.conversation._id);
+                  return exists ? prev : [...prev, chat];
+                });
+              }
             }}
             recipientUserId={chat.user._id}
             currentUser={currentUser}

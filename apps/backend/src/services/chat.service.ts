@@ -24,14 +24,44 @@ export class ChatService {
 			participantHash: hash,
 		});
 
-		// ✅ Emit realtime to both participants
+		// Populate the created conversation to match the shape returned by listConversations
+		let convPop: any = null;
+		try {
+			convPop = await Conversation.findById(conv._id)
+				.populate({
+					path: 'participants',
+					select: '_id fullName email avatarUrl role status',
+				})
+				.populate({
+					path: 'lastMessage',
+					select: 'content type status createdAt senderId',
+					populate: {
+						path: 'senderId',
+						select: 'fullName avatarUrl'
+					}
+				})
+				.lean();
+		} catch (e) {
+			convPop = null;
+		}
+
+		// ✅ Emit realtime to both participants. Emit per-recipient enriched object including isPinned for that user
 		try {
 			const io = getIO();
-			participants.forEach((p) => {
+			for (const p of participants) {
+				let convForUser: any = convPop ? { ...convPop } : { ...conv };
+				// Determine pinned status for this recipient
+				try {
+					const pinned = await PinnedConversation.findOne({ userId: p, conversationId: conv._id }).lean();
+					convForUser.isPinned = !!pinned;
+				} catch {
+					convForUser.isPinned = false;
+				}
+
 				io.to(`user:${p}`).emit("conversation:created", {
-					conversation: conv,
+					conversation: convForUser,
 				});
-			});
+			}
 		} catch { }
 
 		return conv;

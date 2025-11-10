@@ -25,6 +25,19 @@ export interface ConversationDTO {
   createdAt: string;
   updatedAt: string;
 }
+export interface ConversationSocketDTO {
+  _id: string;
+  type: 'private' | 'group';
+  name?: string;
+  participants: string[]; // User IDs
+  lastMessage?: string; // Message ID
+  adminId?: string; // For group conversations
+  avatarUrl?: string;
+  isDeleted: boolean;
+  isPinned?: boolean; // Added by frontend service
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface CreatePrivateConversationDTO {
   otherUserId: string;

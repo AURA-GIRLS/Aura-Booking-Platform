@@ -1,11 +1,12 @@
 import { Search } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import type { Event } from './community.types';
-import type { ConversationDTO } from '../../types/chat.dtos';
+import type { ConversationDTO, ConversationSocketDTO } from '../../types/chat.dtos';
 import { Input } from '../lib/ui/input';
 import { useAuthCheck } from '../../utils/auth';
 import { useTranslate } from '@/i18n/hooks/useTranslate';
 import { ChatService } from '../../services/chat';
+import { UserService } from '@/services/user';
 import { UserWallResponseDTO } from '@/types/community.dtos';
 import { initSocket, getSocket } from '@/config/socket';
 
@@ -45,11 +46,47 @@ const getInitials = (name?: string) => {
   useEffect(() => {
     if (!isAuthenticated()) return;
 
-    const handleCreated = (payload: any) => {
-      setConversations((prev) => {
-        const exists = prev.some((c) => c._id === payload.conversation._id);
-        return exists ? prev : [payload.conversation, ...prev];
-      });
+    const handleCreated = async (payload: any) => {
+      try {
+        let conv = payload.conversation as ConversationDTO;
+
+        // If this is a private conversation, try to enrich the other participant's info
+        if (conv.type === 'private' && Array.isArray(conv.participants)) {
+          console.log("participants",conv);
+          console.log("currentUser",currentUser);
+
+          const other = conv.participants.find((p: any) => p._id != currentUser?._id);
+          console.log("other",other);
+          if (other) {
+            try {
+              const res = await UserService.getUserById(other._id);
+              if (res && res.success && res.data) {
+                const user = res.data;
+                console.log("res user", user);
+                conv = {
+                  ...conv,
+                  participants: conv.participants.map((p: any) =>
+                    p._id === user._id ? { ...p, fullName: user.fullName, avatarUrl: user.avatarUrl } : p
+                  ),
+                };
+              }
+            } catch (e) {
+              // ignore enrichment error
+            }
+          }
+        }
+
+        setConversations((prev) => {
+          const exists = prev.some((c) => c._id === conv._id);
+          return exists ? prev : [conv, ...prev];
+        });
+      } catch (e) {
+        // fallback: just insert raw payload
+        setConversations((prev) => {
+          const exists = prev.some((c) => c._id === payload.conversation._id);
+          return exists ? prev : [payload.conversation, ...prev];
+        });
+      }
     };
 
     const handleDeleted = (payload: any) => {
